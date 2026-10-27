@@ -1,0 +1,371 @@
+{
+  "schema_manifesto": 2,
+  "versao": "20261027T045449Z",
+  "versao_anterior": "20261027T043847Z",
+  "descricao": "Arquivos mínimos do dashboard Segurança Pública de Joinville: contagens municipais agregadas, derivadas de bases analíticas validadas.",
+  "datas": {
+    "gerado_em_utc": "2026-10-27T04:54:49Z",
+    "ultima_consulta_as_fontes_utc": "2026-10-27T04:41:16Z",
+    "nota": "Data de consulta às fontes, data de publicação (informada pela fonte), competência estatística (período dos dados) e data de geração são informações distintas."
+  },
+  "gerador": "scripts/gerar_dados_dashboard.py",
+  "roteiro_sha256": "6c77ed85f0f9e853024609135fce4cfd89ab832dd235975557b7893499f66dbc",
+  "situacao_validacao": {
+    "status": "validado",
+    "descricao": "Gerado a partir das bases analíticas validadas do roteiro (Sinesp: Etapas 5–9; SSP/SC: Etapas 13.2–13.3 com 67 verificações aprovadas) e conferido contra valores conhecidos.",
+    "verificacoes": [
+      "900 observações Sinesp e 12 séries",
+      "homicídio doloso anual 2020–2025 e janeiro–agosto 2020–2026 iguais ao README",
+      "216 observações SSP/SC; acumulados 2023/2024 de Ameaça e lesão leve; 27 zeros publicados"
+    ]
+  },
+  "aprovacao": null,
+  "cobertura": {
+    "sinesp": {
+      "primeira_competencia": "2020-01",
+      "ultima_competencia": "2026-08",
+      "ano_parcial": 2026,
+      "descricao": "2020-01 a 2026-08; município de Joinville/SC; séries Estadual, PF e PRF; 2026 é parcial"
+    },
+    "ssp_violencia_domestica": {
+      "primeira_competencia": "2023-01",
+      "ultima_competencia": "2024-12",
+      "descricao": "2023-01 a 2024-12; Joinville/SC; nove categorias; unidade 'Fato Comunicado'"
+    }
+  },
+  "revisoes_historicas": {
+    "sinesp": "Versão regenerada a partir dos mesmos originais auditados; sem comparação adicional.",
+    "ssp_violencia_domestica": "Sem revisão histórica comprovada documentalmente nos três relatórios auditados (Etapas 11–12)."
+  },
+  "criterios": [
+    "Sinesp: 900 observações mensais da base analítica validada (Etapas 5–9); vítimas em total_vitima; mandados em total; ausência preservada como campo vazio, nunca como zero.",
+    "SSP/SC: 216 observações da base analítica validada (Etapas 13.2–13.3); grafias '0 Dolosa' e '- Dolosa' unificadas por decisão metodológica do projeto, sem confirmação oficial.",
+    "Não inclui homicídios SSP/SC (série histórica não resolvida), Prefeitura/SEPROT, PDFs, XLSX, CSVs brutos nem dados pessoais."
+  ],
+  "fontes": [
+    {
+      "id": "sinesp_vde",
+      "nome": "MJSP / Sinesp VDE",
+      "descricao": "Indicadores municipais de Joinville/SC extraídos dos XLSX anuais da base nacional (2020 a agosto/2026; 2026 parcial).",
+      "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023",
+      "recursos": [
+        {
+          "identificador": "bancovde-2020.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2020.xlsx/@@download/file",
+          "tipo": "xlsx"
+        },
+        {
+          "identificador": "bancovde-2021.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2021.xlsx/@@download/file",
+          "tipo": "xlsx"
+        },
+        {
+          "identificador": "bancovde-2022.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2022.xlsx/@@download/file",
+          "tipo": "xlsx"
+        },
+        {
+          "identificador": "bancovde-2023.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2023.xlsx/@@download/file",
+          "tipo": "xlsx"
+        },
+        {
+          "identificador": "bancovde-2024.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2024.xlsx/@@download/file",
+          "tipo": "xlsx"
+        },
+        {
+          "identificador": "bancovde-2025.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2025.xlsx/@@download/file",
+          "tipo": "xlsx"
+        },
+        {
+          "identificador": "bancovde-2026.xlsx",
+          "url": "https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-2026.xlsx/@@download/file",
+          "tipo": "xlsx"
+        }
+      ],
+      "licenca": {
+        "data_consulta": "2026-10-27",
+        "catalogo": {
+          "nome": "Sistema Nacional de Estatísticas de Segurança Pública (catálogo dados.mj.gov.br)",
+          "url": "https://dados.mj.gov.br/dataset/sistema-nacional-de-estatisticas-de-seguranca-publica",
+          "licenca": "Creative Commons Atribuição (informada pelo responsável do projeto)",
+          "confirmada_na_consulta": false,
+          "observacao": "O domínio dados.mj.gov.br não foi resolvido (NXDOMAIN; também falhou no WebFetch) nas consultas de 27/10/2026; o catálogo não pôde ser lido e a licença NÃO foi confirmada por esta verificação."
+        },
+        "site": {
+          "licenca": "Creative Commons Atribuição-SemDerivações 3.0 Não Adaptada (CC BY-ND 3.0)",
+          "url": "https://creativecommons.org/licenses/by-nd/3.0/deed.pt_BR",
+          "escopo": "Rodapé do portal gov.br: 'Todo o conteúdo deste site está publicado sob a licença...' (licença geral do site, não específica do conjunto de dados).",
+          "confirmada_na_consulta": true
+        },
+        "condicoes_especificas_do_recurso": "Nenhuma proibição, restrição de uso ou exigência de citação específica foi encontrada na página da base VDE nem no Termo de Uso do portal; a página traz notas metodológicas (p.ex. linhas múltiplas em 'Tentativa de Homicídio' e 'Estupro')."
+      },
+      "consulta": {
+        "data_consulta_utc": "2026-10-27T04:41:16Z",
+        "achados": [
+          {
+            "recurso": "pagina_sinesp_vde",
+            "classificacao": "nenhuma_novidade_identificada",
+            "detalhe": "Página 'Atualizado em 26/10/2026 17h07' (registrado anteriormente: não registrado). A data da página, isoladamente, NÃO prova alteração de valores; veja a verificação dos arquivos.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_revisao_de_competencia_historica",
+            "detalhe": "Tamanho diferente do auditado (24285292 ≠ 25875698 bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_revisao_de_competencia_historica",
+            "detalhe": "Tamanho diferente do auditado (24343083 ≠ 24343073 bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_revisao_de_competencia_historica",
+            "detalhe": "Tamanho diferente do auditado (24358954 ≠ 24358662 bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_revisao_de_competencia_historica",
+            "detalhe": "Tamanho diferente do auditado (24375935 ≠ 24375927 bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_revisao_de_competencia_historica",
+            "detalhe": "Tamanho diferente do auditado (24388243 ≠ 24388231 bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_revisao_de_competencia_historica",
+            "detalhe": "Tamanho diferente do auditado (26644100 ≠ 26643031 bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "possivel_nova_competencia",
+            "detalhe": "Arquivo do último ano coberto (2026) maior que o auditado (20670832 > 18023581 bytes): indício de nova(s) competência(s) ou de revisão; confirmar no PREPARAR.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "arquivo_sinesp",
+            "classificacao": "nenhuma_novidade_identificada",
+            "detalhe": "Arquivo de 2027 ainda não publicado (HTTP 404).",
+            "requer_verificacao_manual": false
+          },
+          {
+            "recurso": "catalogo_mj",
+            "classificacao": "falha_de_consulta",
+            "detalhe": "Consulta não concluída: URLError: <urlopen error [Errno 11001] getaddrinfo failed>",
+            "requer_verificacao_manual": true
+          }
+        ],
+        "observacao": null
+      },
+      "publicacao": {
+        "pagina_publicada_em": "27/12/2023 10h57",
+        "pagina_atualizada_em": "26/10/2026 17h07",
+        "observacao": "Datas informadas pela página; não provam alteração de valores."
+      },
+      "condicoes_de_reutilizacao": "Catálogo: Creative Commons Atribuição (informada pelo responsável do projeto) [NÃO confirmada na consulta]. Site: Creative Commons Atribuição-SemDerivações 3.0 Não Adaptada (CC BY-ND 3.0). Nenhuma proibição, restrição de uso ou exigência de citação específica foi encontrada na página da base VDE nem no Termo de Uso do portal; a página traz notas metodológicas (p.ex. linhas múltiplas em 'Tentativa de Homicídio' e 'Estupro')."
+    },
+    {
+      "id": "ssp_sc_violencia_domestica",
+      "nome": "SSP/SC — Segurança em Números (relatórios de violência doméstica 2023–2024)",
+      "descricao": "Contagens mensais de 'Fato Comunicado' de Joinville/SC por categoria, extraídas de três relatórios PDF (216 observações).",
+      "url": "https://ssp.sc.gov.br/segurancaemnumeros/",
+      "recursos": [
+        {
+          "identificador": "VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf",
+          "url": "https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf",
+          "tipo": "pdf"
+        },
+        {
+          "identificador": "VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf",
+          "url": "https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf",
+          "tipo": "pdf"
+        },
+        {
+          "identificador": "VIOLENCIA-DOMESTICA-2024-SC.pdf",
+          "url": "https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2024-SC.pdf",
+          "tipo": "pdf"
+        }
+      ],
+      "licenca": {
+        "data_consulta": "2026-10-27",
+        "catalogo": {
+          "nome": "Segurança em Números (catálogo dados.sc.gov.br)",
+          "url": "https://www.dados.sc.gov.br/dataset/https-ssp-sc-gov-br-segurancaemnumeros",
+          "licenca": "Outra (Aberta) — license_id 'other-open'; a página indica que satisfaz a Definição de Aberto (Open Definition)",
+          "confirmada_na_consulta": true,
+          "observacao": "Confirmada pela API CKAN e pela página. O único recurso do conjunto é um link HTML para ssp.sc.gov.br/segurancaemnumeros; não há texto integral de licença nem licença específica por documento."
+        },
+        "site": {
+          "licenca": "Copyright © 2023 Todos os Direitos Reservados SC - Governo de Santa Catarina",
+          "url": "https://ssp.sc.gov.br/segurancaemnumeros/",
+          "escopo": "Rodapé do site da SSP/SC; não declara licença de reutilização nem exigência de citação.",
+          "confirmada_na_consulta": true
+        },
+        "condicoes_especificas_do_recurso": "Nenhuma condição específica foi encontrada nos relatórios consultados além do que a página informa. O aviso de direitos reservados do site e a classificação aberta do catálogo coexistem; a divergência não foi esclarecida com a SSP/SC."
+      },
+      "consulta": {
+        "data_consulta_utc": "2026-10-27T04:41:16Z",
+        "achados": [
+          {
+            "recurso": "catalogo_sc",
+            "classificacao": "nenhuma_novidade_identificada",
+            "detalhe": "Catálogo consultado (licença 'other-open'; metadados modificados em 2026-03-20T11:12:26.331159). Data dos metadados do catálogo não prova nova competência.",
+            "requer_verificacao_manual": false
+          },
+          {
+            "recurso": "relatorio_pdf",
+            "classificacao": "nenhuma_novidade_identificada",
+            "detalhe": "Relatório auditado com tamanho igual ao original local (não prova conteúdo idêntico).",
+            "requer_verificacao_manual": false
+          },
+          {
+            "recurso": "relatorio_pdf",
+            "classificacao": "nenhuma_novidade_identificada",
+            "detalhe": "Relatório auditado com tamanho igual ao original local (não prova conteúdo idêntico).",
+            "requer_verificacao_manual": false
+          },
+          {
+            "recurso": "relatorio_pdf",
+            "classificacao": "nenhuma_novidade_identificada",
+            "detalhe": "Relatório auditado com tamanho igual ao original local (não prova conteúdo idêntico).",
+            "requer_verificacao_manual": false
+          },
+          {
+            "recurso": "relatorio_novo",
+            "classificacao": "alteracao_de_esquema_ou_fonte",
+            "detalhe": "Recurso de violência doméstica em formato diferente dos PDFs auditados (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet): exige auditoria manual de categorias, unidade, cabeçalhos e competências; NÃO incorporado automaticamente.",
+            "requer_verificacao_manual": true
+          },
+          {
+            "recurso": "relatorio_novo",
+            "classificacao": "alteracao_de_esquema_ou_fonte",
+            "detalhe": "Recurso de violência doméstica em formato diferente dos PDFs auditados (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet): exige auditoria manual de categorias, unidade, cabeçalhos e competências; NÃO incorporado automaticamente.",
+            "requer_verificacao_manual": true
+          }
+        ],
+        "observacao": null
+      },
+      "publicacao": {
+        "informacao": "não informada/registrada"
+      },
+      "condicoes_de_reutilizacao": "Catálogo: Outra (Aberta) — license_id 'other-open'; a página indica que satisfaz a Definição de Aberto (Open Definition). Site: Copyright © 2023 Todos os Direitos Reservados SC - Governo de Santa Catarina. Nenhuma condição específica foi encontrada nos relatórios consultados além do que a página informa. O aviso de direitos reservados do site e a classificação aberta do catálogo coexistem; a divergência não foi esclarecida com a SSP/SC."
+    }
+  ],
+  "avaliacao_de_reutilizacao": "Os arquivos derivados contêm apenas contagens estatísticas municipais agregadas e metadados de rastreabilidade (nomes de arquivos, páginas, linhas e colunas). Os documentos oficiais integrais (XLSX e PDF), dados pessoais e informações protegidas NÃO são redistribuídos. Nenhuma proibição específica aplicável a esses arquivos derivados foi encontrada; também NÃO há autorização específica explícita: a licença do catálogo do MJSP não foi confirmada nesta consulta e o rodapé do portal gov.br declara CC BY-ND 3.0, e o site da SSP/SC declara direitos reservados enquanto o catálogo catarinense a classifica como aberta. A atribuição das fontes é obrigatória nas páginas do painel.",
+  "atribuicao": "Fontes: MJSP / Sinesp VDE (Ministério da Justiça e Segurança Pública) e SSP/SC — Segurança em Números (Secretaria de Estado da Segurança Pública de Santa Catarina). Tabelas e gráficos são elaborações próprias do projeto a partir de valores estatísticos públicos.",
+  "origem_dos_dados": {
+    "sinesp_xlsx_sha256": {
+      "2020": "4c726e6fd6b327b65e2df567695cb8fd3786d3b2c7515e1be85efa355fbb3b5d",
+      "2021": "babdbbbc71c427e32ebad2255657182f79d4de5525adfcbcac332e3f2f7dcd9d",
+      "2022": "f5561304e9569bc9f5ba573598812feaea15dfd06cf9501e5677cd8db923ab3e",
+      "2023": "33baf9e4d2ad10520b68e585c55effba096231bf5924eed8d62fd59c671262de",
+      "2024": "87deaea4473cfede9de9333e4cd9f1bc365b1ada183012f2364054c28ac563d5",
+      "2025": "d8fd9d8f7fa1577c434f617431c6ef3199dcc083bc28f64e7f4b53eaafe2132f",
+      "2026": "ce075722dcde0331c2d6a9d5bee82bf25ba7dd9336f835d79daee0068b0e1fed"
+    },
+    "sinesp_xlsx_bytes": {
+      "2020": 25875698,
+      "2021": 24343073,
+      "2022": 24358662,
+      "2023": 24375927,
+      "2024": 24388231,
+      "2025": 26643031,
+      "2026": 18023581
+    },
+    "ssp_pdf_sha256": {
+      "2025_06_VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf": "05faad8390efe4850c2d04b7ddf00338eb230e8b9db5fb3f363ae72fe635f9d8",
+      "2025_06_VIOLENCIA-DOMESTICA-2024-SC.pdf": "0517356756e91962c94893e304652a5849024060b9b0f6cb2a3fb8c3d9feb2b9",
+      "2025_06_VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf": "435a397e8d438a08e6a5830ed48aa25ab60f9b20386a93d51f2e2780229da52e"
+    },
+    "ssp_pdf_bytes": {
+      "2025_06_VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf": 1184632,
+      "2025_06_VIOLENCIA-DOMESTICA-2024-SC.pdf": 2201254,
+      "2025_06_VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf": 1157819
+    }
+  },
+  "normalizacao_hash": "SHA-256 do conteúdo com fins de linha normalizados para LF.",
+  "arquivos": [
+    {
+      "arquivo": "sinesp_joinville_mensal.csv",
+      "linhas": 900,
+      "colunas": 6,
+      "esquema": [
+        "ano",
+        "mes",
+        "evento",
+        "abrangencia",
+        "unidade",
+        "valor"
+      ],
+      "bytes": 55917,
+      "sha256": "3b673fdc1c953d4ba968675c0d5fba56ca0a35480e42ec357618a5a7d95fc5ae"
+    },
+    {
+      "arquivo": "sinesp_catalogo_indicadores.csv",
+      "linhas": 12,
+      "colunas": 12,
+      "esquema": [
+        "evento",
+        "abrangencia",
+        "unidade",
+        "natureza",
+        "medida_origem",
+        "inicio",
+        "fim",
+        "meses_observados",
+        "meses_com_valor",
+        "meses_valor_zero",
+        "meses_sem_valor",
+        "limitacoes"
+      ],
+      "bytes": 3740,
+      "sha256": "7c10cb06bf2512d0074d2e5b21f3bf9f41f1f87c4e40a8d897d7ee5493cb0832"
+    },
+    {
+      "arquivo": "ssp_violencia_domestica_joinville.csv",
+      "linhas": 216,
+      "colunas": 5,
+      "esquema": [
+        "municipio",
+        "ano",
+        "mes",
+        "categoria",
+        "fatos_comunicados"
+      ],
+      "bytes": 7837,
+      "sha256": "37417408d28b66b1ed894a135e7f929975b836d2ee7e7a5f9ab25a85ab3a3851"
+    },
+    {
+      "arquivo": "ssp_violencia_domestica_rastreabilidade.csv",
+      "linhas": 216,
+      "colunas": 12,
+      "esquema": [
+        "municipio",
+        "ano",
+        "mes",
+        "categoria",
+        "arquivo_pdf",
+        "pagina_pdf",
+        "tabela_pdf",
+        "linha_tabela",
+        "coluna_csv",
+        "rotulo_original_categoria",
+        "cabecalho_mes_original",
+        "valor_textual_original"
+      ],
+      "bytes": 25889,
+      "sha256": "8003418b860eeee8abe0f745eb3da4b4987fc3f188578583de407937316074d5"
+    }
+  ]
+}

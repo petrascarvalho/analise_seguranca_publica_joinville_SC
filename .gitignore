@@ -43,3 +43,9 @@ desktop.ini
 
 # Memória de continuidade externa; proteger também contra cópias acidentais.
 README_IA*.md
+
+# Atualização controlada dos dados: entradas oficiais baixadas, candidatas, versões anteriores e relatórios de
+# verificação são locais (a versão ativa publicada é dashboard/data_publica/).
+/atualizacao/
+/dashboard/data_publica.novo/
+/dashboard/data_publica.antigo/

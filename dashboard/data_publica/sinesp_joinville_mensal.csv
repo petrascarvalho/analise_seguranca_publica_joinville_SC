@@ -1,0 +1,901 @@
+ano,mes,evento,abrangencia,unidade,valor
+2020,1,Feminicídio,Estadual,vítimas,0
+2020,2,Feminicídio,Estadual,vítimas,0
+2020,3,Feminicídio,Estadual,vítimas,1
+2020,4,Feminicídio,Estadual,vítimas,1
+2020,5,Feminicídio,Estadual,vítimas,0
+2020,6,Feminicídio,Estadual,vítimas,0
+2020,7,Feminicídio,Estadual,vítimas,0
+2020,8,Feminicídio,Estadual,vítimas,0
+2020,9,Feminicídio,Estadual,vítimas,0
+2020,10,Feminicídio,Estadual,vítimas,0
+2020,11,Feminicídio,Estadual,vítimas,1
+2020,12,Feminicídio,Estadual,vítimas,0
+2021,1,Feminicídio,Estadual,vítimas,1
+2021,2,Feminicídio,Estadual,vítimas,0
+2021,3,Feminicídio,Estadual,vítimas,0
+2021,4,Feminicídio,Estadual,vítimas,0
+2021,5,Feminicídio,Estadual,vítimas,0
+2021,6,Feminicídio,Estadual,vítimas,0
+2021,7,Feminicídio,Estadual,vítimas,1
+2021,8,Feminicídio,Estadual,vítimas,1
+2021,9,Feminicídio,Estadual,vítimas,0
+2021,10,Feminicídio,Estadual,vítimas,2
+2021,11,Feminicídio,Estadual,vítimas,1
+2021,12,Feminicídio,Estadual,vítimas,0
+2022,1,Feminicídio,Estadual,vítimas,0
+2022,2,Feminicídio,Estadual,vítimas,0
+2022,3,Feminicídio,Estadual,vítimas,0
+2022,4,Feminicídio,Estadual,vítimas,0
+2022,5,Feminicídio,Estadual,vítimas,1
+2022,6,Feminicídio,Estadual,vítimas,0
+2022,7,Feminicídio,Estadual,vítimas,0
+2022,8,Feminicídio,Estadual,vítimas,0
+2022,9,Feminicídio,Estadual,vítimas,0
+2022,10,Feminicídio,Estadual,vítimas,0
+2022,11,Feminicídio,Estadual,vítimas,0
+2022,12,Feminicídio,Estadual,vítimas,1
+2023,1,Feminicídio,Estadual,vítimas,0
+2023,2,Feminicídio,Estadual,vítimas,0
+2023,3,Feminicídio,Estadual,vítimas,0
+2023,4,Feminicídio,Estadual,vítimas,0
+2023,5,Feminicídio,Estadual,vítimas,0
+2023,6,Feminicídio,Estadual,vítimas,0
+2023,7,Feminicídio,Estadual,vítimas,1
+2023,8,Feminicídio,Estadual,vítimas,0
+2023,9,Feminicídio,Estadual,vítimas,0
+2023,10,Feminicídio,Estadual,vítimas,0
+2023,11,Feminicídio,Estadual,vítimas,0
+2023,12,Feminicídio,Estadual,vítimas,1
+2024,1,Feminicídio,Estadual,vítimas,0
+2024,2,Feminicídio,Estadual,vítimas,0
+2024,3,Feminicídio,Estadual,vítimas,3
+2024,4,Feminicídio,Estadual,vítimas,0
+2024,5,Feminicídio,Estadual,vítimas,0
+2024,6,Feminicídio,Estadual,vítimas,0
+2024,7,Feminicídio,Estadual,vítimas,0
+2024,8,Feminicídio,Estadual,vítimas,0
+2024,9,Feminicídio,Estadual,vítimas,0
+2024,10,Feminicídio,Estadual,vítimas,0
+2024,11,Feminicídio,Estadual,vítimas,0
+2024,12,Feminicídio,Estadual,vítimas,0
+2025,1,Feminicídio,Estadual,vítimas,0
+2025,2,Feminicídio,Estadual,vítimas,0
+2025,3,Feminicídio,Estadual,vítimas,0
+2025,4,Feminicídio,Estadual,vítimas,0
+2025,5,Feminicídio,Estadual,vítimas,0
+2025,6,Feminicídio,Estadual,vítimas,0
+2025,7,Feminicídio,Estadual,vítimas,0
+2025,8,Feminicídio,Estadual,vítimas,0
+2025,9,Feminicídio,Estadual,vítimas,2
+2025,10,Feminicídio,Estadual,vítimas,0
+2025,11,Feminicídio,Estadual,vítimas,0
+2025,12,Feminicídio,Estadual,vítimas,0
+2026,1,Feminicídio,Estadual,vítimas,0
+2026,2,Feminicídio,Estadual,vítimas,0
+2026,3,Feminicídio,Estadual,vítimas,0
+2026,4,Feminicídio,Estadual,vítimas,0
+2026,5,Feminicídio,Estadual,vítimas,0
+2026,6,Feminicídio,Estadual,vítimas,0
+2026,7,Feminicídio,Estadual,vítimas,0
+2026,8,Feminicídio,Estadual,vítimas,0
+2020,1,Homicídio doloso,Estadual,vítimas,10
+2020,2,Homicídio doloso,Estadual,vítimas,5
+2020,3,Homicídio doloso,Estadual,vítimas,8
+2020,4,Homicídio doloso,Estadual,vítimas,9
+2020,5,Homicídio doloso,Estadual,vítimas,8
+2020,6,Homicídio doloso,Estadual,vítimas,4
+2020,7,Homicídio doloso,Estadual,vítimas,4
+2020,8,Homicídio doloso,Estadual,vítimas,2
+2020,9,Homicídio doloso,Estadual,vítimas,3
+2020,10,Homicídio doloso,Estadual,vítimas,3
+2020,11,Homicídio doloso,Estadual,vítimas,4
+2020,12,Homicídio doloso,Estadual,vítimas,2
+2021,1,Homicídio doloso,Estadual,vítimas,5
+2021,2,Homicídio doloso,Estadual,vítimas,6
+2021,3,Homicídio doloso,Estadual,vítimas,7
+2021,4,Homicídio doloso,Estadual,vítimas,7
+2021,5,Homicídio doloso,Estadual,vítimas,4
+2021,6,Homicídio doloso,Estadual,vítimas,3
+2021,7,Homicídio doloso,Estadual,vítimas,3
+2021,8,Homicídio doloso,Estadual,vítimas,5
+2021,9,Homicídio doloso,Estadual,vítimas,6
+2021,10,Homicídio doloso,Estadual,vítimas,6
+2021,11,Homicídio doloso,Estadual,vítimas,4
+2021,12,Homicídio doloso,Estadual,vítimas,6
+2022,1,Homicídio doloso,Estadual,vítimas,2
+2022,2,Homicídio doloso,Estadual,vítimas,2
+2022,3,Homicídio doloso,Estadual,vítimas,2
+2022,4,Homicídio doloso,Estadual,vítimas,3
+2022,5,Homicídio doloso,Estadual,vítimas,6
+2022,6,Homicídio doloso,Estadual,vítimas,3
+2022,7,Homicídio doloso,Estadual,vítimas,7
+2022,8,Homicídio doloso,Estadual,vítimas,4
+2022,9,Homicídio doloso,Estadual,vítimas,5
+2022,10,Homicídio doloso,Estadual,vítimas,0
+2022,11,Homicídio doloso,Estadual,vítimas,7
+2022,12,Homicídio doloso,Estadual,vítimas,8
+2023,1,Homicídio doloso,Estadual,vítimas,19
+2023,2,Homicídio doloso,Estadual,vítimas,4
+2023,3,Homicídio doloso,Estadual,vítimas,0
+2023,4,Homicídio doloso,Estadual,vítimas,1
+2023,5,Homicídio doloso,Estadual,vítimas,6
+2023,6,Homicídio doloso,Estadual,vítimas,3
+2023,7,Homicídio doloso,Estadual,vítimas,3
+2023,8,Homicídio doloso,Estadual,vítimas,4
+2023,9,Homicídio doloso,Estadual,vítimas,7
+2023,10,Homicídio doloso,Estadual,vítimas,2
+2023,11,Homicídio doloso,Estadual,vítimas,1
+2023,12,Homicídio doloso,Estadual,vítimas,5
+2024,1,Homicídio doloso,Estadual,vítimas,2
+2024,2,Homicídio doloso,Estadual,vítimas,2
+2024,3,Homicídio doloso,Estadual,vítimas,3
+2024,4,Homicídio doloso,Estadual,vítimas,6
+2024,5,Homicídio doloso,Estadual,vítimas,1
+2024,6,Homicídio doloso,Estadual,vítimas,4
+2024,7,Homicídio doloso,Estadual,vítimas,1
+2024,8,Homicídio doloso,Estadual,vítimas,2
+2024,9,Homicídio doloso,Estadual,vítimas,4
+2024,10,Homicídio doloso,Estadual,vítimas,4
+2024,11,Homicídio doloso,Estadual,vítimas,2
+2024,12,Homicídio doloso,Estadual,vítimas,5
+2025,1,Homicídio doloso,Estadual,vítimas,2
+2025,2,Homicídio doloso,Estadual,vítimas,3
+2025,3,Homicídio doloso,Estadual,vítimas,2
+2025,4,Homicídio doloso,Estadual,vítimas,3
+2025,5,Homicídio doloso,Estadual,vítimas,2
+2025,6,Homicídio doloso,Estadual,vítimas,2
+2025,7,Homicídio doloso,Estadual,vítimas,0
+2025,8,Homicídio doloso,Estadual,vítimas,4
+2025,9,Homicídio doloso,Estadual,vítimas,3
+2025,10,Homicídio doloso,Estadual,vítimas,4
+2025,11,Homicídio doloso,Estadual,vítimas,2
+2025,12,Homicídio doloso,Estadual,vítimas,2
+2026,1,Homicídio doloso,Estadual,vítimas,8
+2026,2,Homicídio doloso,Estadual,vítimas,1
+2026,3,Homicídio doloso,Estadual,vítimas,2
+2026,4,Homicídio doloso,Estadual,vítimas,4
+2026,5,Homicídio doloso,Estadual,vítimas,0
+2026,6,Homicídio doloso,Estadual,vítimas,3
+2026,7,Homicídio doloso,Estadual,vítimas,2
+2026,8,Homicídio doloso,Estadual,vítimas,2
+2020,1,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,4,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,9,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,10,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,11,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,12,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,1,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,4,Lesão corporal seguida de morte,Estadual,vítimas,2
+2021,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,9,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,10,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,11,Lesão corporal seguida de morte,Estadual,vítimas,0
+2021,12,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,1,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,4,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2022,9,Lesão corporal seguida de morte,Estadual,vítimas,1
+2022,10,Lesão corporal seguida de morte,Estadual,vítimas,1
+2022,11,Lesão corporal seguida de morte,Estadual,vítimas,1
+2022,12,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,1,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,4,Lesão corporal seguida de morte,Estadual,vítimas,1
+2023,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,9,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,10,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,11,Lesão corporal seguida de morte,Estadual,vítimas,0
+2023,12,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,1,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,4,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,9,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,10,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,11,Lesão corporal seguida de morte,Estadual,vítimas,0
+2024,12,Lesão corporal seguida de morte,Estadual,vítimas,1
+2025,1,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,4,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,9,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,10,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,11,Lesão corporal seguida de morte,Estadual,vítimas,0
+2025,12,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,1,Lesão corporal seguida de morte,Estadual,vítimas,1
+2026,2,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,3,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,4,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,5,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,6,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,7,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2020,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),56
+2020,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),38
+2020,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),44
+2020,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),31
+2020,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),40
+2020,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),49
+2020,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),78
+2020,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),60
+2020,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),72
+2020,10,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),44
+2020,11,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),57
+2020,12,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),43
+2021,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),66
+2021,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),59
+2021,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),87
+2021,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),62
+2021,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),63
+2021,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),58
+2021,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),59
+2021,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),63
+2021,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),72
+2021,10,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),59
+2021,11,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),89
+2021,12,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),53
+2022,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),51
+2022,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),63
+2022,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),83
+2022,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),70
+2022,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),80
+2022,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),94
+2022,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),84
+2022,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),80
+2022,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),76
+2022,10,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),81
+2022,11,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),56
+2022,12,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),66
+2023,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),0
+2023,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),98
+2023,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),107
+2023,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),66
+2023,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),88
+2023,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),74
+2023,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),54
+2023,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),80
+2023,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),87
+2023,10,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),75
+2023,11,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),160
+2023,12,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),91
+2024,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),67
+2024,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),70
+2024,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),89
+2024,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),90
+2024,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),123
+2024,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),91
+2024,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),86
+2024,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),113
+2024,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),83
+2024,10,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),69
+2024,11,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),83
+2024,12,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),71
+2025,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),81
+2025,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),91
+2025,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),122
+2025,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),105
+2025,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),116
+2025,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),101
+2025,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),93
+2025,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),127
+2025,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),118
+2025,10,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),128
+2025,11,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),96
+2025,12,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),70
+2026,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),78
+2026,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),92
+2026,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),113
+2026,4,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),94
+2026,5,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),110
+2026,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),138
+2026,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),111
+2026,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),85
+2025,1,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
+2025,2,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,3,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,4,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,5,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),4
+2025,6,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
+2025,7,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,8,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,9,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,10,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2025,11,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
+2025,12,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
+2026,1,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2026,2,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),3
+2026,3,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2026,4,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2026,5,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2026,6,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
+2026,7,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
+2026,8,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),2
+2020,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2020,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2020,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2020,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2020,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2020,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,4
+2020,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2020,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2020,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2020,10,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2020,11,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2020,12,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2021,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2021,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2021,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2021,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2021,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2021,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2021,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2021,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2021,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2021,10,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2021,11,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2021,12,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2022,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,7
+2022,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,7
+2022,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2022,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2022,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,4
+2022,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2022,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2022,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2022,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2022,10,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2022,11,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2022,12,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2023,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2023,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,5
+2023,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2023,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2023,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,5
+2023,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,4
+2023,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2023,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2023,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2023,10,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2023,11,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2023,12,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2024,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2024,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,5
+2024,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,4
+2024,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2024,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2024,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,5
+2024,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2024,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2024,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2024,10,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2024,11,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2024,12,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2025,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2025,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2025,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2025,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2025,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,10,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,11,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2025,12,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2026,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2026,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2026,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2026,4,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2026,5,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
+2026,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
+2026,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
+2026,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2020,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,10,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,11,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,12,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,10,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,11,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2021,12,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,10,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,11,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2022,12,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,10,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,11,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2023,12,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,10,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,11,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2024,12,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,10,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,11,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2025,12,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,4,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,5,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2020,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2020,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2020,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2020,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2020,9,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,10,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,3
+2020,11,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,12,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2021,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2021,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2021,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2021,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2021,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2021,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2021,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2021,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2021,9,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2021,10,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2021,11,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2021,12,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2022,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2022,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,3
+2022,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2022,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2022,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2022,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2022,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2022,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,3
+2022,9,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2022,10,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2022,11,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2022,12,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2023,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2023,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2023,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2023,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2023,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2023,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2023,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2023,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2023,9,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2023,10,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2023,11,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2023,12,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2024,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2024,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2024,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2024,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2024,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2024,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2024,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2024,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2024,9,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2024,10,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2024,11,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2024,12,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2025,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,3
+2025,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
+2025,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2025,9,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,10,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,11,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2025,12,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2026,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2026,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,3
+2026,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2026,4,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2026,5,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2026,6,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
+2026,7,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2026,8,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
+2020,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,10,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,11,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,12,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,1
+2021,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,10,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,11,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2021,12,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,1
+2022,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,2
+2022,10,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,11,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2022,12,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,10,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,11,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2023,12,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,10,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,11,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2024,12,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,10,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,11,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2025,12,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,1,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,2,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,3,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,4,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,5,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2020,1,Suicídio,Estadual,vítimas,5
+2020,2,Suicídio,Estadual,vítimas,5
+2020,3,Suicídio,Estadual,vítimas,1
+2020,4,Suicídio,Estadual,vítimas,1
+2020,5,Suicídio,Estadual,vítimas,3
+2020,6,Suicídio,Estadual,vítimas,2
+2020,7,Suicídio,Estadual,vítimas,3
+2020,8,Suicídio,Estadual,vítimas,1
+2020,9,Suicídio,Estadual,vítimas,4
+2020,10,Suicídio,Estadual,vítimas,7
+2020,11,Suicídio,Estadual,vítimas,7
+2020,12,Suicídio,Estadual,vítimas,4
+2021,1,Suicídio,Estadual,vítimas,4
+2021,2,Suicídio,Estadual,vítimas,3
+2021,3,Suicídio,Estadual,vítimas,4
+2021,4,Suicídio,Estadual,vítimas,3
+2021,5,Suicídio,Estadual,vítimas,4
+2021,6,Suicídio,Estadual,vítimas,4
+2021,7,Suicídio,Estadual,vítimas,3
+2021,8,Suicídio,Estadual,vítimas,5
+2021,9,Suicídio,Estadual,vítimas,4
+2021,10,Suicídio,Estadual,vítimas,7
+2021,11,Suicídio,Estadual,vítimas,6
+2021,12,Suicídio,Estadual,vítimas,5
+2022,1,Suicídio,Estadual,vítimas,6
+2022,2,Suicídio,Estadual,vítimas,4
+2022,3,Suicídio,Estadual,vítimas,7
+2022,4,Suicídio,Estadual,vítimas,5
+2022,5,Suicídio,Estadual,vítimas,4
+2022,6,Suicídio,Estadual,vítimas,8
+2022,7,Suicídio,Estadual,vítimas,2
+2022,8,Suicídio,Estadual,vítimas,5
+2022,9,Suicídio,Estadual,vítimas,4
+2022,10,Suicídio,Estadual,vítimas,6
+2022,11,Suicídio,Estadual,vítimas,12
+2022,12,Suicídio,Estadual,vítimas,4
+2023,1,Suicídio,Estadual,vítimas,4
+2023,2,Suicídio,Estadual,vítimas,6
+2023,3,Suicídio,Estadual,vítimas,3
+2023,4,Suicídio,Estadual,vítimas,6
+2023,5,Suicídio,Estadual,vítimas,2
+2023,6,Suicídio,Estadual,vítimas,5
+2023,7,Suicídio,Estadual,vítimas,4
+2023,8,Suicídio,Estadual,vítimas,3
+2023,9,Suicídio,Estadual,vítimas,2
+2023,10,Suicídio,Estadual,vítimas,5
+2023,11,Suicídio,Estadual,vítimas,1
+2023,12,Suicídio,Estadual,vítimas,3
+2024,1,Suicídio,Estadual,vítimas,4
+2024,2,Suicídio,Estadual,vítimas,3
+2024,3,Suicídio,Estadual,vítimas,9
+2024,4,Suicídio,Estadual,vítimas,6
+2024,5,Suicídio,Estadual,vítimas,4
+2024,6,Suicídio,Estadual,vítimas,4
+2024,7,Suicídio,Estadual,vítimas,2
+2024,8,Suicídio,Estadual,vítimas,4
+2024,9,Suicídio,Estadual,vítimas,5
+2024,10,Suicídio,Estadual,vítimas,1
+2024,11,Suicídio,Estadual,vítimas,5
+2024,12,Suicídio,Estadual,vítimas,1
+2025,1,Suicídio,Estadual,vítimas,3
+2025,2,Suicídio,Estadual,vítimas,4
+2025,3,Suicídio,Estadual,vítimas,7
+2025,4,Suicídio,Estadual,vítimas,1
+2025,5,Suicídio,Estadual,vítimas,0
+2025,6,Suicídio,Estadual,vítimas,4
+2025,7,Suicídio,Estadual,vítimas,2
+2025,8,Suicídio,Estadual,vítimas,1
+2025,9,Suicídio,Estadual,vítimas,3
+2025,10,Suicídio,Estadual,vítimas,4
+2025,11,Suicídio,Estadual,vítimas,5
+2025,12,Suicídio,Estadual,vítimas,5
+2026,1,Suicídio,Estadual,vítimas,4
+2026,2,Suicídio,Estadual,vítimas,3
+2026,3,Suicídio,Estadual,vítimas,4
+2026,4,Suicídio,Estadual,vítimas,2
+2026,5,Suicídio,Estadual,vítimas,4
+2026,6,Suicídio,Estadual,vítimas,2
+2026,7,Suicídio,Estadual,vítimas,6
+2026,8,Suicídio,Estadual,vítimas,2
+2020,1,Tentativa de feminicídio,Estadual,vítimas,2
+2020,2,Tentativa de feminicídio,Estadual,vítimas,0
+2020,3,Tentativa de feminicídio,Estadual,vítimas,3
+2020,4,Tentativa de feminicídio,Estadual,vítimas,1
+2020,5,Tentativa de feminicídio,Estadual,vítimas,0
+2020,6,Tentativa de feminicídio,Estadual,vítimas,1
+2020,7,Tentativa de feminicídio,Estadual,vítimas,1
+2020,8,Tentativa de feminicídio,Estadual,vítimas,0
+2020,9,Tentativa de feminicídio,Estadual,vítimas,1
+2020,10,Tentativa de feminicídio,Estadual,vítimas,0
+2020,11,Tentativa de feminicídio,Estadual,vítimas,0
+2020,12,Tentativa de feminicídio,Estadual,vítimas,1
+2021,1,Tentativa de feminicídio,Estadual,vítimas,1
+2021,2,Tentativa de feminicídio,Estadual,vítimas,1
+2021,3,Tentativa de feminicídio,Estadual,vítimas,0
+2021,4,Tentativa de feminicídio,Estadual,vítimas,0
+2021,5,Tentativa de feminicídio,Estadual,vítimas,0
+2021,6,Tentativa de feminicídio,Estadual,vítimas,0
+2021,7,Tentativa de feminicídio,Estadual,vítimas,0
+2021,8,Tentativa de feminicídio,Estadual,vítimas,0
+2021,9,Tentativa de feminicídio,Estadual,vítimas,0
+2021,10,Tentativa de feminicídio,Estadual,vítimas,1
+2021,11,Tentativa de feminicídio,Estadual,vítimas,1
+2021,12,Tentativa de feminicídio,Estadual,vítimas,0
+2022,1,Tentativa de feminicídio,Estadual,vítimas,0
+2022,2,Tentativa de feminicídio,Estadual,vítimas,1
+2022,3,Tentativa de feminicídio,Estadual,vítimas,0
+2022,4,Tentativa de feminicídio,Estadual,vítimas,0
+2022,5,Tentativa de feminicídio,Estadual,vítimas,1
+2022,6,Tentativa de feminicídio,Estadual,vítimas,0
+2022,7,Tentativa de feminicídio,Estadual,vítimas,0
+2022,8,Tentativa de feminicídio,Estadual,vítimas,1
+2022,9,Tentativa de feminicídio,Estadual,vítimas,1
+2022,10,Tentativa de feminicídio,Estadual,vítimas,0
+2022,11,Tentativa de feminicídio,Estadual,vítimas,3
+2022,12,Tentativa de feminicídio,Estadual,vítimas,0
+2023,1,Tentativa de feminicídio,Estadual,vítimas,1
+2023,2,Tentativa de feminicídio,Estadual,vítimas,1
+2023,3,Tentativa de feminicídio,Estadual,vítimas,1
+2023,4,Tentativa de feminicídio,Estadual,vítimas,1
+2023,5,Tentativa de feminicídio,Estadual,vítimas,2
+2023,6,Tentativa de feminicídio,Estadual,vítimas,0
+2023,7,Tentativa de feminicídio,Estadual,vítimas,1
+2023,8,Tentativa de feminicídio,Estadual,vítimas,0
+2023,9,Tentativa de feminicídio,Estadual,vítimas,0
+2023,10,Tentativa de feminicídio,Estadual,vítimas,0
+2023,11,Tentativa de feminicídio,Estadual,vítimas,0
+2023,12,Tentativa de feminicídio,Estadual,vítimas,0
+2024,1,Tentativa de feminicídio,Estadual,vítimas,0
+2024,2,Tentativa de feminicídio,Estadual,vítimas,1
+2024,3,Tentativa de feminicídio,Estadual,vítimas,0
+2024,4,Tentativa de feminicídio,Estadual,vítimas,0
+2024,5,Tentativa de feminicídio,Estadual,vítimas,3
+2024,6,Tentativa de feminicídio,Estadual,vítimas,0
+2024,7,Tentativa de feminicídio,Estadual,vítimas,0
+2024,8,Tentativa de feminicídio,Estadual,vítimas,0
+2024,9,Tentativa de feminicídio,Estadual,vítimas,1
+2024,10,Tentativa de feminicídio,Estadual,vítimas,0
+2024,11,Tentativa de feminicídio,Estadual,vítimas,0
+2024,12,Tentativa de feminicídio,Estadual,vítimas,5
+2025,1,Tentativa de feminicídio,Estadual,vítimas,0
+2025,2,Tentativa de feminicídio,Estadual,vítimas,1
+2025,3,Tentativa de feminicídio,Estadual,vítimas,0
+2025,4,Tentativa de feminicídio,Estadual,vítimas,0
+2025,5,Tentativa de feminicídio,Estadual,vítimas,1
+2025,6,Tentativa de feminicídio,Estadual,vítimas,1
+2025,7,Tentativa de feminicídio,Estadual,vítimas,0
+2025,8,Tentativa de feminicídio,Estadual,vítimas,1
+2025,9,Tentativa de feminicídio,Estadual,vítimas,1
+2025,10,Tentativa de feminicídio,Estadual,vítimas,0
+2025,11,Tentativa de feminicídio,Estadual,vítimas,2
+2025,12,Tentativa de feminicídio,Estadual,vítimas,2
+2026,1,Tentativa de feminicídio,Estadual,vítimas,1
+2026,2,Tentativa de feminicídio,Estadual,vítimas,1
+2026,3,Tentativa de feminicídio,Estadual,vítimas,1
+2026,4,Tentativa de feminicídio,Estadual,vítimas,3
+2026,5,Tentativa de feminicídio,Estadual,vítimas,0
+2026,6,Tentativa de feminicídio,Estadual,vítimas,0
+2026,7,Tentativa de feminicídio,Estadual,vítimas,1
+2026,8,Tentativa de feminicídio,Estadual,vítimas,3
+2020,1,Tentativa de homicídio,Estadual,vítimas,9
+2020,2,Tentativa de homicídio,Estadual,vítimas,11
+2020,3,Tentativa de homicídio,Estadual,vítimas,6
+2020,4,Tentativa de homicídio,Estadual,vítimas,12
+2020,5,Tentativa de homicídio,Estadual,vítimas,12
+2020,6,Tentativa de homicídio,Estadual,vítimas,10
+2020,7,Tentativa de homicídio,Estadual,vítimas,5
+2020,8,Tentativa de homicídio,Estadual,vítimas,9
+2020,9,Tentativa de homicídio,Estadual,vítimas,3
+2020,10,Tentativa de homicídio,Estadual,vítimas,6
+2020,11,Tentativa de homicídio,Estadual,vítimas,7
+2020,12,Tentativa de homicídio,Estadual,vítimas,8
+2021,1,Tentativa de homicídio,Estadual,vítimas,4
+2021,2,Tentativa de homicídio,Estadual,vítimas,7
+2021,3,Tentativa de homicídio,Estadual,vítimas,7
+2021,4,Tentativa de homicídio,Estadual,vítimas,12
+2021,5,Tentativa de homicídio,Estadual,vítimas,8
+2021,6,Tentativa de homicídio,Estadual,vítimas,5
+2021,7,Tentativa de homicídio,Estadual,vítimas,7
+2021,8,Tentativa de homicídio,Estadual,vítimas,3
+2021,9,Tentativa de homicídio,Estadual,vítimas,7
+2021,10,Tentativa de homicídio,Estadual,vítimas,7
+2021,11,Tentativa de homicídio,Estadual,vítimas,13
+2021,12,Tentativa de homicídio,Estadual,vítimas,16
+2022,1,Tentativa de homicídio,Estadual,vítimas,9
+2022,2,Tentativa de homicídio,Estadual,vítimas,9
+2022,3,Tentativa de homicídio,Estadual,vítimas,7
+2022,4,Tentativa de homicídio,Estadual,vítimas,8
+2022,5,Tentativa de homicídio,Estadual,vítimas,7
+2022,6,Tentativa de homicídio,Estadual,vítimas,4
+2022,7,Tentativa de homicídio,Estadual,vítimas,9
+2022,8,Tentativa de homicídio,Estadual,vítimas,7
+2022,9,Tentativa de homicídio,Estadual,vítimas,9
+2022,10,Tentativa de homicídio,Estadual,vítimas,14
+2022,11,Tentativa de homicídio,Estadual,vítimas,10
+2022,12,Tentativa de homicídio,Estadual,vítimas,10
+2023,1,Tentativa de homicídio,Estadual,vítimas,10
+2023,2,Tentativa de homicídio,Estadual,vítimas,4
+2023,3,Tentativa de homicídio,Estadual,vítimas,12
+2023,4,Tentativa de homicídio,Estadual,vítimas,9
+2023,5,Tentativa de homicídio,Estadual,vítimas,9
+2023,6,Tentativa de homicídio,Estadual,vítimas,8
+2023,7,Tentativa de homicídio,Estadual,vítimas,4
+2023,8,Tentativa de homicídio,Estadual,vítimas,6
+2023,9,Tentativa de homicídio,Estadual,vítimas,11
+2023,10,Tentativa de homicídio,Estadual,vítimas,10
+2023,11,Tentativa de homicídio,Estadual,vítimas,9
+2023,12,Tentativa de homicídio,Estadual,vítimas,9
+2024,1,Tentativa de homicídio,Estadual,vítimas,6
+2024,2,Tentativa de homicídio,Estadual,vítimas,7
+2024,3,Tentativa de homicídio,Estadual,vítimas,8
+2024,4,Tentativa de homicídio,Estadual,vítimas,7
+2024,5,Tentativa de homicídio,Estadual,vítimas,6
+2024,6,Tentativa de homicídio,Estadual,vítimas,9
+2024,7,Tentativa de homicídio,Estadual,vítimas,8
+2024,8,Tentativa de homicídio,Estadual,vítimas,6
+2024,9,Tentativa de homicídio,Estadual,vítimas,8
+2024,10,Tentativa de homicídio,Estadual,vítimas,7
+2024,11,Tentativa de homicídio,Estadual,vítimas,5
+2024,12,Tentativa de homicídio,Estadual,vítimas,5
+2025,1,Tentativa de homicídio,Estadual,vítimas,7
+2025,2,Tentativa de homicídio,Estadual,vítimas,5
+2025,3,Tentativa de homicídio,Estadual,vítimas,0
+2025,4,Tentativa de homicídio,Estadual,vítimas,3
+2025,5,Tentativa de homicídio,Estadual,vítimas,11
+2025,6,Tentativa de homicídio,Estadual,vítimas,8
+2025,7,Tentativa de homicídio,Estadual,vítimas,3
+2025,8,Tentativa de homicídio,Estadual,vítimas,0
+2025,9,Tentativa de homicídio,Estadual,vítimas,6
+2025,10,Tentativa de homicídio,Estadual,vítimas,2
+2025,11,Tentativa de homicídio,Estadual,vítimas,5
+2025,12,Tentativa de homicídio,Estadual,vítimas,3
+2026,1,Tentativa de homicídio,Estadual,vítimas,8
+2026,2,Tentativa de homicídio,Estadual,vítimas,11
+2026,3,Tentativa de homicídio,Estadual,vítimas,10
+2026,4,Tentativa de homicídio,Estadual,vítimas,9
+2026,5,Tentativa de homicídio,Estadual,vítimas,6
+2026,6,Tentativa de homicídio,Estadual,vítimas,4
+2026,7,Tentativa de homicídio,Estadual,vítimas,12
+2026,8,Tentativa de homicídio,Estadual,vítimas,8

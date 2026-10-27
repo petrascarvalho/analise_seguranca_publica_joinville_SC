@@ -79,7 +79,24 @@ def test_readme_documents_ssp_stages_and_keeps_pending_items_pending():
 
 def test_app_has_project_and_data_quality_navigation():
     app = project_path("scripts", "painel_streamlit.py").read_text(encoding="utf-8")
-    assert 'project_path("dashboard", "pages", "home.py")' in app
-    assert 'project_path("dashboard", "pages", "quality.py")' in app
-    assert project_path("dashboard", "pages", "home.py").is_file()
-    assert project_path("dashboard", "pages", "quality.py").is_file()
+    # Quatro páginas: Projeto, Indicadores Sinesp, Violência doméstica SSP/SC e Qualidade dos dados.
+    for page in ("home.py", "sinesp.py", "violencia_domestica.py", "quality.py"):
+        assert f'project_path("dashboard", "pages", "{page}")' in app
+        assert project_path("dashboard", "pages", page).is_file()
+    assert app.count("st.Page(") == 4 and "st.navigation(" in app
+
+
+def test_readme_documenta_atualizacao_controlada_licencas_e_deploy_sem_inventar_url():
+    readme = project_path("README.md").read_text(encoding="utf-8")
+    for expected in (
+        "python -m scripts.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
+        "documentacao/ATUALIZACAO_DE_DADOS.md", "documentacao/DEPLOY_STREAMLIT.md", "não pôde ser confirmado", "CC BY-ND",
+        "Nenhum deploy foi feito e não existe URL pública", "116 testes",
+    ):
+        assert expected in readme, expected
+    for documento in ("ATUALIZACAO_DE_DADOS.md", "DEPLOY_STREAMLIT.md"):
+        assert project_path("documentacao", documento).is_file()
+    assert "streamlit.app" not in readme and "streamlit.app" not in project_path("documentacao", "DEPLOY_STREAMLIT.md").read_text(encoding="utf-8").replace("share.streamlit.io", "")
+    regras = [l.strip() for l in project_path(".gitignore").read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]
+    assert "/atualizacao/" in regras and "/dados/" in regras  # entradas/candidatas locais e acervo bruto ficam fora do Git
+    assert not any(r.rstrip("/") in ("dashboard/data_publica", "/dashboard/data_publica", "data_publica") for r in regras)  # os dados mínimos são versionáveis

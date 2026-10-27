@@ -1,6 +1,6 @@
 # Segurança Pública de Joinville
 
-Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. As etapas Sinesp 1–10 e as etapas SSP/SC 11, 12, 13.1, 13.2, 13.3, 14.1 e 14.2 (violência doméstica de Joinville) foram implementadas e executadas em memória; os resultados abaixo foram observados nessas execuções, sem reexecutar o ETL durante a atualização documental. A integração dos resultados e figuras ao Streamlit, o tratamento da Prefeitura e o deploy permanecem pendentes.
+Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. As etapas Sinesp 1–10 e as etapas SSP/SC 11, 12, 13.1, 13.2, 13.3, 14.1 e 14.2 (violência doméstica de Joinville) foram implementadas e executadas em memória; os resultados abaixo foram observados nessas execuções, sem reexecutar o ETL durante a atualização documental. O dashboard Streamlit (Etapa 15) tem quatro páginas, usa dados mínimos agregados versionados em `dashboard/data_publica/` e conta com um fluxo manual e controlado de verificação e atualização dos dados (verificar → preparar → aprovar), testado automaticamente. O tratamento da Prefeitura, a inspeção visual do painel em navegador e o deploy (não autorizado) permanecem pendentes; não há URL pública.
 
 ## 1. Título e resumo
 
@@ -20,7 +20,7 @@ O escopo inclui feminicídio, tentativa de feminicídio, violência doméstica e
 
 Requisitos acadêmicos registrados: trabalho individual do SENAI/LAB365, Módulo 2, Semana 13; ETL em Python, EDA, estatísticas, gráficos com fontes, painel interativo Streamlit, README, repositório dedicado, publicação da aplicação, vídeo de até três minutos e envio dos links ao AVA/repositório da turma conforme enunciado. O prazo informado é **30/10/2026 às 22h, horário de Brasília**, sujeito a comunicados posteriores. Regras finais de visibilidade do repositório, divulgação e marcações do vídeo devem ser conferidas no enunciado vigente antes da entrega.
 
-As etapas Sinesp 1–10 e as etapas SSP/SC 11–14.2 (incluindo as seis visualizações da violência doméstica, produzidas em memória) estão implementadas e foram executadas. A próxima prioridade é a **integração dos resultados Sinesp e SSP/SC ao Streamlit**. Tratamento da Prefeitura, exportações, deploy e entrega final permanecem pendentes.
+As etapas Sinesp 1–10 e as etapas SSP/SC 11–14.2 (incluindo as seis visualizações da violência doméstica, produzidas em memória) estão implementadas e foram executadas. O dashboard Streamlit com os resultados Sinesp e SSP/SC (Etapa 15) está implementado e preparado para o Streamlit Community Cloud (seção 10), mas **não foi implantado**. Permanecem pendentes: a inspeção visual em navegador, o deploy, o tratamento da Prefeitura e a entrega final.
 
 ## 4. Fonte e autorização
 
@@ -33,6 +33,8 @@ As etapas Sinesp 1–10 e as etapas SSP/SC 11–14.2 (incluindo as seis visualiz
 A conferência anterior da notícia confirmou os seis números de furto/roubo. Isso não resolve a definição estatística da unidade. Não há série municipal de 2026 para esses indicadores nos arquivos locais.
 
 Os dados brutos e processados ficam fora do primeiro commit. A disponibilidade pública de uma fonte não confirma autorização de redistribuição integral; termos/licenças ainda precisam de conferência. Os resultados textuais próprios deste README são apresentados com atribuição. Não são publicados microdados pessoais, credenciais ou referências artificiais a bairros.
+
+O dashboard usa apenas arquivos **mínimos, agregados e derivados** em `dashboard/data_publica/` (contagens municipais mensais já auditadas e metadados de rastreabilidade; PDFs, XLSX nacionais, CSVs brutos, dados pessoais e informações protegidas não são redistribuídos). **Condições de reutilização (consulta de 27/10/2026)**, distinguindo catálogo, licença geral do site e condições do recurso: (i) *MJSP/Sinesp* — o catálogo `dados.mj.gov.br` seria "Creative Commons Atribuição" segundo o responsável pelo projeto, mas **não pôde ser confirmado** (o domínio não resolveu; NXDOMAIN); o rodapé do portal gov.br declara "Creative Commons Atribuição-SemDerivações 3.0" (licença geral do site); a página da base VDE e o Termo de Uso do portal não trazem condições específicas. (ii) *SSP/SC* — o catálogo `dados.sc.gov.br` classifica "Segurança em Números" como "Outra (Aberta)" (confirmado pela API CKAN; o único recurso é um link para a página), enquanto o rodapé de `ssp.sc.gov.br` informa "Todos os Direitos Reservados"; a divergência não foi esclarecida. **Nenhuma proibição específica aplicável aos arquivos derivados foi encontrada, mas também não há autorização específica explícita**; trata-se de avaliação técnica, não de parecer jurídico. A atribuição das fontes é obrigatória e aparece no painel; recomenda-se confirmar o uso com o MJSP (estatistica@mj.gov.br) e com a SSP/SC. Detalhes em `dashboard/data_publica/LEIAME.md` e no manifesto.
 
 ## 5. Pipeline e metodologia
 
@@ -57,6 +59,7 @@ O roteiro principal é [scripts/analise_seguranca_publica.py](scripts/analise_se
 | 13.3. Validação integral | Implementada e executada | 67 verificações aprovadas; 216 observações conferidas individualmente contra CSV e PDF |
 | 14.1. EDA da violência doméstica | Implementada e executada | Inspeção, estatísticas por categoria, comparação 2023 × 2024 e análise mensal; 28 verificações aprovadas; sem gráficos |
 | 14.2. Visualizações da violência doméstica | Implementada e executada | Seis figuras Matplotlib em memória (três anuais e três mensais); 79 verificações aprovadas e 90 valores plotados conferidos; nenhuma imagem exportada |
+| 15. Dashboard Streamlit e atualização controlada | Implementada e testada | Quatro páginas; dados mínimos agregados e versionados em `dashboard/data_publica/` com manifesto v2; gerador `scripts/gerar_dados_dashboard.py`; verificação das fontes e fluxo preparar/aprovar/reverter (`scripts/fontes_oficiais.py`, `scripts/atualizacao_dados.py`); 116 testes no total; **sem deploy** |
 | Exportação de resultados | Pendente; não autorizada | Nenhuma base ou figura nova foi exportada |
 
 A chave observacional mantém UF, município, evento, competência e abrangência; agente, arma e faixa etária permanecem disponíveis na camada original. Na última reconstrução houve zero duplicidade exata e zero repetição nas chaves que incluem abrangência. O controle sem abrangência identificou 20 grupos/40 linhas de mandados estaduais e PF, preservados separadamente.
@@ -263,11 +266,84 @@ Para uso operacional, seriam necessários dicionários estáveis, atualização 
 
 ## 10. Aplicação Streamlit
 
-Ponto de entrada: [scripts/painel_streamlit.py](scripts/painel_streamlit.py). Há duas páginas locais: [Projeto](dashboard/pages/home.py) e [Qualidade dos dados](dashboard/pages/quality.py). As tabelas e quatro figuras novas do Sinesp e as tabelas, estatísticas e seis figuras da violência doméstica SSP/SC (Etapas 13–14.2) **ainda não foram integradas**. O texto da página Projeto ainda menciona cobertura antiga e resultados pendentes; essa atualização do painel é tarefa futura, não executada aqui.
+O painel é uma aplicação Streamlit com navegação lateral (`st.navigation`/`st.Page`), layout amplo, filtros por página, indicadores com unidade e período explícitos, figuras Matplotlib com fonte e formatação numérica brasileira. **Não há deploy público confirmado e nenhuma URL de aplicação publicada.** A aplicação roda localmente a partir de arquivos mínimos e **não executa o roteiro analítico nem lê `dados/`** durante a navegação.
 
-A página Qualidade consulta arquivos em `dados/processados/sinesp/`, `dados/processados/ssp_sc/` e `dados/processados/prefeitura/` pelo módulo `scripts.analysis`. Sem esses arquivos, a função retorna uma lista vazia e a página apresenta aviso; isso não equivale a um painel analítico funcional.
+### Arquitetura
 
-Como `dados/` ficará fora do Git, o deploy futuro exigirá uma distribuição permitida de dados mínimos: por exemplo, uma base curada pequena com autorização de publicação ou um artefato externo autorizado, versionado e com hash. A escolha, a exportação e a integração ainda dependem de autorização. Não há URL de deploy ou validação pública da aplicação.
+| Elemento | Função |
+|---|---|
+| [scripts/painel_streamlit.py](scripts/painel_streamlit.py) | Ponto de entrada (`st.navigation` com quatro páginas, layout amplo) |
+| [dashboard/pages/home.py](dashboard/pages/home.py) | **Projeto**: pergunta, escopo, fontes, limites e situação (sem deploy); período lido do manifesto |
+| [dashboard/pages/sinesp.py](dashboard/pages/sinesp.py) | **Indicadores Sinesp**: filtros de indicador, abrangência e anos; KPIs; série anual e mensal; comparações anuais com cobertura por série; períodos equivalentes (janeiro até o último mês publicado da série); as quatro figuras da Etapa 10; catálogo e notas |
+| [dashboard/pages/violencia_domestica.py](dashboard/pages/violencia_domestica.py) | **Violência doméstica SSP/SC**: filtros de categoria, ano e meses; resumo; comparação 2023 × 2024 com as figuras anuais da Etapa 14.2; evolução mensal; estatísticas; tabela com rastreabilidade; notas |
+| [dashboard/pages/quality.py](dashboard/pages/quality.py) | **Qualidade dos dados**: arquivos de exibição e SHA-256 contra o manifesto; versão, datas e situação da validação; última competência; cobertura, ausências e zeros; fontes, licenças verificadas e atribuição; rastreabilidade; limitações |
+| [dashboard/dados_publicos.py](dashboard/dados_publicos.py), [calculos.py](dashboard/calculos.py), [graficos.py](dashboard/graficos.py), [formatacao.py](dashboard/formatacao.py), [ui.py](dashboard/ui.py) | Carregamento/validação (sem Streamlit; `ErroDados` explícito), cálculos descritivos, figuras Matplotlib reutilizáveis, formatação pt-BR e interface |
+| [scripts/gerar_dados_dashboard.py](scripts/gerar_dados_dashboard.py) | Gera os arquivos mínimos a partir das etapas validadas do roteiro (sem importá-lo) |
+| [scripts/fontes_oficiais.py](scripts/fontes_oficiais.py) | Operação **A — verificar**: consulta metadados das fontes e classifica indícios (somente leitura) |
+| [scripts/atualizacao_dados.py](scripts/atualizacao_dados.py), [scripts/versionamento_dados.py](scripts/versionamento_dados.py) | Operações **B — preparar**, **C — aprovar** e **reverter**; manifesto versionado |
+
+As páginas não importam o roteiro de mais de 4.000 linhas nem executam ETL; a navegação não baixa dados.
+
+### Dados mínimos (`dashboard/data_publica/`)
+
+| Arquivo | Conteúdo | Dimensão |
+|---|---|---|
+| `sinesp_joinville_mensal.csv` | `ano, mes, evento, abrangencia, unidade, valor` (Sinesp, jan/2020–ago/2026) | 900 × 6 |
+| `sinesp_catalogo_indicadores.csv` | 12 séries: unidade, natureza, medida de origem, cobertura, meses com valor/zero/sem valor, limitações | 12 × 12 |
+| `ssp_violencia_domestica_joinville.csv` | `municipio, ano, mes, categoria, fatos_comunicados` | 216 × 5 |
+| `ssp_violencia_domestica_rastreabilidade.csv` | PDF, página, tabela, linha, coluna, rótulo original, mês do cabeçalho e valor textual | 216 × 12 |
+| `manifesto_dados_publicos.json` | Versão e versão anterior; datas (geração, última consulta); situação da validação; cobertura e última competência; fontes, recursos e licenças verificadas; atribuição; SHA-256 e tamanhos dos arquivos derivados e dos originais | — |
+
+Os arquivos são **versionados no repositório** (aprovados nesta etapa) para que o painel funcione em um clone limpo. Preservam eventos e abrangências separados, unidades, o período efetivamente disponível, zeros publicados, ausências (campo vazio, nunca zero) e a rastreabilidade. O manifesto distingue **data de consulta, data de publicação (informada pela fonte), competência estatística e data de geração**, e registra a última competência: Sinesp **2026-08** (2026 parcial) e SSP/SC **2024-12**. Os arquivos foram gerados por `python -m scripts.gerar_dados_dashboard` (CSVs idênticos byte a byte em duas execuções independentes); nenhum valor é digitado.
+
+### Informação de versão e atualização no painel
+
+As páginas Sinesp e Violência doméstica exibem fonte, período, **última competência disponível**, versão e data de geração dos dados, aviso de ano parcial (por série) e um quadro "Fonte, atualização dos dados e condições de uso"; a página *Qualidade dos dados* mostra a versão, a versão anterior, a situação da validação, a última verificação registrada e as licenças verificadas. O painel informa que consulta **uma versão histórica validada** e que a atualização é manual e controlada.
+
+### Verificar, preparar e aprovar novas publicações oficiais
+
+Fluxo manual e reprodutível, documentado em [documentacao/ATUALIZACAO_DE_DADOS.md](documentacao/ATUALIZACAO_DE_DADOS.md):
+
+```powershell
+python -m scripts.atualizacao_dados verificar                       # A: consulta as fontes (não altera dados)
+python -m scripts.atualizacao_dados preparar --entradas-sinesp dados/brutos/sinesp   # B: candidata isolada
+python -m scripts.atualizacao_dados comparar <id>                   # relatório e diferenças
+python -m scripts.atualizacao_dados aprovar <id> --confirmo <id>    # C: promove (preserva a versão anterior)
+python -m scripts.atualizacao_dados reverter <versao> --confirmo <versao>
+```
+
+**Automático:** consulta de metadados, classificação de indícios, ETL da candidata, validações, comparação com a versão ativa, backup, troca segura e reversão. **Manual:** fornecer os XLSX, ler o relatório, digitar a aprovação (`--confirmo`; `--aceitar-revisoes` se houver revisões históricas), auditar novos relatórios SSP/SC, commit/push e deploy. **Não há atualização automática operacional** (nada roda em agendamento).
+
+Limitações por fonte: o gov.br não tem API pública (a API REST responde 401) e bloqueia `HEAD` (403) — o tamanho dos arquivos vem de `GET` com `Range`, sem data de modificação por arquivo, e a data "Atualizado em" é da página (indício, não prova); o catálogo do MJSP não resolveu (NXDOMAIN); a SSP/SC tem API REST de mídia (WordPress), mas novos relatórios podem ter formato diferente (já há dois recursos XLSX de violência doméstica, **não incorporados**: exigem auditoria manual). Bloqueios de acesso não são contornados.
+
+**Situação verificada em 27/10/2026:** a verificação real apontou indícios de nova competência e de revisão; a preparação real com os XLSX oficiais daquele dia gerou uma candidata com **911 observações e 11 novas competências (2026-09), sem revisão de valores históricos de Joinville**, com a série *Mortes no trânsito — PRF* ainda em 2026-08; essa candidata **não foi promovida** (depende de aprovação explícita). A versão ativa continua a validada até 2026-08.
+
+### Executar o painel
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m streamlit run scripts/painel_streamlit.py
+```
+
+O painel usa Streamlit, Pandas e Matplotlib e funciona **sem `dados/` e sem `dados/processados/`**; se os arquivos de `dashboard/data_publica/` faltarem ou forem inválidos, as páginas mostram erro explícito (sem preencher números) e não encerram a aplicação.
+
+### Testes e verificações
+
+Suíte completa: **116 testes aprovados** (`python -m pytest tests -q`): `test_dashboard_dados.py` (28), `test_dashboard_graficos.py` (6), `test_dashboard_app.py` (18, `AppTest`), `test_atualizacao_fontes.py` (16, cliente HTTP falso), `test_atualizacao_fluxo.py` (34, XLSX sintéticos gerados a partir dos dados ativos), `test_readme_sections.py` (5) e `test_project_integrity.py` (9; dependem do acervo local). Cobrem: integridade e manifesto; totais conferidos com as tabelas deste README; detecção de nova competência, de revisão histórica, de alteração de esquema e de falha de consulta (sem alterar dados); valores inválidos; preservação de zeros e ausências; hashes; versão anterior preservada em falha da troca; impossibilidade de promover dados não aprovados, adulterados ou com versão ativa desatualizada; reversão; painel em clone limpo (sem `dados/`), sem os dados mínimos e com dados de setembro/2026. Verificações adicionais: servidor iniciado com `python -m streamlit run scripts/painel_streamlit.py` (saúde e rotas HTTP 200) e figuras renderizadas inspecionadas visualmente. **O painel completo não foi inspecionado visualmente em navegador (desktop e celular)**: não houve acesso a navegador; layout e responsividade dependem de verificação manual. Testes que dependem de acesso externo não são executados: a verificação real das fontes e o `preparar --baixar-sinesp` foram executados manualmente (resultado acima).
+
+### Preparação para o Streamlit Community Cloud
+
+Ponto de entrada `scripts/painel_streamlit.py`; dependências em `requirements.txt` (versões testadas: Python 3.12, Streamlit 1.66.0, Pandas 3.0.6, Matplotlib 3.11.2; faixas mais antigas não testadas); caminhos relativos; sem segredos; dados mínimos no clone público. Passo a passo em [documentacao/DEPLOY_STREAMLIT.md](documentacao/DEPLOY_STREAMLIT.md). **Nenhum deploy foi feito e não existe URL pública** (depende de autorização separada).
+
+### Pendências
+
+- Autorização e execução do deploy; registro da URL real (seção 15) somente depois de existir.
+- Inspeção manual no navegador (desktop e celular) e ajustes finos de layout.
+- Decidir se promove a candidata de setembro/2026 (aprovação explícita) e auditar manualmente os novos relatórios SSP/SC (XLSX).
+- Confirmar o uso dos dados com MJSP e SSP/SC (licença do catálogo do MJSP não confirmada).
+- Integrar a Prefeitura/SEPROT e, se resolvida a auditoria, a série de homicídios SSP/SC (fora desta versão).
 
 ## 11. Como executar
 
@@ -305,13 +381,13 @@ Para trabalhar **somente Sinesp**, execute as células 1–2 e depois 5–10 no 
 
 ### Testes
 
-Os testes de documentação podem ser executados sem ETL (conferem a estrutura do README e a presença das etapas 1–14.2, das subetapas 13.1–13.3, das seis figuras e das rotinas no roteiro, sem executá-lo):
+Os testes de documentação e do painel podem ser executados sem ETL e sem o acervo bruto (os de documentação conferem a estrutura do README e a presença das etapas 1–14.2, das subetapas 13.1–13.3, das seis figuras e das rotinas no roteiro, sem executá-lo; os do painel e da atualização estão descritos na seção 10):
 
 ```powershell
 python -m pytest tests/test_readme_sections.py -q
 ```
 
-Os demais testes de integridade dependem do acervo local e de saídas históricas excluídas do Git; não representam um teste de clone limpo apenas com código. O relato antigo de 12 testes aprovados é histórico. Os resultados da preparação documental atual devem ser lidos no relatório da atividade, sem declarar execução recente da suíte completa.
+Os testes de integridade (test_project_integrity.py) dependem do acervo local e de saídas históricas excluídas do Git; não representam um teste de clone limpo apenas com código. O relato antigo de 12 testes aprovados é histórico. Os resultados da preparação documental atual devem ser lidos no relatório da atividade, sem declarar execução recente da suíte completa.
 
 ## 12. Estrutura de pastas
 
@@ -323,11 +399,19 @@ requirements.txt                  intervalos de dependências
 .vscode/settings.json             .venv e raiz do Python Interactive
 scripts/
   analise_seguranca_publica.py     roteiro acadêmico: etapas 1–10 (Sinesp) e 11–14.2 (SSP/SC)
-  painel_streamlit.py             entrada do painel
+  painel_streamlit.py             entrada do painel (st.navigation com 4 páginas)
+  gerar_dados_dashboard.py        gera dashboard/data_publica/ a partir das etapas validadas do roteiro
+  fontes_oficiais.py              verificar: consulta metadados das fontes oficiais (somente leitura)
+  atualizacao_dados.py            preparar / aprovar / reverter (atualização controlada)
+  versionamento_dados.py          manifesto versionado e licenças das fontes
   extract.py, transform.py        módulos anteriores; podem gerar arquivos
   analysis.py, utils.py           análises históricas e resolução de caminhos
   legacy/                        código histórico, fora da execução corrente
-dashboard/pages/                 home.py e quality.py
+dashboard/
+  pages/                         home.py, sinesp.py, violencia_domestica.py e quality.py (4 páginas)
+  dados_publicos.py, calculos.py,
+  graficos.py, formatacao.py, ui.py  módulos do painel (sem Streamlit, exceto ui.py)
+  data_publica/                  dados mínimos agregados + manifesto versionado + LEIAME (ver seção 10)
 notebooks/                       notebook SSP de inspeção, sem saídas gravadas
 tests/                           verificações documentais e do acervo local
 documentacao/
@@ -351,10 +435,10 @@ O README de continuidade e seus backups permanecem **fora do repositório**. Nen
 ## 13. Limitações e melhorias futuras
 
 - 2026 é parcial e tem cortes diferentes: Sinesp até agosto e SSP até julho. Comparações entre fontes exigem o mesmo intervalo e definições compatíveis.
-- O painel ainda não apresenta os resultados Sinesp validados; sua página Projeto contém textos desatualizados.
+- O painel (Etapa 15) cobre apenas Sinesp e violência doméstica SSP/SC; não inclui Prefeitura/SEPROT nem homicídios SSP/SC. As condições de reutilização têm ressalvas (licença do catálogo do MJSP não confirmada; CC BY-ND 3.0 no rodapé do portal; "Todos os Direitos Reservados" no site da SSP/SC com catálogo "Outra (Aberta)"): nenhuma proibição específica foi encontrada, mas não há autorização específica explícita. O painel não foi inspecionado visualmente em navegador e não foi feito deploy.
 - A Etapa 12 auditou 58 grupos de períodos repetidos nos boletins SSP/SC, 41 com valores divergentes (37 sem explicação documental suficiente); isso não autoriza exclusão automática, nem soma de snapshots, nem a escolha de uma versão definitiva de homicídios, que permanece pendente. O boletim de janeiro/2025 (página 8) e os rótulos de fevereiro (28/02 e 29/02) seguem como inconsistências documentadas.
 - Violência doméstica: "Fato Comunicado" não tem definição operacional nos PDFs (não equivale automaticamente a vítimas, pessoas únicas ou boletins de ocorrência únicos); o mapeamento de "0 Dolosa" e "- Dolosa" e a aplicação do cabeçalho de meses às páginas seguintes são decisões metodológicas, sem confirmação oficial da SSP/SC; 2023 vem de dois relatórios semestrais e 2024 de um relatório anual; categorias de poucos casos geram variações percentuais instáveis; os resultados não sustentam causalidade nem incidência real.
-- Próxima prioridade: integrar ao Streamlit os resultados e figuras Sinesp (Etapas 1–10) e SSP/SC (Etapas 13–14.2), que hoje existem apenas em memória no roteiro; em seguida, Prefeitura/SEPROT, deploy e entrega.
+- Próxima prioridade: decidir sobre a publicação dos dados mínimos, inspecionar o painel no navegador, tratar a Prefeitura/SEPROT, fazer o deploy e a entrega.
 - A seleção histórica de homicídios SSP usa o último valor anual por referência e uma edição única para janeiro–julho; precisa de revisão contextual no novo fluxo.
 - A Prefeitura requer esclarecimento da unidade, documentação da transcrição e integração própria. Não há cobertura municipal de 2026 nessa série.
 - A regra `fillna(0)` no módulo histórico `scripts/analysis.py` não faz parte do roteiro Sinesp atual e precisa de revisão antes de reutilização.
@@ -374,7 +458,7 @@ Licença do código e permissões de redistribuição dos dados ainda devem ser 
 
 ## 15. Links de entrega
 
-- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém o primeiro commit (etapas Sinesp 1–10), o ajuste de créditos do README e as etapas SSP/SC 11–14.2 com a documentação e o teste documental atualizados (publicados na branch `main`). Isso não representa deploy da aplicação.
+- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém as etapas Sinesp 1–10, SSP/SC 11–14.2 e, a partir do commit da Etapa 15, o dashboard, os dados mínimos agregados (`dashboard/data_publica/`), o fluxo de atualização controlada, os testes e a documentação (branch `main`). Isso não representa deploy da aplicação.
 - URL Git exata: `https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC.git`.
 - Pasta local: repositório Git na branch `main`, com `origin` configurado.
 - Aplicação Streamlit publicada: pendente.
@@ -384,7 +468,7 @@ Licença do código e permissões de redistribuição dos dados ainda devem ser 
 
 Antes de preparar arquivos para versionar, conferir o [gitignore](.gitignore): `dados/`, tabelas/imagens derivadas locais, ambientes, segredos, logs e backups não devem entrar. O notebook de inspeção tem correção de caminho pendente; os testes de acervo exigem arquivos locais.
 
-O envio ao remoto (`push`) depende de autorização separada, após conferência do commit local. Se o destino ganhar histórico antes do envio, revisar a relação com o histórico local, sem sobrescrever ou forçar atualização. Nenhum deploy foi feito.
+Novos envios ao remoto dependem de autorização; usar `git push` normal e, se o destino ganhar histórico, revisar a relação com o histórico local, sem sobrescrever ou forçar atualização. Nenhum deploy foi feito.
 
 ## 16. Conclusões sustentadas pelas análises
 
