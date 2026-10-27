@@ -1,0 +1,45 @@
+# Ambientes e segredos (o exemplo sem credenciais permanece versionável).
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+.streamlit/secrets.toml
+
+# Caches e arquivos gerados pelo ambiente de desenvolvimento.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.cache/
+.matplotlib/
+fontlist-v*.json
+node_modules/
+
+# Temporários, logs e cópias locais; nenhum arquivo é apagado por estas regras.
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+~$*
+*.bak
+*.zip
+.DS_Store
+Thumbs.db
+desktop.ini
+*.inspect.ndjson
+/backup_pre_migracao_20261016/
+/data/joinville_rows.json
+
+# Acervo e derivados: obtenção/restauração documentada no README acadêmico.
+# Redistribuição dos arquivos de dados ainda não foi autorizada/verificada.
+/dados/
+/documentacao/analises/graficos/
+/documentacao/analises/tabelas/
+/documentacao/auditoria/evidencia_grafia_violencia_domestica_2023.png
+
+# Memória de continuidade externa; proteger também contra cópias acidentais.
+README_IA*.md
