@@ -49,3 +49,6 @@ README_IA*.md
 /atualizacao/
 /dashboard/data_publica.novo/
 /dashboard/data_publica.antigo/
+
+# Material local de revisão visual dos gráficos (gerado por scripts/gerar_revisao_visual.py).
+/revisao_visual/

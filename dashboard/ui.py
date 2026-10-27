@@ -5,6 +5,7 @@ from __future__ import annotations
 import streamlit as st
 
 from dashboard import dados_publicos as dp
+from dashboard import graficos
 from dashboard.formatacao import NOMES_MESES
 
 _TEXTO_CLASSIFICACAO = {
@@ -93,10 +94,29 @@ def carregar_dados_consistentes():
     return sinesp, catalogo
 
 
-def mostrar_figura(figura, legenda: str | None = None):
-    st.pyplot(figura, clear_figure=False)
+def modo_compacto() -> bool:
+    """Estado do seletor "Visualização compacta (celular)" (``st.session_state['modo_compacto']``; falso por padrão)."""
+    return bool(st.session_state.get("modo_compacto", False))
+
+
+def mostrar_figura(figura, legenda: str | None = None, tabela=None):
+    """Mostra a figura, a legenda e, opcionalmente, a tabela numérica que a sustenta (os valores desenhados vêm dela).
+
+    No modo compacto a imagem não traz o texto interpretativo nem a fonte completa; eles aparecem aqui como texto nativo do Streamlit
+    (``figura.sinesp_notas``), que se adapta à largura da tela.
+    """
+    if modo_compacto():
+        graficos.ajustar_compacto(figura)  # sem espaço em branco abaixo de gráficos sem legenda
+    st.pyplot(figura, clear_figure=False, width="stretch")
     if legenda:
         st.caption(legenda)
+    notas = getattr(figura, "sinesp_notas", None)
+    if modo_compacto() and notas:
+        st.caption(notas["interpretacao"])
+        st.caption(notas["rodape"])
+    if tabela is not None:
+        with st.expander("Valores usados neste gráfico (tabela)"):
+            st.dataframe(tabela, hide_index=True)
 
 
 def descricao_versao(manifesto: dict) -> str:

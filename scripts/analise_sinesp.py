@@ -26,6 +26,7 @@ import os
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from dashboard import calculos, graficos
@@ -40,6 +41,8 @@ pd.set_option("display.width", 200)
 pd.set_option("display.max_columns", 30)
 
 ANOS = list(range(2020, 2027))
+EVENTO_ESTUDO = os.environ.get("SINESP_EVENTO_ESTUDO", "Homicídio doloso")   # indicador estudado nas seções 7.1 a 9 (troque e execute de novo)
+ABRANGENCIA_ESTUDO = os.environ.get("SINESP_ABRANGENCIA_ESTUDO", "Estadual")  # Estadual, Polícia Federal ou Polícia Rodoviária Federal
 ACERVO_SINESP = Path(os.environ.get("SINESP_PASTA_XLSX", project_path("dados", "brutos", "sinesp")))
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
 
@@ -299,6 +302,28 @@ print("Janeiro–setembro (nove meses; a PRF ainda não publicou setembro/2026):
 mostrar(jan_set)
 
 # %% [markdown]
+# ## 7.1 Série de estudo e distribuição dos valores mensais
+# Daqui em diante as análises usam **uma série por vez**: o indicador e a abrangência escolhidos em `EVENTO_ESTUDO` e
+# `ABRANGENCIA_ESTUDO` (seção 1). Troque os dois valores e execute novamente para estudar outra série; vítimas e mandados
+# nunca são misturados, porque cada série tem uma única unidade.
+
+# %%
+serie_estudo = calculos.serie_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO)
+unidade_estudo = serie_estudo["unidade"].iloc[0]
+print(f"Série de estudo: {EVENTO_ESTUDO} | {ABRANGENCIA_ESTUDO} | unidade: {unidade_estudo} | {len(serie_estudo)} meses")
+
+print("\nGrade ano × mês (<NA> = mês ainda sem valor publicado, não zero) — é a tabela do mapa de calor:")
+mostrar(calculos.quadro_ano_mes(serie_estudo))
+
+print("Distribuição dos valores mensais em faixas de contagem — é a tabela do gráfico de distribuição por faixas.")
+print("Regra: o zero publicado é faixa própria; os demais valores entram em faixas de largura inteira igual, com número de faixas pela regra")
+print("de Sturges (⌈1 + log₂ n⌉). O valor extremo não é removido (fica na última faixa) e a soma das faixas é o número de meses com valor.")
+distribuicao = calculos.distribuicao_frequencias(serie_estudo)
+mostrar(distribuicao)
+print(f"Largura das faixas: {distribuicao.attrs['largura']} | soma das frequências: {int(distribuicao['n_meses'].sum())} | meses com valor: {int(serie_estudo['valor'].count())}")
+assert int(distribuicao["n_meses"].sum()) == int(serie_estudo["valor"].count())
+
+# %% [markdown]
 # # 8. Estatísticas descritivas
 # Sobre os valores **mensais** de cada série: soma, média, mediana, mínimo, máximo e desvio-padrão descritivo (`ddof=0`, pois descreve
 # os meses observados, sem inferência). Variações entre períodos: diferença absoluta sempre; percentual só com base positiva.
@@ -322,18 +347,123 @@ print("Janeiro–setembro de 2026 × 2025 (percentual indefinido quando a base �
 mostrar(variacao_entre_periodos(jan_set, 2025, 2026))
 
 # %% [markdown]
-# # 9. Visualizações
-# As figuras reutilizam as funções já validadas do dashboard (`dashboard/graficos.py`); aqui elas são apenas exibidas.
-# O aperfeiçoamento visual dos gráficos é uma etapa posterior e não é feito neste roteiro.
+# ## 8.1 Quartis, IQR e pontos fora dos limites (critério de Tukey)
+# Quartis por interpolação linear. **IQR = Q3 − Q1.** Limites de Tukey: Q1 − 1,5·IQR e Q3 + 1,5·IQR; valores fora deles são
+# *atípicos estatísticos* — não são, por si só, erro nem anomalia. Em contagens mensais o método frequentemente **não é informativo**:
+# - **IQR = 0** (Q1 = Q3): qualquer valor diferente da concentração seria "atípico";
+# - **maioria de zeros publicados** (≥ 50% dos meses) ou **contagens muito baixas** (Q3 ≤ 1): oscilações de 0 a 3 são comuns;
+# - **distribuição degenerada** (todos os valores iguais) ou **dados insuficientes** (< 12 meses).
+# Nesses casos o roteiro não aponta pontos atípicos. Cada série é avaliada na sua própria unidade.
 
 # %%
+print("Diagnóstico do método IQR em cada série (período completo):")
+mostrar(calculos.diagnostico_outliers_todas_as_series(base_analitica))
+
+diagnostico = calculos.diagnostico_outliers_iqr(serie_estudo)
+print(f"\nSérie de estudo — {diagnostico['rotulo']}.")
+print(diagnostico["mensagem"])
+resumo_iqr = pd.Series({chave: diagnostico[chave] for chave in ("n", "minimo", "q1", "mediana", "q3", "maximo", "iqr", "limite_inferior", "limite_superior", "zeros")})
+mostrar(resumo_iqr.rename("valor").to_frame())
+if diagnostico["interpretavel"]:
+    print("Pontos fora dos limites (atípicos estatísticos, não anomalias comprovadas):")
+    mostrar(diagnostico["fora"])
+else:
+    print("Nenhum ponto é apresentado como atípico: o método não é informativo para esta série.")
+
+print("\nResumo de cinco números por ano (tabela do boxplot); 2026 é parcial e tem menos meses:")
+mostrar(calculos.quartis_por_ano(serie_estudo).drop(columns=["valores_fora"]))
+
+# %% [markdown]
+# ## 8.2 Sazonalidade (exploratória), média móvel e acumulado
+# - **Sazonalidade:** média de cada mês-calendário usando **somente anos completos** (2020–2025 → no máximo 6 observações por mês).
+#   O ano de 2026 é parcial e **não** entra. Com tão poucos anos, o perfil descreve esses anos; não demonstra sazonalidade.
+# - **Média móvel de 12 meses:** só existe quando os 12 meses têm valor (nada é interpolado).
+# - **Acumulado no ano:** soma de janeiro até cada mês; anos parciais terminam no último mês publicado.
+
+# %%
+perfil = calculos.perfil_sazonal(serie_estudo)
+print(f"Perfil por mês — anos completos usados: {perfil.attrs['anos_usados']} (n = {len(perfil.attrs['anos_usados'])})")
+mostrar(perfil.round(2))
+
+print("Média móvel de 12 meses (últimos 6 meses):")
+mostrar(calculos.media_movel(serie_estudo).tail(6))
+print("Acumulado no ano (2026, ano parcial):")
+mostrar(calculos.acumulado_no_ano(serie_estudo).query("ano == 2026"))
+
+# %% [markdown]
+# # 9. Visualizações
+# As figuras reutilizam as funções de `dashboard/graficos.py` e desenham **exatamente as tabelas** calculadas acima (a célula de
+# conferência compara os números). Estão organizadas em quatro grupos: visão geral, evolução temporal, estatística descritiva e outliers.
+# Todas usam a série de estudo, a mesma fonte, a unidade e as mesmas cores por ano. As figuras da Etapa 10 (fixas) ficam ao final.
+
+# %% [markdown]
+# ## 9.1 Visão geral
+
+# %%
+mapa_calor = graficos.figura_mapa_calor_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS)
+mostrar(mapa_calor)
+
+mes_final = calculos.mes_final_da_serie(serie_estudo)
+figura_periodo = graficos.figura_periodo_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS, mes_final)
+mostrar(figura_periodo)
+
+ranking = calculos.ranking_por_unidade(base_analitica, 2025, unidade_estudo)  # séries da mesma unidade, ano completo 2025
+mostrar(graficos.figura_ranking_sinesp(ranking, 2025, destaque=(EVENTO_ESTUDO, ABRANGENCIA_ESTUDO)))
+
+# %% [markdown]
+# ## 9.2 Evolução temporal
+
+# %%
+mostrar(graficos.figura_serie_anual_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+mostrar(graficos.figura_mensal_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+mostrar(graficos.figura_media_movel_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+mostrar(graficos.figura_acumulado_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+
+# %% [markdown]
+# ## 9.3 Estatística descritiva
+
+# %%
+mostrar(graficos.figura_boxplot_anual_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+mostrar(graficos.figura_distribuicao_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+figura_sazonal = graficos.figura_sazonalidade_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS)
+if figura_sazonal is None:
+    print("Sazonalidade não apresentada: menos de 2 anos completos nesta série.")
+else:
+    mostrar(figura_sazonal)
+
+# %% [markdown]
+# ## 9.4 Outliers
+# Quando o método é informativo, os pontos fora dos limites são destacados; senão a figura apenas informa o motivo.
+# Abaixo, a série de estudo e uma série com IQR = 0 (latrocínio) para mostrar o aviso.
+
+# %%
+mostrar(graficos.figura_outliers_iqr_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS))
+mostrar(graficos.figura_outliers_iqr_sinesp(base_analitica, "Roubo seguido de morte (latrocínio)", "Estadual", ANOS))
+
+# %% [markdown]
+# ## 9.5 Conferência: o que está desenhado é o que está na tabela
+
+# %%
+def numeros_do_mapa_de_calor(figura) -> list:
+    """Valores (ou None) de cada célula desenhada no mapa de calor."""
+    matriz = figura.axes[0].images[0].get_array()
+    return [[None if matriz[i, j] is np.ma.masked else int(matriz[i, j]) for j in range(matriz.shape[1])] for i in range(matriz.shape[0])]
+
+
+tabela_mapa = calculos.quadro_ano_mes(serie_estudo)
+esperado = [[None if pd.isna(v) else int(v) for v in linha] for linha in tabela_mapa.to_numpy()]
+print("Mapa de calor = tabela ano × mês:", numeros_do_mapa_de_calor(mapa_calor) == esperado)
+
+linhas_media_movel = {linha.get_gid(): linha for linha in graficos.figura_media_movel_sinesp(base_analitica, EVENTO_ESTUDO, ABRANGENCIA_ESTUDO, ANOS).axes[0].lines}
+tabela_movel = calculos.media_movel(serie_estudo)
+desenhado = np.array(linhas_media_movel["media_movel"].get_ydata(), dtype="float64")
+print("Média móvel desenhada = tabela:", bool(np.allclose(desenhado, tabela_movel["media_movel"].astype("float64").to_numpy(), equal_nan=True)))
+
+print("Etapa 10 (figuras fixas, dados curados):")
 figuras = graficos.figuras_sinesp_etapa10(base_analitica)
 for nome, figura in figuras.items():
-    print(nome)
+    print(" -", nome)
     mostrar(figura)
-
-figura_suicidio = graficos.figura_serie_anual_sinesp(base_analitica, "Suicídio", "Estadual", ANOS)
-mostrar(figura_suicidio)
 
 # %% [markdown]
 # # 10. Conclusões e limitações
@@ -347,6 +477,16 @@ print(f"- Homicídio doloso em anos completos: {int(homicidio[2020])} vítimas e
 print(f"- Janeiro–setembro: homicídio doloso {int(homicidio_ja[2025])} (2025) e {int(homicidio_ja[2026])} (2026); "
       f"tentativa de homicídio {int(tentativa_ja[2025])} e {int(tentativa_ja[2026])}.")
 print(f"- A base tem {len(base_analitica)} observações em {len(catalogo)} séries, de {base_analitica['ano'].min()}-01 até {ultima.max()}.")
+diagnosticos = calculos.diagnostico_outliers_todas_as_series(base_analitica)
+informativas = int(diagnosticos["classificacao"].eq("método informativo").sum())
+print(f"- Critério IQR (Tukey): informativo em {informativas} das {len(diagnosticos)} séries; nas demais (IQR = 0, maioria de zeros, contagens muito baixas "
+      "ou distribuição degenerada) nenhum ponto é apontado como atípico. Pontos fora dos limites são atípicos estatísticos, não anomalias comprovadas.")
+anos_usados = perfil.attrs["anos_usados"]
+if anos_usados:
+    print(f"- Sazonalidade: calculada só com anos completos ({anos_usados[0]}–{anos_usados[-1]}, n = {len(anos_usados)}); "
+          "2026 é parcial e fica de fora. Com tão poucos anos, o perfil mensal é exploratório e não demonstra sazonalidade.")
+else:
+    print("- Sazonalidade: a série de estudo não tem ano completo; perfil mensal não calculado.")
 print("\nLIMITAÇÕES:")
 print("- Registros administrativos agregados: não medem toda a criminalidade, não estimam subnotificação e não indicam causa.")
 print("- Sem taxas populacionais, sem dados por bairro, rua, horário ou corporação; sem total geral entre indicadores ou abrangências.")

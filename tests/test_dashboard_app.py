@@ -75,7 +75,7 @@ def test_sinesp_valores_padrao_e_filtros():
     assert "+4 vs janeiro–setembro de 2025" in app.metric[1].delta and "−7 vs 2024" in app.metric[0].delta
     assert "Janeiro–setembro de 2026" in app.metric[1].label
     assert any("2026 contém apenas janeiro a setembro" in i.value for i in app.info)
-    assert len(app.tabs) == 6
+    assert len(app.tabs) == 5
 
     app.select_slider[0].set_value((2020, 2025)).run()  # sem 2026: o aviso de ano parcial desaparece
     _sem_erros(app)
@@ -107,6 +107,29 @@ def test_sinesp_todos_os_indicadores_e_abrangencias_executam():
         app.selectbox[0].select(linha.evento).run()
         app.selectbox[1].select(linha.abrangencia).run()
         _sem_erros(app)
+
+
+def test_sinesp_organiza_a_analise_em_quatro_grupos_com_tabela_por_grafico():
+    app = _pagina("sinesp")
+    _sem_erros(app)
+    assert [t.label for t in app.tabs] == ["Visão geral", "Evolução temporal", "Estatística descritiva", "Outliers", "Indicadores e interpretação"]
+    tabelas = [e for e in app.expander if e.label == "Valores usados neste gráfico (tabela)"]
+    assert len(tabelas) >= 9  # mapa de calor, períodos, ranking, anual, mensal, média móvel, acumulado, boxplot, distribuição, sazonalidade, outliers
+    assert any("Método informativo" in i.value for i in app.info)  # homicídio doloso: limites de Tukey informativos
+    assert any("Sazonalidade (exploratória)" in m.value for m in app.markdown) and not app.error
+
+
+def test_sinesp_outliers_nao_conclui_anomalia_quando_o_metodo_nao_e_informativo():
+    app = _pagina("sinesp")
+    app.selectbox[0].select("Roubo seguido de morte (latrocínio)").run()
+    _sem_erros(app)
+    assert any("Método IQR não informativo" in w.value and "IQR igual a zero" in w.value for w in app.warning)
+    assert not any("Método informativo" in i.value for i in app.info)
+    app.selectbox[0].select("Mandado de prisão cumprido").run()
+    app.selectbox[1].select("Polícia Federal").run()
+    _sem_erros(app)
+    assert any("maioria de zeros publicados" in w.value for w in app.warning)
+    assert any("Sazonalidade não avaliada" in i.value for i in app.info)  # PF: um único ano completo
 
 
 def test_sinesp_comparacao_de_anos_completos_e_ranking_por_unidade():
