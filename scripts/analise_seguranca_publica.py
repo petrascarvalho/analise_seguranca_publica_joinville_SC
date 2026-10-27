@@ -1616,5 +1616,2215 @@ for ano_grafico_sinesp, caminho_grafico_sinesp in arquivos_sinesp_por_ano.items(
     exigir_sinesp_etapa9(sha256_original_sinesp(caminho_grafico_sinesp) == hashes_originais_etapa8[ano_grafico_sinesp], "original alterado durante as visualizações.")
 print("Etapa 10: quatro figuras em memória; valores plotados iguais às tabelas da etapa 9; bases 900 × 14 e 900 × 10 preservadas.")
 
-# ETAPA 11 — Planejamento: exportar somente com autorização específica.
-# ETAPA 12 — Planejamento: reler e validar arquivos exportados após autorização.
+# %% [markdown]
+# # ETAPA 11 — Inspeção dos dados brutos SSP/SC
+# Execute a partir desta célula, sem executar as etapas Sinesp. As importações e
+# os caminhos abaixo são independentes. Leitura literal: os CSVs permanecem em
+# um dicionário por arquivo, sem concatenação, limpeza ou conversão de valores.
+# As tabelas auxiliares são evidências de inspeção, não uma base analítica final.
+
+# %%
+from pathlib import Path as CaminhoSSP11
+from collections import defaultdict as agrupar_ssp11
+import hashlib as hash_ssp11
+import re as regex_ssp11
+
+import pandas as pd_ssp11
+import pdfplumber as pdf_ssp11
+from pypdf import PdfReader as LeitorSSP11
+from IPython.display import display as mostrar_ssp11
+
+raiz_ssp11 = CaminhoSSP11(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP11.cwd()
+pasta_pdf_ssp11 = raiz_ssp11 / "dados/brutos/ssp_sc/pdfs"
+pasta_csv_ssp11 = raiz_ssp11 / "dados/brutos/ssp_sc/csv_extraidos"
+arquivos_pdf_ssp11 = sorted(pasta_pdf_ssp11.rglob("*.pdf"))
+arquivos_csv_ssp11 = sorted(pasta_csv_ssp11.rglob("*.csv"))
+if len(arquivos_pdf_ssp11) != 45 or len(arquivos_csv_ssp11) != 45:
+    raise ValueError("Etapa 11: esperado acervo de 45 PDFs e 45 CSVs; conferir os caminhos e o inventário.")
+if {p.stem for p in arquivos_pdf_ssp11} != {p.stem for p in arquivos_csv_ssp11}:
+    raise ValueError("Etapa 11: os nomes-base dos PDFs e CSVs não correspondem.")
+
+
+def sha256_ssp11(caminho):
+    """Verifica bytes originais; não grava nem altera os arquivos."""
+    with caminho.open("rb") as fluxo:
+        return hash_ssp11.file_digest(fluxo, "sha256").hexdigest()
+
+
+hashes_antes_ssp11 = {p: sha256_ssp11(p) for p in arquivos_pdf_ssp11 + arquivos_csv_ssp11}
+# Se as bases Sinesp estiverem no kernel, conferir sua preservação ao terminar.
+# A ausência dessas variáveis não impede a inspeção independente da SSP.
+retratos_sinesp_ssp11 = {
+    nome: globals()[nome].copy(deep=True)
+    for nome in ("df_sinesp_joinville_concatenado", "df_sinesp_joinville_analitico")
+    if nome in globals()
+}
+csvs_brutos_ssp = {}
+leitores_ssp11 = {}
+textos_pdf_ssp = {}
+metadados_pdf_ssp11 = {}
+linhas_inventario_ssp11 = []
+linhas_amostras_ssp11 = []
+linhas_qualidade_ssp11 = []
+grupos_esquemas_ssp11 = agrupar_ssp11(list)
+problemas_ssp11 = []
+meses_ssp11 = ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+
+
+def texto_pagina_ssp11(nome, pagina):
+    chave = (nome, pagina)
+    if chave not in textos_pdf_ssp:
+        textos_pdf_ssp[chave] = leitores_ssp11[nome].pages[pagina - 1].extract_text() or ""
+    return textos_pdf_ssp[chave]
+
+
+def celulas_ssp11(linha):
+    """Retorna as células em sua ordem original, inclusive strings vazias."""
+    return tuple(linha[c] for c in linha.index if c.startswith("celula_"))
+
+
+def problema_ssp11(arquivo, detalhe):
+    problemas_ssp11.append({"arquivo": arquivo, "pendencia": detalhe})
+
+
+# %% [markdown]
+# ## 11.1 — Inventário, esquemas e ausências literais
+# dtype=str e keep_default_na=False preservam tokens, inclusive zeros e vazios.
+# Vazio em celula_* pode ser preenchimento retangular da extração, célula mesclada
+# ou ausência no PDF; não equivale automaticamente a falha nem a contagem zero.
+# O período vem do conteúdo do PDF, não do prefixo do nome do arquivo.
+
+# %%
+for caminho_pdf_ssp11 in arquivos_pdf_ssp11:
+    nome_ssp11 = caminho_pdf_ssp11.name
+    caminho_csv_ssp11 = next(p for p in arquivos_csv_ssp11 if p.stem == caminho_pdf_ssp11.stem)
+    bruto_ssp11 = pd_ssp11.read_csv(
+        caminho_csv_ssp11, sep=";", encoding="utf-8-sig", dtype=str,
+        keep_default_na=False, na_filter=False,
+    )
+    csvs_brutos_ssp[caminho_csv_ssp11.name] = bruto_ssp11
+    leitores_ssp11[nome_ssp11] = LeitorSSP11(caminho_pdf_ssp11)
+    paginas_ssp11 = len(leitores_ssp11[nome_ssp11].pages)
+    domestico_ssp11 = "VIOLENCIA-DOMESTICA" in nome_ssp11
+    primeiro_texto_ssp11 = texto_pagina_ssp11(nome_ssp11, 1)
+    ano_cabecalho_ssp11 = regex_ssp11.search(r"\b20\d{2}\b", primeiro_texto_ssp11)
+    ano_ssp11 = ano_cabecalho_ssp11.group() if ano_cabecalho_ssp11 else "pendente"
+    if domestico_ssp11:
+        if paginas_ssp11 % 2:
+            raise ValueError(f"Etapa 11: páginas temáticas sem par em {nome_ssp11}.")
+        metade_ssp11 = paginas_ssp11 // 2
+        cabecalho_direito_ssp11 = texto_pagina_ssp11(nome_ssp11, metade_ssp11 + 1)
+        # Examinar apenas o cabeçalho anterior à primeira linha numérica.
+        meses_esquerda_ssp11 = regex_ssp11.findall(r"\b(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\b", primeiro_texto_ssp11[:120])
+        meses_direita_ssp11 = regex_ssp11.findall(r"\b(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\b", cabecalho_direito_ssp11[:80])
+        periodo_ssp11 = f"{ano_ssp11}: {'/'.join(meses_esquerda_ssp11 + meses_direita_ssp11)}"
+        atualizacoes_ssp11 = ()
+    else:
+        metade_ssp11 = None
+        meses_esquerda_ssp11, meses_direita_ssp11 = [], []
+        texto_segundo_ssp11 = texto_pagina_ssp11(nome_ssp11, 2)
+        # Datas de atualização podem diferir entre a página estadual e homicídios.
+        atualizacoes_ssp11 = tuple(regex_ssp11.findall(
+            r"ATUALIZAÇÃO DOS DADOS:\s*(\d{2}/\d{2}/\d{4})",
+            primeiro_texto_ssp11 + "\n" + texto_segundo_ssp11,
+        ))
+        limite_ssp11 = regex_ssp11.search(r"PERÍODO\s*\((01/01\s*-\s*\d{2}/\d{2})\)", primeiro_texto_ssp11)
+        periodo_ssp11 = f"{ano_ssp11}: {limite_ssp11.group(1) if limite_ssp11 else 'pendente'}"
+    metadados_pdf_ssp11[nome_ssp11] = {
+        "ano_edicao": ano_ssp11, "periodo_edicao": periodo_ssp11,
+        "atualizacoes_paginas_1_2": atualizacoes_ssp11,
+        "tipo_relatorio": "Violência doméstica" if domestico_ssp11 else "Boletim mensal de indicadores",
+        "paginas": paginas_ssp11, "metade": metade_ssp11,
+        "meses_esquerda": meses_esquerda_ssp11, "meses_direita": meses_direita_ssp11,
+    }
+    colunas_ssp11 = tuple(bruto_ssp11.columns)
+    grupos_esquemas_ssp11[colunas_ssp11].append(caminho_csv_ssp11.name)
+    for caminho_ssp11, tipo_ssp11 in ((caminho_pdf_ssp11, "PDF"), (caminho_csv_ssp11, "CSV")):
+        linhas_inventario_ssp11.append({
+            "arquivo": caminho_ssp11.name, "tipo": tipo_ssp11,
+            "periodo_referencia": periodo_ssp11,
+            "tipo_relatorio": metadados_pdf_ssp11[nome_ssp11]["tipo_relatorio"],
+            "paginas": paginas_ssp11 if tipo_ssp11 == "PDF" else None,
+            "linhas": len(bruto_ssp11) if tipo_ssp11 == "CSV" else None,
+            "colunas": len(colunas_ssp11) if tipo_ssp11 == "CSV" else None,
+            "cabecalhos": colunas_ssp11 if tipo_ssp11 == "CSV" else tuple(primeiro_texto_ssp11.splitlines()[:10]),
+            "associado": caminho_csv_ssp11.name if tipo_ssp11 == "PDF" else nome_ssp11,
+            "bytes": caminho_ssp11.stat().st_size, "sha256": hashes_antes_ssp11[caminho_ssp11],
+        })
+    for indice_ssp11, linha_ssp11 in bruto_ssp11.head(3).iterrows():
+        linhas_amostras_ssp11.append({
+            "arquivo_csv": caminho_csv_ssp11.name, "indice_csv": indice_ssp11,
+            **{c: linha_ssp11[c] for c in colunas_ssp11[:4]},
+            "celulas_originais": celulas_ssp11(linha_ssp11),
+        })
+    for coluna_ssp11 in colunas_ssp11:
+        linhas_qualidade_ssp11.append({
+            "arquivo_csv": caminho_csv_ssp11.name, "coluna": coluna_ssp11,
+            "tipo": str(bruto_ssp11[coluna_ssp11].dtype),
+            "vazios_literais": int(bruto_ssp11[coluna_ssp11].eq("").sum()),
+            "nulos_pandas": int(bruto_ssp11[coluna_ssp11].isna().sum()),
+        })
+    if set(bruto_ssp11.arquivo_pdf) != {nome_ssp11}:
+        raise ValueError(f"Etapa 11: procedência divergente em {caminho_csv_ssp11.name}.")
+    for coluna_ssp11 in ("pagina_pdf", "tabela_pdf", "linha_tabela"):
+        if not bruto_ssp11[coluna_ssp11].map(lambda x: bool(regex_ssp11.fullmatch(r"[1-9]\d*", x))).all():
+            raise ValueError(f"Etapa 11: referência inválida: {caminho_csv_ssp11.name}/{coluna_ssp11}.")
+    if {int(p) for p in bruto_ssp11.pagina_pdf} != set(range(1, paginas_ssp11 + 1)):
+        raise ValueError(f"Etapa 11: cobertura de páginas divergente em {nome_ssp11}.")
+    if bruto_ssp11.duplicated(["arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela"]).any():
+        raise ValueError(f"Etapa 11: rastreabilidade repetida dentro de {nome_ssp11}.")
+
+inventario_arquivos_ssp = pd_ssp11.DataFrame(linhas_inventario_ssp11)
+amostras_csv_ssp = pd_ssp11.DataFrame(linhas_amostras_ssp11)
+qualidade_csv_ssp = pd_ssp11.DataFrame(linhas_qualidade_ssp11)
+esquemas_ssp = pd_ssp11.DataFrame([
+    {"esquema": numero, "colunas": colunas, "quantidade_colunas": len(colunas),
+     "quantidade_arquivos": len(nomes), "quantidade_linhas": sum(len(csvs_brutos_ssp[n]) for n in nomes),
+     "arquivos": tuple(nomes), "exemplo_registro": tuple(csvs_brutos_ssp[nomes[0]].loc[csvs_brutos_ssp[nomes[0]].celula_01.eq("JOINVILLE")].iloc[0]),
+     "tipo_tabela": "Fragmentos mensais de violência doméstica" if "VIOLENCIA-DOMESTICA" in nomes[0] else "Boletim mensal: tabelas estaduais, municipais e gráficos extraídos"}
+    for numero, (colunas, nomes) in enumerate(grupos_esquemas_ssp11.items(), 1)
+])
+mostrar_ssp11(inventario_arquivos_ssp)
+mostrar_ssp11(esquemas_ssp)
+mostrar_ssp11(amostras_csv_ssp)
+
+# %% [markdown]
+# ## 11.2 — Contexto municipal, página e tabela
+# Todas as menções a Joinville são candidatas, inclusive rankings. Só classificar
+# contagens após conferir o cabeçalho municipal e a seção de homicídios.
+# Na tabela doméstica, examinar as linhas seguintes até o próximo município e
+# as páginas de continuação horizontal. O campo municipal vazio permanece vazio:
+# a associação contextual é registrada em metadados separados, sem preenchê-lo.
+
+# %%
+linhas_candidatas_ssp11 = []
+linhas_mencoes_ssp11 = []
+linhas_contextos_ssp11 = []
+linhas_evidencias_ssp11 = []
+verificacoes_tabelas_ssp11 = []
+linhas_indicadores_ssp11 = []
+
+
+def registrar_candidato_ssp11(nome_csv, indice, classificacao, municipio_contexto, indicador, evidencia):
+    linha = csvs_brutos_ssp[nome_csv].loc[indice]
+    linhas_candidatas_ssp11.append({
+        "arquivo_csv": nome_csv, "indice_csv": indice,
+        **{c: linha[c] for c in ("arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela")},
+        "municipio_publicado": linha["celula_01"], "municipio_contexto": municipio_contexto,
+        "indicador": indicador, "classificacao": classificacao,
+        "celulas_originais": celulas_ssp11(linha), "evidencia_contextual": evidencia,
+    })
+
+
+def registrar_celula_ssp11(nome_csv, indice, coluna, indicador, periodo_tipo, ano, periodo, unidade, contexto):
+    linha = csvs_brutos_ssp[nome_csv].loc[indice]
+    valor = linha[coluna]
+    linhas_evidencias_ssp11.append({
+        "arquivo_pdf": linha.arquivo_pdf, "arquivo_csv": nome_csv,
+        "pagina_pdf": linha.pagina_pdf, "tabela_pdf": linha.tabela_pdf,
+        "linha_tabela": linha.linha_tabela, "coluna_csv": coluna,
+        "municipio": "JOINVILLE", "indicador_original": indicador,
+        "periodo_tipo": periodo_tipo, "ano_referencia": ano,
+        "periodo_referencia": periodo, "valor_publicado": valor,
+        "unidade": unidade, "edicao": metadados_pdf_ssp11[linha.arquivo_pdf]["periodo_edicao"],
+        "valor_inteiro_literal": bool(regex_ssp11.fullmatch(r"\d+", valor)),
+        "evidencia_contextual": contexto,
+    })
+
+
+for nome_csv_ssp11, bruto_ssp11 in csvs_brutos_ssp.items():
+    nome_pdf_ssp11 = CaminhoSSP11(nome_csv_ssp11).with_suffix(".pdf").name
+    meta_ssp11 = metadados_pdf_ssp11[nome_pdf_ssp11]
+    colunas_celulas_ssp11 = [c for c in bruto_ssp11 if c.startswith("celula_")]
+    mencoes_ssp11 = bruto_ssp11[colunas_celulas_ssp11].apply(
+        lambda coluna: coluna.str.contains("JOINVILLE", case=False, regex=False)
+    ).any(axis=1)
+    for indice_ssp11 in bruto_ssp11.index[mencoes_ssp11]:
+        linha_ssp11 = bruto_ssp11.loc[indice_ssp11]
+        linhas_mencoes_ssp11.append({"arquivo_csv": nome_csv_ssp11, "indice_csv": indice_ssp11,
+            "pagina_pdf": linha_ssp11.pagina_pdf, "tabela_pdf": linha_ssp11.tabela_pdf,
+            "linha_tabela": linha_ssp11.linha_tabela, "celulas_originais": celulas_ssp11(linha_ssp11)})
+        if linha_ssp11.celula_01 != "JOINVILLE":
+            pagina_mencao_ssp11 = bruto_ssp11.loc[bruto_ssp11.pagina_pdf.eq(linha_ssp11.pagina_pdf)]
+            ranking_ssp11 = pagina_mencao_ssp11[colunas_celulas_ssp11].apply(
+                lambda coluna: coluna.str.contains("VARIAÇÕES DE HOMICÍDIOS POR MUNICÍPIO", regex=False)
+            ).any(axis=1).any()
+            registrar_candidato_ssp11(nome_csv_ssp11, indice_ssp11,
+                "Ranking de variação de homicídios; não somar às contagens" if ranking_ssp11 else "Menção textual; conferir contexto",
+                "JOINVILLE" if ranking_ssp11 else "pendente", "Variação de homicídios" if ranking_ssp11 else "pendente",
+                "Cabeçalho da página: variação absoluta entre dois anos; pares no rótulo municipal" if ranking_ssp11 else "Conferência pendente")
+    if meta_ssp11["metade"] is None:
+        # A seção municipal inicia antes da página de Joinville. Procurar o título
+        # nos próprios CSVs, preservando a linha textual que estabelece o indicador.
+        titulos_ssp11 = bruto_ssp11.loc[bruto_ssp11[colunas_celulas_ssp11].apply(
+            lambda coluna: coluna.str.contains("VÍTIMAS DE HOMICÍDIO NOS MUNICÍPIOS", regex=False)
+        ).any(axis=1)]
+        exatas_ssp11 = bruto_ssp11.loc[bruto_ssp11.celula_01.eq("JOINVILLE")]
+        for indice_ssp11, linha_ssp11 in exatas_ssp11.iterrows():
+            pagina_ssp11 = int(linha_ssp11.pagina_pdf)
+            tabela_ssp11 = bruto_ssp11.loc[(bruto_ssp11.pagina_pdf == linha_ssp11.pagina_pdf) & (bruto_ssp11.tabela_pdf == linha_ssp11.tabela_pdf)]
+            texto_ssp11 = texto_pagina_ssp11(nome_pdf_ssp11, pagina_ssp11)
+            cabecalhos_ssp11 = tabela_ssp11.loc[tabela_ssp11.celula_01.str.contains("MUNICÍPIO", regex=False)]
+            if titulos_ssp11.empty or cabecalhos_ssp11.empty or "VÍTIMAS POR ANO" not in texto_ssp11:
+                problema_ssp11(nome_pdf_ssp11, f"Página {pagina_ssp11}: contexto municipal de homicídio não confirmado.")
+                continue
+            cabecalho_ssp11 = cabecalhos_ssp11.iloc[0]
+            colunas_ano_ssp11 = [c for c in colunas_celulas_ssp11 if regex_ssp11.fullmatch(r"20\d{2}", cabecalho_ssp11[c])]
+            limite_ssp11 = regex_ssp11.search(r"NO PERÍODO\s*\(([^)]+)\)", texto_ssp11)
+            if len(colunas_ano_ssp11) != 7 or limite_ssp11 is None:
+                problema_ssp11(nome_pdf_ssp11, "Cabeçalho anual/acumulado não interpretável sem conferência adicional.")
+                continue
+            # Uma edição pode conter cabeçalhos históricos inconsistentes. Manter
+            # os anos literalmente publicados, registrar a suspeita e não corrigi-los.
+            anos_cabecalho_ssp11 = [cabecalho_ssp11[c] for c in colunas_ano_ssp11]
+            ano_edicao_ssp11 = int(meta_ssp11["ano_edicao"])
+            anos_esperados_ssp11 = [str(a) for a in range(ano_edicao_ssp11 - 3, ano_edicao_ssp11)] + [str(a) for a in range(ano_edicao_ssp11 - 3, ano_edicao_ssp11 + 1)]
+            if anos_cabecalho_ssp11 != anos_esperados_ssp11:
+                problema_ssp11(nome_pdf_ssp11, f"Cabeçalhos municipais {anos_cabecalho_ssp11} não acompanham a edição {ano_edicao_ssp11}; conferir fonte, sem relabelar valores.")
+            contexto_ssp11 = f"Seção municipal p.{titulos_ssp11.iloc[0].pagina_pdf}; cabeçalho p.{pagina_ssp11}; {limite_ssp11.group(1)}"
+            registrar_candidato_ssp11(nome_csv_ssp11, indice_ssp11, "Linha municipal de homicídios", "JOINVILLE", "Nº de vítimas de homicídio", contexto_ssp11)
+            linhas_contextos_ssp11.append({"arquivo_pdf": nome_pdf_ssp11, "pagina_pdf": pagina_ssp11, "tabela_pdf": linha_ssp11.tabela_pdf,
+                "cabecalhos_brutos": tuple(celulas_ssp11(r) for _, r in tabela_ssp11.head(4).iterrows()),
+                "texto_pagina": texto_ssp11, "contexto": contexto_ssp11})
+            for posicao_ssp11, coluna_ssp11 in enumerate(colunas_ano_ssp11):
+                ano_valor_ssp11 = cabecalho_ssp11[coluna_ssp11]
+                anual_ssp11 = posicao_ssp11 < 3
+                registrar_celula_ssp11(nome_csv_ssp11, indice_ssp11, coluna_ssp11, "Nº de vítimas de homicídio",
+                    "ano completo" if anual_ssp11 else "período acumulado", ano_valor_ssp11,
+                    ano_valor_ssp11 if anual_ssp11 else limite_ssp11.group(1), "vítimas", contexto_ssp11)
+    else:
+        # Inspeção de fragmentos pareados; não fundir nem reescrever suas células.
+        metade_ssp11 = meta_ssp11["metade"]
+        for indice_inicio_ssp11 in bruto_ssp11.index[bruto_ssp11.celula_01.eq("JOINVILLE")]:
+            inicio_ssp11 = bruto_ssp11.loc[indice_inicio_ssp11]
+            pagina_esquerda_ssp11 = int(inicio_ssp11.pagina_pdf)
+            if pagina_esquerda_ssp11 > metade_ssp11:
+                problema_ssp11(nome_pdf_ssp11, "Município apareceu na metade sem rótulos; conferir layout.")
+                continue
+            esquerda_ssp11 = bruto_ssp11.loc[(bruto_ssp11.pagina_pdf == inicio_ssp11.pagina_pdf) & (bruto_ssp11.tabela_pdf == inicio_ssp11.tabela_pdf)]
+            pagina_direita_ssp11 = pagina_esquerda_ssp11 + metade_ssp11
+            direita_ssp11 = bruto_ssp11.loc[(bruto_ssp11.pagina_pdf == str(pagina_direita_ssp11)) & (bruto_ssp11.tabela_pdf == inicio_ssp11.tabela_pdf)]
+            if esquerda_ssp11.linha_tabela.tolist() != direita_ssp11.linha_tabela.tolist():
+                problema_ssp11(nome_pdf_ssp11, f"Fragmentos p.{pagina_esquerda_ssp11}/{pagina_direita_ssp11} desalinhados.")
+                continue
+            contexto_ssp11 = f"Bloco JOINVILLE p.{pagina_esquerda_ssp11}; continuação horizontal p.{pagina_direita_ssp11}; mesma linha/tabela"
+            linhas_contextos_ssp11.append({"arquivo_pdf": nome_pdf_ssp11, "pagina_pdf": pagina_esquerda_ssp11,
+                "tabela_pdf": inicio_ssp11.tabela_pdf, "cabecalhos_brutos": (meta_ssp11["meses_esquerda"], meta_ssp11["meses_direita"]),
+                "texto_pagina": texto_pagina_ssp11(nome_pdf_ssp11, pagina_esquerda_ssp11),
+                "texto_continuacao": texto_pagina_ssp11(nome_pdf_ssp11, pagina_direita_ssp11), "contexto": contexto_ssp11})
+            bloco_ssp11 = esquerda_ssp11.loc[indice_inicio_ssp11:]
+            for indice_ssp11, linha_ssp11 in bloco_ssp11.iterrows():
+                if indice_ssp11 != indice_inicio_ssp11 and linha_ssp11.celula_01 != "":
+                    break
+                indicador_ssp11 = linha_ssp11.celula_02
+                direita_linha_ssp11 = direita_ssp11.loc[direita_ssp11.linha_tabela.eq(linha_ssp11.linha_tabela)]
+                if not indicador_ssp11 or len(direita_linha_ssp11) != 1:
+                    problema_ssp11(nome_pdf_ssp11, "Categoria/linha da continuação incerta.")
+                    continue
+                indice_direita_ssp11 = direita_linha_ssp11.index[0]
+                for indice_parte_ssp11, meses_parte_ssp11, deslocamento_ssp11 in (
+                    (indice_ssp11, meta_ssp11["meses_esquerda"], 3),
+                    (indice_direita_ssp11, meta_ssp11["meses_direita"], 1),
+                ):
+                    registrar_candidato_ssp11(nome_csv_ssp11, indice_parte_ssp11, "Fragmento municipal de violência doméstica", "JOINVILLE", indicador_ssp11, contexto_ssp11)
+                    for posicao_ssp11, mes_ssp11 in enumerate(meses_parte_ssp11):
+                        coluna_ssp11 = f"celula_{posicao_ssp11 + deslocamento_ssp11:02d}"
+                        registrar_celula_ssp11(nome_csv_ssp11, indice_parte_ssp11, coluna_ssp11, indicador_ssp11,
+                            "mensal", meta_ssp11["ano_edicao"], f"{meta_ssp11['ano_edicao']}-{meses_ssp11.index(mes_ssp11)+1:02d}",
+                            "Fato Comunicado (unidade operacional a validar)", contexto_ssp11)
+    # Conferir no PDF a tabela exata de cada linha municipal usada. Não reexportar
+    # a extração; comparar cada célula não vazia e os índices de página/tabela/linha.
+    candidatas_arquivo_ssp11 = [r for r in linhas_candidatas_ssp11 if r["arquivo_csv"] == nome_csv_ssp11 and r["classificacao"] in ("Linha municipal de homicídios", "Fragmento municipal de violência doméstica")]
+    with pdf_ssp11.open(pasta_pdf_ssp11 / nome_pdf_ssp11) as documento_ssp11:
+        tabelas_pagina_ssp11 = {}
+        for candidata_ssp11 in candidatas_arquivo_ssp11:
+            pagina_ssp11 = int(candidata_ssp11["pagina_pdf"])
+            if pagina_ssp11 not in tabelas_pagina_ssp11:
+                tabelas_pagina_ssp11[pagina_ssp11] = documento_ssp11.pages[pagina_ssp11 - 1].extract_tables()
+            tabelas_ssp11 = tabelas_pagina_ssp11[pagina_ssp11]
+            numero_tabela_ssp11 = int(candidata_ssp11["tabela_pdf"])
+            numero_linha_ssp11 = int(candidata_ssp11["linha_tabela"])
+            linha_pdf_ssp11 = tabelas_ssp11[numero_tabela_ssp11 - 1][numero_linha_ssp11 - 1]
+            valores_csv_ssp11 = candidata_ssp11["celulas_originais"]
+            # None e string vazia são indistinguíveis no CSV histórico. Comparar
+            # a representação serializável somente aqui, sem preencher DataFrames.
+            confere_ssp11 = all(valores_csv_ssp11[i] == ("" if v is None else v) for i, v in enumerate(linha_pdf_ssp11)) and all(v == "" for v in valores_csv_ssp11[len(linha_pdf_ssp11):])
+            verificacoes_tabelas_ssp11.append({"arquivo_pdf": nome_pdf_ssp11, "pagina_pdf": pagina_ssp11,
+                "tabela_pdf": numero_tabela_ssp11, "linha_tabela": numero_linha_ssp11, "celulas_conferem": confere_ssp11})
+            if not confere_ssp11:
+                problema_ssp11(nome_pdf_ssp11, f"Células divergentes na p.{pagina_ssp11}, tabela {numero_tabela_ssp11}, linha {numero_linha_ssp11}.")
+
+# Menções literais e associação contextual são tabelas separadas. As linhas de
+# continuação doméstica não contêm o nome da cidade, mas mantêm sua chave física.
+mencoes_textuais_joinville_ssp = pd_ssp11.DataFrame(linhas_mencoes_ssp11)
+registros_candidatos_joinville_ssp = pd_ssp11.DataFrame(linhas_candidatas_ssp11)
+contextos_tabelas_ssp = pd_ssp11.DataFrame(linhas_contextos_ssp11)
+evidencias_celulas_ssp = pd_ssp11.DataFrame(linhas_evidencias_ssp11)
+conferencia_tabelas_pdf_ssp = pd_ssp11.DataFrame(verificacoes_tabelas_ssp11)
+mostrar_ssp11(registros_candidatos_joinville_ssp)
+mostrar_ssp11(contextos_tabelas_ssp)
+mostrar_ssp11(evidencias_celulas_ssp)
+
+# %% [markdown]
+# ## 11.3 — Cobertura, indicadores e republicações
+# Evidências por célula são strings originais anotadas para conferência. Não
+# somar categorias, edições ou acumulados. Agrupar abaixo apenas para contar
+# cobertura e identificar valores republicados; não gerar totais de crimes.
+# Rótulos de lesão com '0 Dolosa' e '- Dolosa' permanecem distintos nesta etapa.
+# Os intervalos 28/02 e 29/02 são rótulos literais da edição, compartilhados por
+# vários anos históricos; ainda não representam datas civis validadas para cada
+# ano. Os grupos abaixo são apenas repetições literais, sem resolver esse caso.
+
+# %%
+for chave_ssp11, grupo_ssp11 in evidencias_celulas_ssp.groupby(["indicador_original", "ano_referencia", "periodo_tipo"], sort=False):
+    linhas_indicadores_ssp11.append({
+        "indicador_original": chave_ssp11[0], "ano_referencia": chave_ssp11[1], "periodo_tipo": chave_ssp11[2],
+        "periodos_publicados": tuple(sorted(set(grupo_ssp11.periodo_referencia))),
+        "celulas_publicadas": len(grupo_ssp11), "unidade": tuple(set(grupo_ssp11.unidade)),
+        "arquivos": tuple(sorted(set(grupo_ssp11.arquivo_pdf))),
+        "valores_nao_interpretaveis": int((~grupo_ssp11.valor_inteiro_literal).sum()),
+    })
+indicadores_identificados_ssp = pd_ssp11.DataFrame(linhas_indicadores_ssp11)
+republicacoes_ssp11 = []
+for chave_ssp11, grupo_ssp11 in evidencias_celulas_ssp.groupby(["municipio", "indicador_original", "periodo_tipo", "ano_referencia", "periodo_referencia", "unidade"], sort=False):
+    if len(grupo_ssp11) > 1:
+        republicacoes_ssp11.append({
+            "chave_observacao": chave_ssp11, "quantidade_edicoes": len(grupo_ssp11),
+            "valores_publicados_distintos": tuple(sorted(set(grupo_ssp11.valor_publicado))),
+            "divergencia": grupo_ssp11.valor_publicado.nunique() > 1,
+            "referencias": tuple(zip(grupo_ssp11.arquivo_pdf, grupo_ssp11.pagina_pdf, grupo_ssp11.tabela_pdf, grupo_ssp11.linha_tabela, grupo_ssp11.valor_publicado)),
+        })
+republicacoes_divergencias_ssp = pd_ssp11.DataFrame(republicacoes_ssp11)
+# Diagnóstico lógico por célula, sem converter a coluna valor_publicado. Os
+# inteiros locais servem apenas à comparação; o token original segue preservado.
+inconsistencias_ssp11 = []
+for _, acumulado_ssp11 in evidencias_celulas_ssp.loc[evidencias_celulas_ssp.periodo_tipo.eq("período acumulado")].iterrows():
+    anual_mesma_edicao_ssp11 = evidencias_celulas_ssp.loc[
+        evidencias_celulas_ssp.arquivo_pdf.eq(acumulado_ssp11.arquivo_pdf)
+        & evidencias_celulas_ssp.periodo_tipo.eq("ano completo")
+        & evidencias_celulas_ssp.ano_referencia.eq(acumulado_ssp11.ano_referencia)
+    ]
+    if len(anual_mesma_edicao_ssp11) == 1:
+        anual_ssp11 = anual_mesma_edicao_ssp11.iloc[0]
+        if acumulado_ssp11.valor_inteiro_literal and anual_ssp11.valor_inteiro_literal and int(acumulado_ssp11.valor_publicado) > int(anual_ssp11.valor_publicado):
+            inconsistencias_ssp11.append({"arquivo_pdf": acumulado_ssp11.arquivo_pdf,
+                "pagina_pdf": acumulado_ssp11.pagina_pdf, "linha_tabela": acumulado_ssp11.linha_tabela,
+                "ano_publicado": acumulado_ssp11.ano_referencia, "periodo_publicado": acumulado_ssp11.periodo_referencia,
+                "acumulado_publicado": acumulado_ssp11.valor_publicado, "anual_publicado": anual_ssp11.valor_publicado,
+                "situacao": "Acumulado superior ao anual na mesma edição; conferir publicação"})
+inconsistencias_acumulados_ssp = pd_ssp11.DataFrame(inconsistencias_ssp11)
+arquivos_identicos_ssp = pd_ssp11.DataFrame([
+    {"sha256": digest, "arquivos": tuple(r.arquivo), "quantidade": len(r)}
+    for digest, r in inventario_arquivos_ssp.groupby("sha256") if len(r) > 1
+])
+mostrar_ssp11(indicadores_identificados_ssp)
+mostrar_ssp11(republicacoes_divergencias_ssp)
+mostrar_ssp11(arquivos_identicos_ssp)
+mostrar_ssp11(inconsistencias_acumulados_ssp)
+
+# %% [markdown]
+# ## 11.4 — Integridade e pendências
+# Comparar os hashes antes/depois dos 90 insumos. O manifesto antigo pode cobrir
+# só os PDFs; ausência de CSV no manifesto não comprova alteração nem validação
+# histórica. Nenhuma divergência recebe correção automática.
+
+# %%
+manifesto_ssp11 = pd_ssp11.read_csv(
+    raiz_ssp11 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv",
+    dtype=str, keep_default_na=False,
+)
+linhas_integridade_ssp11 = []
+for caminho_ssp11, digest_ssp11 in hashes_antes_ssp11.items():
+    relativo_ssp11 = caminho_ssp11.relative_to(raiz_ssp11).as_posix()
+    historico_ssp11 = manifesto_ssp11.loc[manifesto_ssp11.caminho_destino_planejado.eq(relativo_ssp11)]
+    hash_historico_ssp11 = historico_ssp11.iloc[0].sha256 if len(historico_ssp11) == 1 else None
+    digest_depois_ssp11 = sha256_ssp11(caminho_ssp11)
+    linhas_integridade_ssp11.append({
+        "arquivo": caminho_ssp11.name, "tipo": caminho_ssp11.suffix,
+        "sha256_antes": digest_ssp11, "sha256_depois": digest_depois_ssp11,
+        "preservado": digest_ssp11 == digest_depois_ssp11,
+        "historico": "não consta" if hash_historico_ssp11 is None else ("confere" if hash_historico_ssp11 == digest_ssp11 else "diverge"),
+    })
+integridade_arquivos_ssp = pd_ssp11.DataFrame(linhas_integridade_ssp11)
+for nome_ssp11, retrato_ssp11 in retratos_sinesp_ssp11.items():
+    pd_ssp11.testing.assert_frame_equal(globals()[nome_ssp11], retrato_ssp11, check_exact=True)
+if not integridade_arquivos_ssp.preservado.all() or integridade_arquivos_ssp.historico.eq("diverge").any():
+    raise ValueError("Etapa 11: divergência de integridade; interromper e apresentar o inventário.")
+pendencias_inspecao_ssp = pd_ssp11.DataFrame(problemas_ssp11, columns=["arquivo", "pendencia"])
+mostrar_ssp11(qualidade_csv_ssp)
+mostrar_ssp11(conferencia_tabelas_pdf_ssp)
+mostrar_ssp11(integridade_arquivos_ssp)
+mostrar_ssp11(pendencias_inspecao_ssp)
+print(f"Etapa 11: inspeção em memória concluída; {len(pendencias_inspecao_ssp)} pendência(s) de contexto e {len(inconsistencias_acumulados_ssp)} inconsistência(s) de acumulado. Consultar os DataFrames no Data Viewer; tratamentos aguardam validação.")
+
+# %% [markdown]
+# # ETAPA 12 — Auditoria das inconsistências SSP/SC
+# Execute a partir desta célula, independentemente das etapas anteriores. Esta
+# auditoria lê os originais e registra diagnósticos em memória. Não corrige anos,
+# rótulos ou valores, não seleciona uma edição definitiva e não exporta arquivos.
+# As diferenças numéricas abaixo são diagnósticos entre versões publicadas, não
+# contagens mensais obtidas por subtração de acumulados.
+
+# %%
+from pathlib import Path as CaminhoSSP12
+from calendar import isleap as bissexto_ssp12
+import hashlib as hash_ssp12
+import re as regex_ssp12
+
+import pandas as pd_ssp12
+import pdfplumber as pdf_ssp12
+from pypdf import PdfReader as LeitorSSP12
+from IPython.display import display as mostrar_ssp12
+
+raiz_ssp12 = CaminhoSSP12(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP12.cwd()
+pasta_ssp12 = raiz_ssp12 / "dados/brutos/ssp_sc"
+pdfs_ssp12 = sorted((pasta_ssp12 / "pdfs").rglob("*.pdf"))
+csvs_ssp12 = sorted((pasta_ssp12 / "csv_extraidos").rglob("*.csv"))
+if len(pdfs_ssp12) != 45 or len(csvs_ssp12) != 45 or {p.stem for p in pdfs_ssp12} != {p.stem for p in csvs_ssp12}:
+    raise ValueError("Etapa 12: acervo diferente dos 45 pares PDF/CSV; interromper a auditoria.")
+
+
+def sha256_ssp12(caminho):
+    with caminho.open("rb") as fluxo:
+        return hash_ssp12.file_digest(fluxo, "sha256").hexdigest()
+
+
+hashes_entrada_ssp12 = {p: sha256_ssp12(p) for p in pdfs_ssp12 + csvs_ssp12}
+retratos_preservacao_ssp12 = {
+    nome: globals()[nome].copy(deep=True)
+    for nome in ("df_sinesp_joinville_concatenado", "df_sinesp_joinville_analitico", "evidencias_celulas_ssp", "republicacoes_divergencias_ssp")
+    if nome in globals()
+}
+brutos_auditoria_ssp12 = {
+    p.with_suffix(".pdf").name: pd_ssp12.read_csv(p, sep=";", encoding="utf-8-sig", dtype=str, keep_default_na=False, na_filter=False)
+    for p in csvs_ssp12
+}
+textos_auditoria_ssp12 = {}
+notas_auditoria_ssp12 = []
+metadados_auditoria_ssp12 = {}
+padrao_nota_ssp12 = r"retific|ratific|revis[aã]|corrig|corre[cç]|provis[oó]|consolid|sujeit|defini[cç]|metodolog|contabiliz|uma v[ií]tima|pessoas [uú]nicas|mais de um fato"
+for caminho_ssp12 in pdfs_ssp12:
+    leitor_ssp12 = LeitorSSP12(caminho_ssp12)
+    textos_auditoria_ssp12[caminho_ssp12.name] = tuple(p.extract_text() or "" for p in leitor_ssp12.pages)
+    for numero_pagina_ssp12, texto_ssp12 in enumerate(textos_auditoria_ssp12[caminho_ssp12.name], 1):
+        linhas_texto_ssp12 = texto_ssp12.splitlines()
+        for numero_linha_ssp12, linha_texto_ssp12 in enumerate(linhas_texto_ssp12):
+            if regex_ssp12.search(padrao_nota_ssp12, linha_texto_ssp12, regex_ssp12.I):
+                notas_auditoria_ssp12.append({
+                    "arquivo_pdf": caminho_ssp12.name, "pagina_pdf": numero_pagina_ssp12,
+                    "trecho_literal": "\n".join(linhas_texto_ssp12[max(0, numero_linha_ssp12 - 1):numero_linha_ssp12 + 3]),
+                    "explicacao_de_revisao": bool(regex_ssp12.search(r"retific|ratific|revis[aã]|corrig|corre[cç]", linha_texto_ssp12, regex_ssp12.I)),
+                })
+    if "VIOLENCIA-DOMESTICA" not in caminho_ssp12.name:
+        pagina_1_ssp12, pagina_2_ssp12 = textos_auditoria_ssp12[caminho_ssp12.name][:2]
+        ano_edicao_ssp12 = regex_ssp12.search(r"\b20\d{2}\b", pagina_1_ssp12).group()
+        periodo_edicao_ssp12 = regex_ssp12.search(r"PERÍODO\s*\((01/01\s*-\s*\d{2}/\d{2})\)", pagina_1_ssp12).group(1)
+        atualizacao_1_ssp12 = regex_ssp12.search(r"ATUALIZAÇÃO DOS DADOS:\s*(\d{2}/\d{2}/\d{4})", pagina_1_ssp12)
+        atualizacao_2_ssp12 = regex_ssp12.search(r"ATUALIZAÇÃO DOS DADOS:\s*(\d{2}/\d{2}/\d{4})", pagina_2_ssp12)
+        metadados_auditoria_ssp12[caminho_ssp12.name] = {
+            "arquivo_pdf": caminho_ssp12.name, "edicao": f"{ano_edicao_ssp12}-{periodo_edicao_ssp12[-2:]}",
+            "ano_edicao": ano_edicao_ssp12, "periodo_edicao": periodo_edicao_ssp12,
+            "atualizacao_pagina_1": atualizacao_1_ssp12.group(1) if atualizacao_1_ssp12 else None,
+            "atualizacao_homicidios": atualizacao_2_ssp12.group(1) if atualizacao_2_ssp12 else None,
+            "pagina_atualizacao_homicidios": 2,
+        }
+notas_documentais_ssp12 = pd_ssp12.DataFrame(notas_auditoria_ssp12)
+edicoes_auditoria_ssp12 = pd_ssp12.DataFrame([
+    {"codigo_edicao": f"B{n:02d}", **meta}
+    for n, meta in enumerate(sorted(metadados_auditoria_ssp12.values(), key=lambda m: m["edicao"]), 1)
+])
+codigos_edicao_ssp12 = dict(zip(edicoes_auditoria_ssp12.arquivo_pdf, edicoes_auditoria_ssp12.codigo_edicao))
+
+# %% [markdown]
+# ## 12.1 — Leitura literal das células municipais e auditoria de janeiro/2025
+# O ano é o escrito na própria coluna, mesmo quando incoerente com a edição.
+# As datas de atualização da página 2 identificam a seção de homicídios; não
+# substituir por datas da página 1, que se refere aos registros estaduais SISP.
+
+# %%
+celulas_homicidios_ssp12 = []
+cabecalhos_homicidios_ssp12 = []
+for nome_pdf_ssp12, meta_ssp12 in metadados_auditoria_ssp12.items():
+    bruto_ssp12 = brutos_auditoria_ssp12[nome_pdf_ssp12]
+    colunas_ssp12 = [c for c in bruto_ssp12 if c.startswith("celula_")]
+    municipais_ssp12 = bruto_ssp12.loc[bruto_ssp12.celula_01.eq("JOINVILLE")]
+    if len(municipais_ssp12) != 1:
+        raise ValueError(f"Etapa 12: linha municipal inesperada em {nome_pdf_ssp12}.")
+    linha_ssp12 = municipais_ssp12.iloc[0]
+    tabela_ssp12 = bruto_ssp12.loc[bruto_ssp12.pagina_pdf.eq(linha_ssp12.pagina_pdf) & bruto_ssp12.tabela_pdf.eq(linha_ssp12.tabela_pdf)]
+    cabecalho_ssp12 = tabela_ssp12.loc[tabela_ssp12.celula_01.str.contains("MUNICÍPIO", regex=False)].iloc[0]
+    colunas_ano_ssp12 = [c for c in colunas_ssp12 if regex_ssp12.fullmatch(r"20\d{2}", cabecalho_ssp12[c])]
+    texto_pagina_ssp12 = textos_auditoria_ssp12[nome_pdf_ssp12][int(linha_ssp12.pagina_pdf) - 1]
+    periodo_ssp12 = regex_ssp12.search(r"NO PERÍODO\s*\(([^)]+)\)", texto_pagina_ssp12).group(1)
+    if len(colunas_ano_ssp12) != 7:
+        raise ValueError(f"Etapa 12: cabeçalho municipal inesperado em {nome_pdf_ssp12}.")
+    cabecalhos_homicidios_ssp12.append({
+        "arquivo_pdf": nome_pdf_ssp12, "pagina_pdf": linha_ssp12.pagina_pdf,
+        "tabela_pdf": linha_ssp12.tabela_pdf, "linha_municipal": linha_ssp12.linha_tabela,
+        "anos_literais": tuple(cabecalho_ssp12[c] for c in colunas_ano_ssp12),
+        "periodo_literal": periodo_ssp12, "texto_pagina": texto_pagina_ssp12,
+    })
+    for posicao_ssp12, coluna_ssp12 in enumerate(colunas_ano_ssp12):
+        valor_ssp12 = linha_ssp12[coluna_ssp12]
+        if not regex_ssp12.fullmatch(r"\d+", valor_ssp12):
+            raise ValueError(f"Etapa 12: valor não interpretável em {nome_pdf_ssp12}/{coluna_ssp12}; preservar e investigar.")
+        anual_ssp12 = posicao_ssp12 < 3
+        celulas_homicidios_ssp12.append({
+            "arquivo_pdf": nome_pdf_ssp12, "arquivo_csv": CaminhoSSP12(nome_pdf_ssp12).with_suffix(".csv").name,
+            "pagina_pdf": linha_ssp12.pagina_pdf, "tabela_pdf": linha_ssp12.tabela_pdf,
+            "linha_tabela": linha_ssp12.linha_tabela, "coluna_csv": coluna_ssp12,
+            "indicador": "Nº de vítimas de homicídio", "municipio": "JOINVILLE", "unidade": "vítimas",
+            "ano_referencia": cabecalho_ssp12[coluna_ssp12],
+            "periodo_tipo": "ano completo" if anual_ssp12 else "período acumulado",
+            "periodo_publicado": cabecalho_ssp12[coluna_ssp12] if anual_ssp12 else periodo_ssp12,
+            "valor_publicado": valor_ssp12, "codigo_edicao": codigos_edicao_ssp12[nome_pdf_ssp12],
+            **{c: meta_ssp12[c] for c in ("edicao", "atualizacao_homicidios", "pagina_atualizacao_homicidios")},
+        })
+evidencias_homicidios_ssp12 = pd_ssp12.DataFrame(celulas_homicidios_ssp12)
+cabecalhos_auditados_ssp12 = pd_ssp12.DataFrame(cabecalhos_homicidios_ssp12)
+nome_janeiro_ssp12 = "2025_02_01-janeiro-1.pdf"
+auditoria_janeiro_2025_ssp12 = evidencias_homicidios_ssp12.loc[evidencias_homicidios_ssp12.arquivo_pdf.eq(nome_janeiro_ssp12)].copy(deep=True)
+with pdf_ssp12.open(pasta_ssp12 / "pdfs" / nome_janeiro_ssp12) as documento_ssp12:
+    tabela_janeiro_ssp12 = documento_ssp12.pages[7].find_tables()[0]
+    linhas_janeiro_ssp12 = tabela_janeiro_ssp12.extract()
+    for indice_ssp12, observacao_ssp12 in auditoria_janeiro_2025_ssp12.iterrows():
+        numero_coluna_ssp12 = int(observacao_ssp12.coluna_csv[-2:]) - 1
+        valor_pdf_ssp12 = linhas_janeiro_ssp12[int(observacao_ssp12.linha_tabela) - 1][numero_coluna_ssp12]
+        auditoria_janeiro_2025_ssp12.loc[indice_ssp12, "valor_pdf"] = valor_pdf_ssp12
+        auditoria_janeiro_2025_ssp12.loc[indice_ssp12, "pdf_csv_conferem"] = valor_pdf_ssp12 == observacao_ssp12.valor_publicado
+        auditoria_janeiro_2025_ssp12.loc[indice_ssp12, "celula_bbox_pdf"] = str(tabela_janeiro_ssp12.rows[int(observacao_ssp12.linha_tabela) - 1].cells[numero_coluna_ssp12])
+casos_acumulado_superior_ssp12 = []
+for _, observacao_ssp12 in auditoria_janeiro_2025_ssp12.loc[auditoria_janeiro_2025_ssp12.periodo_tipo.eq("período acumulado")].iterrows():
+    anuais_ssp12 = auditoria_janeiro_2025_ssp12.loc[auditoria_janeiro_2025_ssp12.periodo_tipo.eq("ano completo") & auditoria_janeiro_2025_ssp12.ano_referencia.eq(observacao_ssp12.ano_referencia)]
+    if len(anuais_ssp12) == 1 and int(observacao_ssp12.valor_publicado) > int(anuais_ssp12.iloc[0].valor_publicado):
+        casos_acumulado_superior_ssp12.append({"ano_publicado": observacao_ssp12.ano_referencia,
+            "anual_publicado": anuais_ssp12.iloc[0].valor_publicado, "acumulado_publicado": observacao_ssp12.valor_publicado,
+            "excesso_diagnostico": int(observacao_ssp12.valor_publicado) - int(anuais_ssp12.iloc[0].valor_publicado),
+            "arquivo_pdf": nome_janeiro_ssp12, "pagina_pdf": "8", "tabela_pdf": "1", "linha_tabela": "36"})
+acumulados_superiores_ssp12 = pd_ssp12.DataFrame(casos_acumulado_superior_ssp12)
+mostrar_ssp12(auditoria_janeiro_2025_ssp12)
+mostrar_ssp12(acumulados_superiores_ssp12)
+
+# %% [markdown]
+# ## 12.2 — Todas as versões dos 58 grupos, sem selecionar uma publicação
+# Diferença de valor não prova revisão documentada. A classificação 'possível
+# problema de cabeçalho' é usada quando somente a edição suspeita introduz a
+# diferença; não se apaga essa edição. Se as outras edições também divergem, a
+# classificação permanece 'inconsistência ainda não explicada', com uma ressalva.
+# 'Ratificado' no nome de um arquivo não explica uma alteração municipal específica.
+
+# %%
+grupos_auditoria_ssp12 = []
+versoes_auditoria_ssp12 = []
+campos_chave_ssp12 = ["indicador", "municipio", "unidade", "periodo_tipo", "ano_referencia", "periodo_publicado"]
+for chave_ssp12, grupo_ssp12 in evidencias_homicidios_ssp12.groupby(campos_chave_ssp12, sort=True):
+    if len(grupo_ssp12) < 2:
+        continue
+    identificador_ssp12 = f"G{len(grupos_auditoria_ssp12) + 1:02d}"
+    divergente_ssp12 = grupo_ssp12.valor_publicado.nunique() > 1
+    contem_janeiro_ssp12 = grupo_ssp12.arquivo_pdf.eq(nome_janeiro_ssp12).any()
+    outras_edicoes_ssp12 = grupo_ssp12.loc[grupo_ssp12.arquivo_pdf.ne(nome_janeiro_ssp12)]
+    if not divergente_ssp12:
+        classe_ssp12, explicacao_ssp12 = "Sem divergência de valor", "Republicações literais concordantes; não representam observações independentes."
+    elif contem_janeiro_ssp12 and outras_edicoes_ssp12.valor_publicado.nunique() == 1:
+        classe_ssp12 = "Possível problema de cabeçalho"
+        explicacao_ssp12 = "Diferença restrita à edição jan/2025, cujo cabeçalho municipal não acompanha a edição; causa definitiva pendente."
+    else:
+        classe_ssp12 = "Inconsistência ainda não explicada"
+        explicacao_ssp12 = "Não localizada nota documental que explique a mudança desta observação; não presumir revisão, erro ou mudança de cobertura."
+    valores_locais_ssp12 = [int(v) for v in grupo_ssp12.valor_publicado]
+    grupos_auditoria_ssp12.append({
+        "grupo": identificador_ssp12, **dict(zip(campos_chave_ssp12, chave_ssp12)),
+        "quantidade_edicoes": len(grupo_ssp12), "divergente": divergente_ssp12,
+        "valores_publicados_distintos": tuple(sorted(set(grupo_ssp12.valor_publicado), key=int)),
+        "amplitude_entre_versoes": max(valores_locais_ssp12) - min(valores_locais_ssp12),
+        "classificacao": classe_ssp12, "explicacao_documental": explicacao_ssp12,
+        "inclui_edicao_com_cabecalho_suspeito": bool(contem_janeiro_ssp12),
+        "situacao": "pendente de validação" if divergente_ssp12 else "concordante, sem escolha definitiva",
+    })
+    anterior_ssp12 = None
+    # Ordenar somente as evidências auxiliares por edição; nenhuma base original
+    # recebe ordenação, conversão ou mudança de índices.
+    for _, versao_ssp12 in grupo_ssp12.sort_values("edicao").iterrows():
+        valor_local_ssp12 = int(versao_ssp12.valor_publicado)
+        versoes_auditoria_ssp12.append({"grupo": identificador_ssp12, **versao_ssp12.to_dict(),
+            "diferenca_versao_anterior": None if anterior_ssp12 is None else valor_local_ssp12 - anterior_ssp12,
+            "classificacao_grupo": classe_ssp12, "explicacao_documental": explicacao_ssp12,
+            "ressalva_versao": "Cabeçalho/período de jan/2025 pendente" if versao_ssp12.arquivo_pdf == nome_janeiro_ssp12 else "Causa da mudança não documentada"})
+        anterior_ssp12 = valor_local_ssp12
+matriz_republicacoes_ssp12 = pd_ssp12.DataFrame(grupos_auditoria_ssp12)
+versoes_republicacoes_ssp12 = pd_ssp12.DataFrame(versoes_auditoria_ssp12)
+matriz_divergencias_ssp12 = matriz_republicacoes_ssp12.loc[matriz_republicacoes_ssp12.divergente].copy(deep=True)
+versoes_divergentes_ssp12 = versoes_republicacoes_ssp12.loc[versoes_republicacoes_ssp12.grupo.isin(matriz_divergencias_ssp12.grupo)].copy(deep=True)
+mostrar_ssp12(edicoes_auditoria_ssp12)
+mostrar_ssp12(matriz_republicacoes_ssp12)
+mostrar_ssp12(matriz_divergencias_ssp12)
+mostrar_ssp12(versoes_divergentes_ssp12)
+
+# %% [markdown]
+# ## 12.3 — Violência doméstica: cabeçalhos, alinhamento e 216 células
+# Não preencher o município nas células vazias: associar os fragmentos por
+# contexto e manter os valores literais em uma tabela exclusiva de auditoria.
+# As grafias '0 Dolosa' e '- Dolosa' não são padronizadas. As nove categorias
+# são conferidas em cada relatório; os meses vêm dos cabeçalhos originais.
+
+# %%
+meses_ssp12 = ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+categorias_comuns_ssp12 = {"Ameaça", "Calúnia", "Difamação", "Estupro", "Injúria", "Injúria real", "Vias de fato"}
+fragmentos_domesticos_ssp12 = []
+celulas_domesticas_ssp12 = []
+estrutura_domestica_ssp12 = []
+for nome_pdf_ssp12, bruto_ssp12 in brutos_auditoria_ssp12.items():
+    if "VIOLENCIA-DOMESTICA" not in nome_pdf_ssp12:
+        continue
+    textos_ssp12 = textos_auditoria_ssp12[nome_pdf_ssp12]
+    metade_ssp12 = len(textos_ssp12) // 2
+    ano_ssp12 = regex_ssp12.search(r"\b20\d{2}\b", textos_ssp12[0]).group()
+    meses_esquerda_ssp12 = regex_ssp12.findall(r"\b(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\b", textos_ssp12[0][:120])
+    meses_direita_ssp12 = regex_ssp12.findall(r"\b(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\b", textos_ssp12[metade_ssp12][:80])
+    inicio_ssp12 = bruto_ssp12.loc[bruto_ssp12.celula_01.eq("JOINVILLE")].iloc[0]
+    pagina_esquerda_ssp12 = int(inicio_ssp12.pagina_pdf)
+    pagina_direita_ssp12 = pagina_esquerda_ssp12 + metade_ssp12
+    esquerda_ssp12 = bruto_ssp12.loc[bruto_ssp12.pagina_pdf.eq(str(pagina_esquerda_ssp12)) & bruto_ssp12.tabela_pdf.eq(inicio_ssp12.tabela_pdf)]
+    direita_ssp12 = bruto_ssp12.loc[bruto_ssp12.pagina_pdf.eq(str(pagina_direita_ssp12)) & bruto_ssp12.tabela_pdf.eq(inicio_ssp12.tabela_pdf)]
+    bloco_ssp12 = []
+    iniciou_ssp12 = False
+    for _, linha_ssp12 in esquerda_ssp12.iterrows():
+        if linha_ssp12.celula_01 == "JOINVILLE":
+            iniciou_ssp12 = True
+        elif iniciou_ssp12 and linha_ssp12.celula_01 != "":
+            break
+        if iniciou_ssp12:
+            bloco_ssp12.append(linha_ssp12)
+    categorias_ssp12 = {r.celula_02 for r in bloco_ssp12}
+    variantes_ssp12 = (
+        {"Lesão corporal grave ou gravíssima 0 Dolosa", "Lesão corporal leve 0 Dolosa"}
+        if "1o-SEMESTRE-2023" in nome_pdf_ssp12 else
+        {"Lesão corporal grave ou gravíssima - Dolosa", "Lesão corporal leve - Dolosa"}
+    )
+    if len(bloco_ssp12) != 9 or categorias_ssp12 != categorias_comuns_ssp12 | variantes_ssp12:
+        raise ValueError(f"Etapa 12: categorias domésticas divergentes em {nome_pdf_ssp12}.")
+    if esquerda_ssp12.linha_tabela.tolist() != direita_ssp12.linha_tabela.tolist():
+        raise ValueError(f"Etapa 12: páginas domésticas desalinhadas em {nome_pdf_ssp12}.")
+    with pdf_ssp12.open(pasta_ssp12 / "pdfs" / nome_pdf_ssp12) as documento_ssp12:
+        tabelas_ssp12 = {pagina: documento_ssp12.pages[pagina - 1].find_tables()[0] for pagina in (pagina_esquerda_ssp12, pagina_direita_ssp12)}
+        extraidas_ssp12 = {pagina: tabela.extract() for pagina, tabela in tabelas_ssp12.items()}
+        for linha_esquerda_ssp12 in bloco_ssp12:
+            linha_direita_ssp12 = direita_ssp12.loc[direita_ssp12.linha_tabela.eq(linha_esquerda_ssp12.linha_tabela)].iloc[0]
+            for pagina_ssp12, linha_ssp12, meses_parte_ssp12, deslocamento_ssp12 in (
+                (pagina_esquerda_ssp12, linha_esquerda_ssp12, meses_esquerda_ssp12, 3),
+                (pagina_direita_ssp12, linha_direita_ssp12, meses_direita_ssp12, 1),
+            ):
+                indice_linha_ssp12 = int(linha_ssp12.linha_tabela) - 1
+                bbox_linha_ssp12 = tabelas_ssp12[pagina_ssp12].rows[indice_linha_ssp12].bbox
+                fragmentos_domesticos_ssp12.append({"arquivo_pdf": nome_pdf_ssp12, "pagina_pdf": pagina_ssp12,
+                    "tabela_pdf": linha_ssp12.tabela_pdf, "linha_tabela": linha_ssp12.linha_tabela,
+                    "indicador_original": linha_esquerda_ssp12.celula_02, "bbox_linha": bbox_linha_ssp12,
+                    "meses_cabecalho": tuple(meses_parte_ssp12)})
+                for posicao_ssp12, mes_ssp12 in enumerate(meses_parte_ssp12):
+                    numero_coluna_ssp12 = posicao_ssp12 + deslocamento_ssp12
+                    coluna_ssp12 = f"celula_{numero_coluna_ssp12:02d}"
+                    valor_csv_ssp12 = linha_ssp12[coluna_ssp12]
+                    valor_pdf_ssp12 = extraidas_ssp12[pagina_ssp12][indice_linha_ssp12][numero_coluna_ssp12 - 1]
+                    celulas_domesticas_ssp12.append({"arquivo_pdf": nome_pdf_ssp12, "pagina_pdf": pagina_ssp12,
+                        "tabela_pdf": linha_ssp12.tabela_pdf, "linha_tabela": linha_ssp12.linha_tabela, "coluna_csv": coluna_ssp12,
+                        "municipio_contextual": "JOINVILLE", "municipio_celula_original": linha_ssp12.celula_01,
+                        "indicador_original": linha_esquerda_ssp12.celula_02, "ano": ano_ssp12,
+                        "mes_cabecalho": mes_ssp12, "valor_publicado": valor_csv_ssp12, "valor_pdf": valor_pdf_ssp12,
+                        "pdf_csv_conferem": valor_csv_ssp12 == valor_pdf_ssp12,
+                        "unidade_cabecalho": "Fato Comunicado", "definicao_operacional": "não explicitada nesses PDFs"})
+    estrutura_domestica_ssp12.append({"arquivo_pdf": nome_pdf_ssp12, "paginas": len(textos_ssp12),
+        "pagina_esquerda": pagina_esquerda_ssp12, "pagina_direita": pagina_direita_ssp12,
+        "cabecalho_original_esquerda": "\n".join(l for l in textos_ssp12[0].splitlines() if regex_ssp12.search(r"Munic[ií]pio|Fato Comunicado|^20\d{2}$|^(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)(?:\s+(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez))*$", l)),
+        "cabecalho_original_direita": "\n".join(textos_ssp12[metade_ssp12].splitlines()[:2]),
+        "meses": tuple(meses_esquerda_ssp12 + meses_direita_ssp12), "categorias_originais": tuple(sorted(categorias_ssp12)),
+        "definicao_oficial_no_documento": "Não localizada explicação operacional da contagem ou de pessoas únicas"})
+auditoria_estrutura_domestica_ssp12 = pd_ssp12.DataFrame(estrutura_domestica_ssp12)
+auditoria_fragmentos_domesticos_ssp12 = pd_ssp12.DataFrame(fragmentos_domesticos_ssp12)
+auditoria_celulas_domesticas_ssp12 = pd_ssp12.DataFrame(celulas_domesticas_ssp12)
+mostrar_ssp12(auditoria_estrutura_domestica_ssp12)
+mostrar_ssp12(auditoria_fragmentos_domesticos_ssp12)
+mostrar_ssp12(auditoria_celulas_domesticas_ssp12)
+
+# %% [markdown]
+# ## 12.4 — Calendário, edição e documentação da unidade
+# 28/02 e 29/02 permanecem como rótulos originais. Identificar o que seria uma
+# data civil inválida não autoriza truncar datas, equiparar períodos ou mudar o
+# ano. A edição e a data de atualização são metadados distintos da competência.
+# Não calcular meses por diferença entre acumulados de edições diferentes.
+
+# %%
+linhas_fevereiro_ssp12 = []
+for _, registro_ssp12 in evidencias_homicidios_ssp12.iterrows():
+    if registro_ssp12.periodo_tipo == "período acumulado" and registro_ssp12.periodo_publicado.endswith(("28/02", "29/02")):
+        linhas_fevereiro_ssp12.append({**registro_ssp12.to_dict(),
+            "ano_referencia_bissexto": bissexto_ssp12(int(registro_ssp12.ano_referencia)),
+            "29_fevereiro_invalido_se_data_literal": registro_ssp12.periodo_publicado.endswith("29/02") and not bissexto_ssp12(int(registro_ssp12.ano_referencia)),
+            "situacao": "Rótulo compartilhado da edição; correspondência ao calendário histórico pendente"})
+auditoria_fevereiro_ssp12 = pd_ssp12.DataFrame(linhas_fevereiro_ssp12)
+documentacao_unidade_ssp12 = pd_ssp12.DataFrame([
+    {"fonte": "Três PDFs domésticos locais", "evidencia": "Cabeçalho Fato Comunicado; meses e categorias; sem definição operacional de contagem", "limite": "Não comprova vítimas, pessoas únicas ou relação um para um com BO"},
+    {"fonte": "documentacao/fontes/SSP_SC.md e documentacao/auditoria/ssp_csv_extraction_etapa_1_1.md", "evidencia": "Documentam extração e grafias; não são dicionário oficial da medida", "limite": "Não substituem definição da SSP/SC"},
+    {"fonte": "https://ssp.sc.gov.br/segurancaemnumeros/", "evidencia": "Portal oficial identifica os três relatórios como indicadores de violência doméstica", "limite": "A página consultada não apresenta definição operacional de Fato Comunicado"},
+    {"fonte": "https://www.sas.sc.gov.br/index.php/conselhos/cedca/diagnostico-da-realidade-social-da-crianca-e-do-adolescente-do-estado-de-santa-catarina/3447-caderno-3-direito-a-liberdade-ao-respeito-e-a-dignidade/file", "evidencia": "Diagnóstico CEDCA/SC, 2018, página PDF 55, nota: uma vítima pode ter mais de um fato comunicado", "limite": "Contexto de crianças/adolescentes e dados SSP/2016; não define o algoritmo dos relatórios domésticos 2023–2024"},
+])
+mostrar_ssp12(auditoria_fevereiro_ssp12)
+mostrar_ssp12(documentacao_unidade_ssp12)
+
+# %% [markdown]
+# ## 12.5 — Preservação e limites da auditoria
+# Conferir as dimensões diagnósticas esperadas e os 90 hashes contra a auditoria
+# histórica e contra a leitura inicial. As bases anteriores existentes no kernel
+# também são comparadas, sem exigir sua reconstrução.
+
+# %%
+if len(matriz_republicacoes_ssp12) != 58 or len(matriz_divergencias_ssp12) != 41:
+    raise ValueError("Etapa 12: os grupos não correspondem à inspeção anterior; apresentar a divergência.")
+if len(evidencias_homicidios_ssp12) != 294 or len(acumulados_superiores_ssp12) != 3:
+    raise ValueError("Etapa 12: as evidências de homicídios divergiram da Etapa 11.")
+if len(auditoria_celulas_domesticas_ssp12) != 216 or not auditoria_celulas_domesticas_ssp12.pdf_csv_conferem.all() or not auditoria_janeiro_2025_ssp12.pdf_csv_conferem.all():
+    raise ValueError("Etapa 12: células não correspondem aos PDFs; interromper sem corrigir.")
+if auditoria_celulas_domesticas_ssp12.duplicated(["arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela", "coluna_csv"]).any():
+    raise ValueError("Etapa 12: célula doméstica diagnosticada mais de uma vez; investigar sem deduplicar.")
+manifesto_ssp12 = pd_ssp12.read_csv(raiz_ssp12 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv", dtype=str, keep_default_na=False)
+integridade_auditoria_ssp12 = pd_ssp12.DataFrame([
+    {"arquivo": p.name, "sha256_antes": digest, "sha256_depois": sha256_ssp12(p),
+     "sha256_historico": manifesto_ssp12.loc[manifesto_ssp12.caminho_destino_planejado.eq(p.relative_to(raiz_ssp12).as_posix()), "sha256"].item()}
+    for p, digest in hashes_entrada_ssp12.items()
+])
+if not (integridade_auditoria_ssp12.sha256_antes.eq(integridade_auditoria_ssp12.sha256_depois) & integridade_auditoria_ssp12.sha256_antes.eq(integridade_auditoria_ssp12.sha256_historico)).all():
+    raise ValueError("Etapa 12: divergência de integridade; interromper a auditoria.")
+for nome_ssp12, retrato_ssp12 in retratos_preservacao_ssp12.items():
+    pd_ssp12.testing.assert_frame_equal(globals()[nome_ssp12], retrato_ssp12, check_exact=True)
+mostrar_ssp12(integridade_auditoria_ssp12)
+print("Etapa 12: 58 grupos auditados, 41 divergentes; valores originais preservados; causas pendentes não foram presumidas. Nenhuma série definitiva selecionada.")
+
+# %% [markdown]
+# # ETAPA 13.1 — Inspeção e exibição dos dados brutos de violência doméstica (SSP/SC)
+# Execute a partir desta célula, sem executar as etapas anteriores nem o Sinesp.
+# Esta etapa é somente de leitura e visualização: os três relatórios de violência
+# doméstica são lidos literalmente (todas as células como texto), os blocos de
+# Joinville das páginas esquerda e direita são exibidos separadamente e as
+# estruturas são conferidas contra os PDFs. Nada é limpo, convertido, renomeado,
+# concatenado em base analítica ou exportado.
+#
+# Decisão metodológica registrada: o usuário aprovou, para a FUTURA base analítica
+# (Etapa 13.2), a equivalência entre "Lesão corporal leve 0 Dolosa" e
+# "Lesão corporal leve - Dolosa" e entre "Lesão corporal grave ou gravíssima 0 Dolosa"
+# e "Lesão corporal grave ou gravíssima - Dolosa". É uma decisão do projeto, não
+# uma confirmação oficial da SSP/SC. Aqui os quatro textos originais permanecem
+# exatamente como publicados e nenhum mapeamento é executado.
+# "Fato Comunicado" é a unidade publicada e não é equiparada a vítimas, pessoas
+# únicas ou ocorrências únicas.
+
+# %% [markdown]
+# ## 13.1.1 — Arquivos, referências dos blocos e verificações
+# As referências abaixo (páginas, tabela, linhas e meses) são as identificadas na
+# proposta da Etapa 13. Elas são apenas hipóteses de conferência: os blocos são
+# localizados nos CSVs pelo texto JOINVILLE e depois comparados com as referências.
+
+# %%
+from pathlib import Path as CaminhoSSP131
+import hashlib as hash_ssp131
+import re as regex_ssp131
+
+import pandas as pd_ssp131
+import pdfplumber as pdf_ssp131
+from IPython.display import display as mostrar_ssp131
+
+raiz_ssp131 = CaminhoSSP131(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP131.cwd()
+pasta_pdf_ssp131 = raiz_ssp131 / "dados/brutos/ssp_sc/pdfs"
+pasta_csv_ssp131 = raiz_ssp131 / "dados/brutos/ssp_sc/csv_extraidos"
+
+referencias_ssp131 = {
+    "1º semestre de 2023": {
+        "arquivo": "2025_06_VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023", "ano": "2023",
+        "pagina_esquerda": 16, "pagina_direita": 49, "tabela": "1", "linha_inicial": 42, "linha_final": 50,
+        "meses_esquerda": ("jan",), "meses_direita": ("fev", "mar", "abr", "mai", "jun"),
+    },
+    "2º semestre de 2023": {
+        "arquivo": "2025_06_VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023", "ano": "2023",
+        "pagina_esquerda": 16, "pagina_direita": 48, "tabela": "1", "linha_inicial": 12, "linha_final": 20,
+        "meses_esquerda": ("jul", "ago"), "meses_direita": ("set", "out", "nov", "dez"),
+    },
+    "2024": {
+        "arquivo": "2025_06_VIOLENCIA-DOMESTICA-2024-SC", "ano": "2024",
+        "pagina_esquerda": 18, "pagina_direita": 55, "tabela": "1", "linha_inicial": 32, "linha_final": 40,
+        "meses_esquerda": ("jan", "fev", "mar"), "meses_direita": ("abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"),
+    },
+}
+# Textos originais esperados em cada relatório (apenas para conferência, sem substituição).
+categorias_comuns_ssp131 = ("Ameaça", "Calúnia", "Difamação", "Estupro", "Injúria", "Injúria real", "Vias de fato")
+lesoes_ssp131 = {
+    "0": ("Lesão corporal grave ou gravíssima 0 Dolosa", "Lesão corporal leve 0 Dolosa"),
+    "-": ("Lesão corporal grave ou gravíssima - Dolosa", "Lesão corporal leve - Dolosa"),
+}
+todas_lesoes_ssp131 = lesoes_ssp131["0"] + lesoes_ssp131["-"]
+grafia_esperada_ssp131 = {"1º semestre de 2023": "0", "2º semestre de 2023": "-", "2024": "-"}
+
+verificacoes_ssp131 = {}
+
+
+def registrar_ssp131(relatorio, verificacao, esperado, encontrado):
+    # Registro por chave: executar novamente uma célula substitui, não duplica.
+    verificacoes_ssp131[(relatorio, verificacao)] = {
+        "relatorio": relatorio, "verificacao": verificacao,
+        "esperado": esperado, "encontrado": encontrado, "ok": esperado == encontrado}
+
+
+for relatorio_ssp131, ref_ssp131 in referencias_ssp131.items():
+    for pasta_ssp131, sufixo_ssp131 in ((pasta_pdf_ssp131, ".pdf"), (pasta_csv_ssp131, ".csv")):
+        caminho_ssp131 = pasta_ssp131 / (ref_ssp131["arquivo"] + sufixo_ssp131)
+        if not caminho_ssp131.is_file():
+            raise FileNotFoundError(f"Etapa 13.1: arquivo não encontrado: {caminho_ssp131}")
+        registrar_ssp131(relatorio_ssp131, f"existe {sufixo_ssp131}", True, True)
+
+mostrar_ssp131(pd_ssp131.DataFrame([{"relatorio": r, **ref} for r, ref in referencias_ssp131.items()]))
+
+# %% [markdown]
+# ## 13.1.2 — Leitura literal dos três CSVs e inventário
+# Os CSVs são lidos com `dtype=str` e sem conversão de ausentes: o que está na
+# célula é o que aparece aqui. As colunas `celula_*` são nomes do extrator, não
+# cabeçalhos do relatório. Os hashes SHA-256 são comparados com o inventário
+# histórico para confirmar que os originais não foram alterados.
+
+# %%
+def sha256_ssp131(caminho):
+    with caminho.open("rb") as fluxo:
+        return hash_ssp131.file_digest(fluxo, "sha256").hexdigest()
+
+
+manifesto_ssp131 = pd_ssp131.read_csv(
+    raiz_ssp131 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv",
+    dtype=str, keep_default_na=False)
+brutos_dom_ssp131 = {}
+paginas_pdf_ssp131 = {}
+hashes_antes_ssp131 = {}
+linhas_inventario_ssp131 = []
+for relatorio_ssp131, ref_ssp131 in referencias_ssp131.items():
+    caminho_pdf_ssp131 = pasta_pdf_ssp131 / (ref_ssp131["arquivo"] + ".pdf")
+    caminho_csv_ssp131 = pasta_csv_ssp131 / (ref_ssp131["arquivo"] + ".csv")
+    brutos_dom_ssp131[relatorio_ssp131] = pd_ssp131.read_csv(
+        caminho_csv_ssp131, sep=";", encoding="utf-8-sig", dtype=str, keep_default_na=False, na_filter=False)
+    with pdf_ssp131.open(caminho_pdf_ssp131) as documento_ssp131:
+        paginas_pdf_ssp131[relatorio_ssp131] = len(documento_ssp131.pages)
+    for caminho_ssp131 in (caminho_pdf_ssp131, caminho_csv_ssp131):
+        hashes_antes_ssp131[caminho_ssp131] = sha256_ssp131(caminho_ssp131)
+        historico_ssp131 = manifesto_ssp131.loc[
+            manifesto_ssp131.caminho_destino_planejado.eq(caminho_ssp131.relative_to(raiz_ssp131).as_posix()), "sha256"].tolist()
+        registrar_ssp131(relatorio_ssp131, f"sha256 igual ao inventário histórico ({caminho_ssp131.suffix})",
+                         [hashes_antes_ssp131[caminho_ssp131]], historico_ssp131)
+    bruto_ssp131 = brutos_dom_ssp131[relatorio_ssp131]
+    linhas_inventario_ssp131.append({
+        "relatorio": relatorio_ssp131, "arquivo_pdf": caminho_pdf_ssp131.name, "paginas_pdf": paginas_pdf_ssp131[relatorio_ssp131],
+        "arquivo_csv": caminho_csv_ssp131.name, "linhas_csv": len(bruto_ssp131), "colunas_csv": tuple(bruto_ssp131.columns),
+        "caminho_pdf": caminho_pdf_ssp131.relative_to(raiz_ssp131).as_posix(),
+        "caminho_csv": caminho_csv_ssp131.relative_to(raiz_ssp131).as_posix(),
+        "sha256_pdf": hashes_antes_ssp131[caminho_pdf_ssp131], "sha256_csv": hashes_antes_ssp131[caminho_csv_ssp131]})
+inventario_dom_ssp131 = pd_ssp131.DataFrame(linhas_inventario_ssp131)
+mostrar_ssp131(inventario_dom_ssp131)
+for relatorio_ssp131, bruto_ssp131 in brutos_dom_ssp131.items():
+    print(f"\n{relatorio_ssp131} — primeiras linhas do CSV bruto (valores literais):")
+    mostrar_ssp131(bruto_ssp131.head(3))
+
+# %% [markdown]
+# ## 13.1.3 — Localização dos blocos de Joinville
+# O bloco começa na linha cuja `celula_01` é JOINVILLE e vai até a linha anterior
+# à próxima `celula_01` preenchida, na mesma página e tabela. As demais linhas do
+# bloco têm `celula_01` vazia no CSV: o município é dado pelo contexto do bloco e a
+# célula original continua vazia. A página da direita é a da esquerda mais metade
+# do total de páginas (como na Etapa 12). Os blocos abaixo são seleções
+# temporárias para exibição; os CSVs não são modificados.
+
+# %%
+blocos_esquerda_ssp131 = {}
+blocos_direita_ssp131 = {}
+linhas_localizacao_ssp131 = []
+for relatorio_ssp131, ref_ssp131 in referencias_ssp131.items():
+    bruto_ssp131 = brutos_dom_ssp131[relatorio_ssp131]
+    marcadores_ssp131 = bruto_ssp131.index[bruto_ssp131.celula_01.eq("JOINVILLE")]
+    if len(marcadores_ssp131) == 0:
+        raise ValueError(f"Etapa 13.1: JOINVILLE não encontrado em {ref_ssp131['arquivo']}.")
+    inicio_ssp131 = bruto_ssp131.loc[marcadores_ssp131[0]]
+    pagina_esq_ssp131 = int(inicio_ssp131.pagina_pdf)
+    pagina_dir_ssp131 = pagina_esq_ssp131 + paginas_pdf_ssp131[relatorio_ssp131] // 2
+    pagina_tabela_ssp131 = bruto_ssp131.loc[bruto_ssp131.pagina_pdf.eq(str(pagina_esq_ssp131)) & bruto_ssp131.tabela_pdf.eq(inicio_ssp131.tabela_pdf)]
+    posicao_inicio_ssp131 = pagina_tabela_ssp131.index.get_loc(marcadores_ssp131[0])
+    posicao_fim_ssp131 = len(pagina_tabela_ssp131)
+    for posicao_ssp131 in range(posicao_inicio_ssp131 + 1, len(pagina_tabela_ssp131)):
+        if pagina_tabela_ssp131.iloc[posicao_ssp131].celula_01 != "":
+            posicao_fim_ssp131 = posicao_ssp131
+            break
+    bloco_esq_ssp131 = pagina_tabela_ssp131.iloc[posicao_inicio_ssp131:posicao_fim_ssp131].copy()
+    bloco_dir_ssp131 = bruto_ssp131.loc[
+        bruto_ssp131.pagina_pdf.eq(str(pagina_dir_ssp131)) & bruto_ssp131.tabela_pdf.eq(inicio_ssp131.tabela_pdf)
+        & bruto_ssp131.linha_tabela.isin(bloco_esq_ssp131.linha_tabela)].copy()
+    blocos_esquerda_ssp131[relatorio_ssp131] = bloco_esq_ssp131
+    blocos_direita_ssp131[relatorio_ssp131] = bloco_dir_ssp131
+    linhas_bloco_ssp131 = bloco_esq_ssp131.linha_tabela.astype(int)
+    encontrado_ssp131 = (pagina_esq_ssp131, pagina_dir_ssp131, inicio_ssp131.tabela_pdf, int(linhas_bloco_ssp131.min()), int(linhas_bloco_ssp131.max()))
+    referencia_ssp131 = (ref_ssp131["pagina_esquerda"], ref_ssp131["pagina_direita"], ref_ssp131["tabela"], ref_ssp131["linha_inicial"], ref_ssp131["linha_final"])
+    registrar_ssp131(relatorio_ssp131, "ocorrências de JOINVILLE em celula_01", 1, len(marcadores_ssp131))
+    registrar_ssp131(relatorio_ssp131, "páginas, tabela e linhas do bloco = referência", referencia_ssp131, encontrado_ssp131)
+    registrar_ssp131(relatorio_ssp131, "linhas do bloco na esquerda", 9, len(bloco_esq_ssp131))
+    registrar_ssp131(relatorio_ssp131, "linhas correspondentes na direita", 9, len(bloco_dir_ssp131))
+    registrar_ssp131(relatorio_ssp131, "linha_tabela esquerda = direita (mesma ordem)",
+                     bloco_esq_ssp131.linha_tabela.tolist(), bloco_dir_ssp131.linha_tabela.tolist())
+    registrar_ssp131(relatorio_ssp131, "linhas do bloco consecutivas",
+                     list(range(int(linhas_bloco_ssp131.min()), int(linhas_bloco_ssp131.min()) + 9)), linhas_bloco_ssp131.tolist())
+    linhas_localizacao_ssp131.append({
+        "relatorio": relatorio_ssp131, "paginas_pdf_total": paginas_pdf_ssp131[relatorio_ssp131],
+        "pagina_esq_referencia": ref_ssp131["pagina_esquerda"], "pagina_esq_encontrada": pagina_esq_ssp131,
+        "pagina_dir_referencia": ref_ssp131["pagina_direita"], "pagina_dir_derivada": pagina_dir_ssp131,
+        "tabela_referencia": ref_ssp131["tabela"], "tabela_encontrada": inicio_ssp131.tabela_pdf,
+        "linhas_referencia": f"{ref_ssp131['linha_inicial']}–{ref_ssp131['linha_final']}",
+        "linhas_encontradas": f"{linhas_bloco_ssp131.min()}–{linhas_bloco_ssp131.max()}",
+        "linhas_esquerda": len(bloco_esq_ssp131), "linhas_direita": len(bloco_dir_ssp131),
+        "indices_csv_esquerda": f"{bloco_esq_ssp131.index.min()}–{bloco_esq_ssp131.index.max()}",
+        "confere_referencia": referencia_ssp131 == encontrado_ssp131})
+localizacao_blocos_ssp131 = pd_ssp131.DataFrame(linhas_localizacao_ssp131)
+mostrar_ssp131(localizacao_blocos_ssp131)
+
+# %% [markdown]
+# ## 13.1.4 — Blocos brutos: página esquerda e página direita
+# Para cada relatório, primeiro o bloco da página esquerda (município, categoria e
+# os primeiros meses) e depois o da página direita (somente os meses restantes,
+# sem município nem categoria). O índice é o do CSV bruto e todas as colunas
+# `celula_*` originais são mantidas, inclusive as vazias do extrator.
+
+# %%
+for relatorio_ssp131 in referencias_ssp131:
+    print(f"\n=== {relatorio_ssp131} — PÁGINA ESQUERDA ({referencias_ssp131[relatorio_ssp131]['arquivo']}.csv) ===")
+    mostrar_ssp131(blocos_esquerda_ssp131[relatorio_ssp131])
+    print(f"=== {relatorio_ssp131} — PÁGINA DIREITA (continuação horizontal) ===")
+    mostrar_ssp131(blocos_direita_ssp131[relatorio_ssp131])
+
+# %% [markdown]
+# ## 13.1.5 — Quadro de conferência entre as duas metades
+# Este quadro existe só para a verificação visual: cada linha mostra a categoria
+# original e os valores da esquerda ao lado dos valores da direita que têm o mesmo
+# `linha_tabela`. Não é a base analítica, não converte valores e não identifica
+# meses; as colunas continuam sendo `celula_*`. Colunas totalmente vazias nas
+# linhas do bloco são omitidas somente da exibição.
+
+# %%
+quadros_conferencia_ssp131 = {}
+colunas_valor_ssp131 = {}
+for relatorio_ssp131 in referencias_ssp131:
+    esquerda_ssp131 = blocos_esquerda_ssp131[relatorio_ssp131]
+    direita_ssp131 = blocos_direita_ssp131[relatorio_ssp131]
+    colunas_celula_ssp131 = [c for c in esquerda_ssp131.columns if c.startswith("celula_")]
+    valores_esq_ssp131 = [c for c in colunas_celula_ssp131[2:] if esquerda_ssp131[c].ne("").any()]
+    valores_dir_ssp131 = [c for c in colunas_celula_ssp131 if direita_ssp131[c].ne("").any()]
+    colunas_valor_ssp131[relatorio_ssp131] = (tuple(valores_esq_ssp131), tuple(valores_dir_ssp131))
+    parte_esq_ssp131 = esquerda_ssp131[["linha_tabela", "celula_01", "celula_02"] + valores_esq_ssp131].rename(
+        columns={c: f"esq_{c}" for c in ["celula_01", "celula_02"] + valores_esq_ssp131})
+    parte_dir_ssp131 = direita_ssp131[["linha_tabela"] + valores_dir_ssp131].rename(columns={c: f"dir_{c}" for c in valores_dir_ssp131})
+    quadros_conferencia_ssp131[relatorio_ssp131] = parte_esq_ssp131.merge(
+        parte_dir_ssp131, on="linha_tabela", how="left", validate="one_to_one", indicator="presente_na_direita")
+    registrar_ssp131(relatorio_ssp131, "todas as linhas da esquerda têm par na direita", 9,
+                     int(quadros_conferencia_ssp131[relatorio_ssp131].presente_na_direita.eq("both").sum()))
+    print(f"\n=== {relatorio_ssp131}: colunas de valores — esquerda {valores_esq_ssp131}; direita {valores_dir_ssp131} ===")
+    mostrar_ssp131(quadros_conferencia_ssp131[relatorio_ssp131])
+
+# %% [markdown]
+# ## 13.1.6 — Os nove rótulos originais de cada relatório
+# Os rótulos são exibidos exatamente como publicados. A coluna
+# `caractere_antes_de_Dolosa` mostra o caractere literal e o código Unicode que
+# separa "grave ou gravíssima"/"leve" de "Dolosa": `0` (U+0030) ou `-` (U+002D).
+# Registro metodológico: a equivalência dessas quatro grafias foi aprovada para a
+# futura transformação (Etapa 13.2), como decisão do projeto, e NÃO é confirmação
+# oficial da SSP/SC. Aqui nada é substituído, mapeado ou padronizado.
+
+# %%
+linhas_categorias_ssp131 = []
+for relatorio_ssp131 in referencias_ssp131:
+    for _, linha_ssp131 in blocos_esquerda_ssp131[relatorio_ssp131].iterrows():
+        rotulo_ssp131 = linha_ssp131.celula_02
+        correspondencia_ssp131 = regex_ssp131.search(r"(\S)\s+Dolosa\s*$", rotulo_ssp131)
+        linhas_categorias_ssp131.append({
+            "relatorio": relatorio_ssp131, "pagina_pdf": linha_ssp131.pagina_pdf, "tabela_pdf": linha_ssp131.tabela_pdf,
+            "linha_tabela": linha_ssp131.linha_tabela, "rotulo_original": rotulo_ssp131,
+            "grafia_lesao_corporal": rotulo_ssp131 in todas_lesoes_ssp131,
+            "caractere_antes_de_Dolosa": correspondencia_ssp131.group(1) if correspondencia_ssp131 else "",
+            "unicode": f"U+{ord(correspondencia_ssp131.group(1)):04X}" if correspondencia_ssp131 else ""})
+categorias_originais_ssp131 = pd_ssp131.DataFrame(linhas_categorias_ssp131)
+for relatorio_ssp131 in referencias_ssp131:
+    rotulos_ssp131 = categorias_originais_ssp131.loc[categorias_originais_ssp131.relatorio.eq(relatorio_ssp131), "rotulo_original"].tolist()
+    esperados_ssp131 = set(categorias_comuns_ssp131) | set(lesoes_ssp131[grafia_esperada_ssp131[relatorio_ssp131]])
+    registrar_ssp131(relatorio_ssp131, "nove rótulos distintos", 9, len(set(rotulos_ssp131)))
+    registrar_ssp131(relatorio_ssp131, "conjunto de rótulos esperado", sorted(esperados_ssp131), sorted(rotulos_ssp131))
+    print(f"\n=== {relatorio_ssp131} — rótulos originais ===")
+    mostrar_ssp131(categorias_originais_ssp131.loc[categorias_originais_ssp131.relatorio.eq(relatorio_ssp131)].reset_index(drop=True))
+print("\nQuatro grafias de lesão corporal por relatório (literais):")
+mostrar_ssp131(pd_ssp131.DataFrame([
+    {"grafia_original": grafia_ssp131, **{r: bool(categorias_originais_ssp131.loc[categorias_originais_ssp131.relatorio.eq(r)].rotulo_original.eq(grafia_ssp131).any()) for r in referencias_ssp131}}
+    for grafia_ssp131 in todas_lesoes_ssp131]))
+
+# %% [markdown]
+# ## 13.1.7 — Cabeçalhos dos PDFs e cobertura mensal
+# O texto das páginas é lido dos PDFs originais. Os cabeçalhos com ano e meses
+# são mostrados literalmente (`jan`, `fev`, …): não há conversão para números,
+# competência ou data. A tabela mostra também as primeiras linhas de texto das
+# páginas dos blocos, para evidenciar onde o cabeçalho de meses está impresso.
+
+# %%
+padrao_mes_ssp131 = r"(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)"
+padrao_linha_meses_ssp131 = rf"{padrao_mes_ssp131}(?:\s+{padrao_mes_ssp131})*"
+textos_pdf_ssp131 = {}
+tabelas_pdf_ssp131 = {}
+linhas_cabecalho_ssp131 = []
+for relatorio_ssp131, ref_ssp131 in referencias_ssp131.items():
+    meio_ssp131 = paginas_pdf_ssp131[relatorio_ssp131] // 2
+    pagina_esq_ssp131 = int(blocos_esquerda_ssp131[relatorio_ssp131].pagina_pdf.iloc[0])
+    pagina_dir_ssp131 = int(blocos_direita_ssp131[relatorio_ssp131].pagina_pdf.iloc[0])
+    papeis_ssp131 = (
+        (1, "cabeçalho da metade esquerda (1ª página)"), (meio_ssp131 + 1, "cabeçalho da metade direita (1ª página)"),
+        (pagina_esq_ssp131, "página do bloco — esquerda"), (pagina_dir_ssp131, "página do bloco — direita"))
+    with pdf_ssp131.open(pasta_pdf_ssp131 / (ref_ssp131["arquivo"] + ".pdf")) as documento_ssp131:
+        for pagina_ssp131, papel_ssp131 in papeis_ssp131:
+            texto_ssp131 = documento_ssp131.pages[pagina_ssp131 - 1].extract_text() or ""
+            textos_pdf_ssp131[(relatorio_ssp131, pagina_ssp131)] = texto_ssp131
+            primeiras_ssp131 = texto_ssp131.splitlines()[:4]
+            meses_pagina_ssp131 = tuple(m for l in primeiras_ssp131 if regex_ssp131.fullmatch(padrao_linha_meses_ssp131, l.strip()) for m in l.split())
+            ano_pagina_ssp131 = next((l.strip() for l in primeiras_ssp131 if regex_ssp131.fullmatch(r"20\d{2}", l.strip())), "")
+            linhas_cabecalho_ssp131.append({
+                "relatorio": relatorio_ssp131, "pagina_pdf": pagina_ssp131, "papel": papel_ssp131,
+                "ano_impresso": ano_pagina_ssp131, "meses_impressos": meses_pagina_ssp131,
+                "quatro_primeiras_linhas_literais": " | ".join(primeiras_ssp131)})
+        for pagina_ssp131, tabela_pdf_ssp131 in ((pagina_esq_ssp131, blocos_esquerda_ssp131[relatorio_ssp131].tabela_pdf.iloc[0]),
+                                                  (pagina_dir_ssp131, blocos_direita_ssp131[relatorio_ssp131].tabela_pdf.iloc[0])):
+            tabelas_pdf_ssp131[(relatorio_ssp131, pagina_ssp131)] = documento_ssp131.pages[pagina_ssp131 - 1].find_tables()[int(tabela_pdf_ssp131) - 1].extract()
+cabecalhos_pdf_ssp131 = pd_ssp131.DataFrame(linhas_cabecalho_ssp131)
+mostrar_ssp131(cabecalhos_pdf_ssp131)
+
+linhas_cobertura_ssp131 = []
+for relatorio_ssp131, ref_ssp131 in referencias_ssp131.items():
+    parte_ssp131 = cabecalhos_pdf_ssp131.loc[cabecalhos_pdf_ssp131.relatorio.eq(relatorio_ssp131)].set_index("papel")
+    meses_esq_ssp131 = parte_ssp131.loc["cabeçalho da metade esquerda (1ª página)", "meses_impressos"]
+    meses_dir_ssp131 = parte_ssp131.loc["cabeçalho da metade direita (1ª página)", "meses_impressos"]
+    registrar_ssp131(relatorio_ssp131, "meses do cabeçalho esquerdo", ref_ssp131["meses_esquerda"], meses_esq_ssp131)
+    registrar_ssp131(relatorio_ssp131, "meses do cabeçalho direito", ref_ssp131["meses_direita"], meses_dir_ssp131)
+    registrar_ssp131(relatorio_ssp131, "ano impresso nos cabeçalhos", (ref_ssp131["ano"], ref_ssp131["ano"]),
+                     (parte_ssp131.loc["cabeçalho da metade esquerda (1ª página)", "ano_impresso"], parte_ssp131.loc["cabeçalho da metade direita (1ª página)", "ano_impresso"]))
+    registrar_ssp131(relatorio_ssp131, "colunas de valor na esquerda = nº de meses", len(ref_ssp131["meses_esquerda"]), len(colunas_valor_ssp131[relatorio_ssp131][0]))
+    registrar_ssp131(relatorio_ssp131, "colunas de valor na direita = nº de meses", len(ref_ssp131["meses_direita"]), len(colunas_valor_ssp131[relatorio_ssp131][1]))
+    # Observação, não correção: o cabeçalho de meses não é reimpresso nas páginas do bloco.
+    registrar_ssp131(relatorio_ssp131, "meses impressos nas páginas dos blocos (esperado: nenhum)", ((), ()),
+                     (parte_ssp131.loc["página do bloco — esquerda", "meses_impressos"], parte_ssp131.loc["página do bloco — direita", "meses_impressos"]))
+    linhas_cobertura_ssp131.append({
+        "relatorio": relatorio_ssp131, "meses_esquerda_cabecalho": meses_esq_ssp131,
+        "colunas_csv_esquerda": colunas_valor_ssp131[relatorio_ssp131][0],
+        "meses_direita_cabecalho": meses_dir_ssp131, "colunas_csv_direita": colunas_valor_ssp131[relatorio_ssp131][1],
+        "cobertura_publicada": meses_esq_ssp131 + meses_dir_ssp131})
+cobertura_mensal_ssp131 = pd_ssp131.DataFrame(linhas_cobertura_ssp131)
+print("\nCobertura mensal pelos cabeçalhos (rótulos literais; sem conversão):")
+mostrar_ssp131(cobertura_mensal_ssp131)
+meses_ano_ssp131 = ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+registrar_ssp131("2023 (dois relatórios)", "meses jan–jun + jul–dez sem repetição", meses_ano_ssp131,
+                 cobertura_mensal_ssp131.loc[cobertura_mensal_ssp131.relatorio.eq("1º semestre de 2023"), "cobertura_publicada"].iloc[0]
+                 + cobertura_mensal_ssp131.loc[cobertura_mensal_ssp131.relatorio.eq("2º semestre de 2023"), "cobertura_publicada"].iloc[0])
+registrar_ssp131("2024", "meses jan–dez", meses_ano_ssp131,
+                 cobertura_mensal_ssp131.loc[cobertura_mensal_ssp131.relatorio.eq("2024"), "cobertura_publicada"].iloc[0])
+
+# %% [markdown]
+# ## 13.1.8 — Conferência dos textos e valores do CSV com a tabela do PDF
+# Compara, linha a linha e célula a célula, o texto do CSV com o texto extraído
+# da própria tabela da página do PDF. Células do CSV além da largura da tabela do
+# PDF devem estar vazias (preenchimento do extrator). Só leitura: nada é corrigido.
+
+# %%
+linhas_pdf_csv_ssp131 = []
+for relatorio_ssp131 in referencias_ssp131:
+    for lado_ssp131, blocos_ssp131 in (("esquerda", blocos_esquerda_ssp131), ("direita", blocos_direita_ssp131)):
+        colunas_celula_ssp131 = [c for c in blocos_ssp131[relatorio_ssp131].columns if c.startswith("celula_")]
+        for _, linha_ssp131 in blocos_ssp131[relatorio_ssp131].iterrows():
+            tabela_pdf_ssp131 = tabelas_pdf_ssp131[(relatorio_ssp131, int(linha_ssp131.pagina_pdf))]
+            linha_pdf_ssp131 = [c if c is not None else "" for c in tabela_pdf_ssp131[int(linha_ssp131.linha_tabela) - 1]]
+            celulas_csv_ssp131 = [linha_ssp131[c] for c in colunas_celula_ssp131]
+            largura_ssp131 = len(linha_pdf_ssp131)
+            linhas_pdf_csv_ssp131.append({
+                "relatorio": relatorio_ssp131, "lado": lado_ssp131, "pagina_pdf": linha_ssp131.pagina_pdf,
+                "linha_tabela": linha_ssp131.linha_tabela, "celulas_pdf": tuple(linha_pdf_ssp131),
+                "celulas_csv_na_largura_do_pdf": tuple(celulas_csv_ssp131[:largura_ssp131]),
+                "csv_alem_do_pdf_vazio": all(c == "" for c in celulas_csv_ssp131[largura_ssp131:]),
+                "pdf_csv_conferem": celulas_csv_ssp131[:largura_ssp131] == linha_pdf_ssp131 and all(c == "" for c in celulas_csv_ssp131[largura_ssp131:])})
+conferencia_pdf_csv_ssp131 = pd_ssp131.DataFrame(linhas_pdf_csv_ssp131)
+for relatorio_ssp131 in referencias_ssp131:
+    parte_ssp131 = conferencia_pdf_csv_ssp131.loc[conferencia_pdf_csv_ssp131.relatorio.eq(relatorio_ssp131)]
+    registrar_ssp131(relatorio_ssp131, "18 linhas do bloco conferem com o PDF", 18, int(parte_ssp131.pdf_csv_conferem.sum()))
+mostrar_ssp131(conferencia_pdf_csv_ssp131)
+
+# %% [markdown]
+# ## 13.1.9 — Preservação e síntese das verificações
+# Os hashes dos PDFs e CSVs são recalculados e comparados com os de antes da
+# leitura. As verificações que não coincidem com o esperado aparecem como
+# divergências, com a evidência, e nenhum dado é alterado.
+
+# %%
+for caminho_ssp131, hash_antes_ssp131 in hashes_antes_ssp131.items():
+    registrar_ssp131(caminho_ssp131.name, "sha256 antes = depois", hash_antes_ssp131, sha256_ssp131(caminho_ssp131))
+resumo_verificacoes_ssp131 = pd_ssp131.DataFrame(list(verificacoes_ssp131.values()))
+print("Verificações da Etapa 13.1 (somente leitura e estrutura):")
+mostrar_ssp131(resumo_verificacoes_ssp131)
+divergencias_ssp131 = resumo_verificacoes_ssp131.loc[~resumo_verificacoes_ssp131.ok]
+if divergencias_ssp131.empty:
+    print(f"Etapa 13.1: {len(resumo_verificacoes_ssp131)} verificações conferidas, nenhuma divergência.")
+else:
+    print(f"Etapa 13.1: {len(divergencias_ssp131)} divergência(s) em {len(resumo_verificacoes_ssp131)} verificações; evidência abaixo, sem alteração dos dados.")
+    mostrar_ssp131(divergencias_ssp131)
+print("Nenhuma transformação analítica: sem conversão de valores/meses, mapeamento de categorias, base 216 × 5 ou exportação.")
+
+# %% [markdown]
+# # ETAPA 13.2 — Construção da base analítica de violência doméstica de Joinville (SSP/SC)
+# Execute depois das células 13.1.1 a 13.1.7 da Etapa 13.1 (não é preciso executar
+# as Etapas 1–12 nem o Sinesp). A base é construída somente em memória, a partir
+# dos blocos brutos já inspecionados; os PDFs e CSVs não são alterados e nada é
+# exportado. Se qualquer conferência falhar, a execução é interrompida com a
+# evidência e as variáveis finais não são criadas.
+#
+# Convenções metodológicas aprovadas (decisões do projeto, não confirmações oficiais da SSP/SC):
+# 1. Interpretação estrutural dos meses: o cabeçalho de meses da primeira página de
+#    cada metade da tabela é aplicado às páginas seguintes da mesma tabela contínua.
+#    Ano e mês vêm dos cabeçalhos dos PDFs, nunca do nome do arquivo. A categoria é
+#    associada aos valores da página direita pela mesma linha da tabela.
+# 2. Equivalência das grafias "0 Dolosa" e "- Dolosa" das duas lesões corporais, por
+#    mapeamento explícito. Nenhuma categoria é agregada a outra.
+# "Fato Comunicado" é a unidade publicada; não é equiparada a vítimas, pessoas únicas
+# ou ocorrências únicas.
+
+# %% [markdown]
+# ## 13.2.1 — Parâmetros explícitos: meses, categorias e mapeamento
+
+# %%
+necessarios_ssp132 = (
+    "pd_ssp131", "mostrar_ssp131", "sha256_ssp131", "referencias_ssp131", "brutos_dom_ssp131",
+    "blocos_esquerda_ssp131", "blocos_direita_ssp131", "colunas_valor_ssp131", "cabecalhos_pdf_ssp131",
+    "paginas_pdf_ssp131", "hashes_antes_ssp131", "pasta_pdf_ssp131", "pasta_csv_ssp131")
+ausentes_ssp132 = [nome for nome in necessarios_ssp132 if nome not in globals()]
+if ausentes_ssp132:
+    raise NameError(f"Etapa 13.2: execute antes as células 13.1.1 a 13.1.7 da Etapa 13.1. Ausentes: {ausentes_ssp132}")
+
+numero_mes_ssp132 = {"jan": 1, "fev": 2, "mar": 3, "abr": 4, "mai": 5, "jun": 6,
+                     "jul": 7, "ago": 8, "set": 9, "out": 10, "nov": 11, "dez": 12}
+categorias_analiticas_ssp132 = (
+    "Ameaça", "Calúnia", "Difamação", "Estupro", "Injúria", "Injúria real",
+    "Lesão corporal grave ou gravíssima dolosa", "Lesão corporal leve dolosa", "Vias de fato")
+# Mapeamento explícito rótulo original -> categoria analítica (sem substituição genérica de caracteres).
+mapeamento_categorias_ssp132 = {
+    "Ameaça": "Ameaça",
+    "Calúnia": "Calúnia",
+    "Difamação": "Difamação",
+    "Estupro": "Estupro",
+    "Injúria": "Injúria",
+    "Injúria real": "Injúria real",
+    "Lesão corporal grave ou gravíssima 0 Dolosa": "Lesão corporal grave ou gravíssima dolosa",
+    "Lesão corporal grave ou gravíssima - Dolosa": "Lesão corporal grave ou gravíssima dolosa",
+    "Lesão corporal leve 0 Dolosa": "Lesão corporal leve dolosa",
+    "Lesão corporal leve - Dolosa": "Lesão corporal leve dolosa",
+    "Vias de fato": "Vias de fato",
+}
+papel_esquerda_ssp132 = "cabeçalho da metade esquerda (1ª página)"
+papel_direita_ssp132 = "cabeçalho da metade direita (1ª página)"
+unidade_ssp132 = "Fato Comunicado"
+regra_ssp132 = (
+    "Interpretação estrutural validada no projeto: o cabeçalho de meses da 1ª página de cada metade da tabela "
+    "vale para as páginas seguintes da mesma tabela contínua; ano e mês vêm do cabeçalho do PDF; a categoria é "
+    "associada pela mesma linha da tabela; rótulos de lesão corporal mapeados por decisão metodológica, "
+    "sem confirmação oficial da SSP/SC")
+
+# %% [markdown]
+# ## 13.2.2 — Construção em variáveis temporárias
+# Para cada relatório: confere ano, meses, quantidade e ordem das colunas contra os
+# cabeçalhos esperados; percorre as nove linhas do bloco; lê cada célula mensal
+# (esquerda e direita) e só a converte para inteiro depois de verificar que o texto
+# é um inteiro não negativo. Vazio ou não numérico em coluna mensal válida interrompe
+# a construção, sem preenchimento. As colunas vazias do extrator, fora dos meses do
+# cabeçalho, não são lidas e não geram observações.
+
+# %%
+registros_ssp132 = []
+problemas_ssp132 = []
+for relatorio_ssp132, ref_ssp132 in referencias_ssp131.items():
+    cabecalho_ssp132 = cabecalhos_pdf_ssp131.loc[cabecalhos_pdf_ssp131.relatorio.eq(relatorio_ssp132)].set_index("papel")
+    ano_texto_ssp132 = cabecalho_ssp132.loc[papel_esquerda_ssp132, "ano_impresso"]
+    meses_esq_ssp132 = tuple(cabecalho_ssp132.loc[papel_esquerda_ssp132, "meses_impressos"])
+    meses_dir_ssp132 = tuple(cabecalho_ssp132.loc[papel_direita_ssp132, "meses_impressos"])
+    colunas_esq_ssp132, colunas_dir_ssp132 = colunas_valor_ssp131[relatorio_ssp132]
+    if ano_texto_ssp132 != ref_ssp132["ano"] or cabecalho_ssp132.loc[papel_direita_ssp132, "ano_impresso"] != ano_texto_ssp132:
+        raise ValueError(f"Etapa 13.2: ano dos cabeçalhos diferente do esperado em {relatorio_ssp132}.")
+    if meses_esq_ssp132 != ref_ssp132["meses_esquerda"] or meses_dir_ssp132 != ref_ssp132["meses_direita"]:
+        raise ValueError(f"Etapa 13.2: meses dos cabeçalhos diferentes do esperado em {relatorio_ssp132}.")
+    if tuple(colunas_esq_ssp132) != tuple(f"celula_{i:02d}" for i in range(3, 3 + len(meses_esq_ssp132))) \
+            or tuple(colunas_dir_ssp132) != tuple(f"celula_{i:02d}" for i in range(1, 1 + len(meses_dir_ssp132))):
+        raise ValueError(f"Etapa 13.2: quantidade ou ordem das colunas não corresponde aos cabeçalhos em {relatorio_ssp132}.")
+    numeros_ssp132 = [numero_mes_ssp132[m] for m in meses_esq_ssp132 + meses_dir_ssp132]
+    if numeros_ssp132 != list(range(numeros_ssp132[0], numeros_ssp132[0] + len(numeros_ssp132))):
+        raise ValueError(f"Etapa 13.2: meses fora da sequência do calendário em {relatorio_ssp132}.")
+    pagina_cab_esq_ssp132 = str(cabecalho_ssp132.loc[papel_esquerda_ssp132, "pagina_pdf"])
+    pagina_cab_dir_ssp132 = str(cabecalho_ssp132.loc[papel_direita_ssp132, "pagina_pdf"])
+    esquerda_ssp132 = blocos_esquerda_ssp131[relatorio_ssp132]
+    direita_ssp132 = blocos_direita_ssp131[relatorio_ssp132].set_index("linha_tabela")
+    caminho_pdf_ssp132 = pasta_pdf_ssp131 / (ref_ssp132["arquivo"] + ".pdf")
+    caminho_csv_ssp132 = pasta_csv_ssp131 / (ref_ssp132["arquivo"] + ".csv")
+    for _, linha_esq_ssp132 in esquerda_ssp132.iterrows():
+        linha_dir_ssp132 = direita_ssp132.loc[linha_esq_ssp132.linha_tabela]
+        rotulo_ssp132 = linha_esq_ssp132.celula_02
+        if rotulo_ssp132 not in mapeamento_categorias_ssp132:
+            raise ValueError(f"Etapa 13.2: rótulo sem mapeamento aprovado em {relatorio_ssp132}: {rotulo_ssp132!r}")
+        for lado_ssp132, linha_ssp132, colunas_ssp132, meses_ssp132, pagina_cab_ssp132, pagina_par_ssp132 in (
+            ("esquerda", linha_esq_ssp132, colunas_esq_ssp132, meses_esq_ssp132, pagina_cab_esq_ssp132, str(linha_dir_ssp132.pagina_pdf)),
+            ("direita", linha_dir_ssp132, colunas_dir_ssp132, meses_dir_ssp132, pagina_cab_dir_ssp132, str(linha_esq_ssp132.pagina_pdf)),
+        ):
+            for coluna_ssp132, mes_rotulo_ssp132 in zip(colunas_ssp132, meses_ssp132):
+                texto_ssp132 = linha_ssp132[coluna_ssp132]
+                if not (isinstance(texto_ssp132, str) and texto_ssp132.isascii() and texto_ssp132.isdigit()):
+                    problemas_ssp132.append({
+                        "relatorio": relatorio_ssp132, "arquivo_pdf": ref_ssp132["arquivo"] + ".pdf", "pagina_pdf": linha_ssp132.pagina_pdf if lado_ssp132 == "esquerda" else linha_ssp132["pagina_pdf"],
+                        "linha_tabela": linha_esq_ssp132.linha_tabela, "coluna_csv": coluna_ssp132,
+                        "rotulo_original": rotulo_ssp132, "mes_cabecalho": mes_rotulo_ssp132, "texto_encontrado": texto_ssp132})
+                    continue
+                registros_ssp132.append({
+                    "municipio": "JOINVILLE", "ano": int(ano_texto_ssp132), "mes": numero_mes_ssp132[mes_rotulo_ssp132],
+                    "categoria": mapeamento_categorias_ssp132[rotulo_ssp132], "fatos_comunicados": int(texto_ssp132),
+                    "relatorio_origem": relatorio_ssp132,
+                    "arquivo_pdf": caminho_pdf_ssp132.name, "sha256_pdf": hashes_antes_ssp131[caminho_pdf_ssp132],
+                    "arquivo_csv": caminho_csv_ssp132.name, "sha256_csv": hashes_antes_ssp131[caminho_csv_ssp132],
+                    "pagina_pdf": str(linha_ssp132["pagina_pdf"]), "tabela_pdf": str(linha_ssp132["tabela_pdf"]),
+                    "linha_tabela": str(linha_esq_ssp132.linha_tabela), "coluna_csv": coluna_ssp132,
+                    "lado_da_tabela": lado_ssp132, "pagina_horizontal_pareada": pagina_par_ssp132,
+                    "rotulo_original_categoria": rotulo_ssp132,
+                    "municipio_celula_original": linha_esq_ssp132.celula_01 if lado_ssp132 == "esquerda" else None,
+                    "cabecalho_ano_original": ano_texto_ssp132, "cabecalho_mes_original": mes_rotulo_ssp132,
+                    "pagina_cabecalho_meses": pagina_cab_ssp132,
+                    "valor_textual_original": texto_ssp132, "unidade": unidade_ssp132, "regra_interpretacao": regra_ssp132})
+if problemas_ssp132:
+    print("Etapa 13.2: valor ausente ou não numérico em coluna mensal válida; construção interrompida, sem preenchimento.")
+    mostrar_ssp131(pd_ssp131.DataFrame(problemas_ssp132))
+    raise ValueError("Etapa 13.2: valores ausentes ou não numéricos em colunas mensais válidas; revisar a evidência acima.")
+
+tabela_temporaria_ssp132 = pd_ssp131.DataFrame(registros_ssp132)
+ordem_categoria_ssp132 = {nome: posicao for posicao, nome in enumerate(categorias_analiticas_ssp132)}
+tabela_temporaria_ssp132 = tabela_temporaria_ssp132.assign(_ordem=tabela_temporaria_ssp132.categoria.map(ordem_categoria_ssp132)).sort_values(
+    ["ano", "mes", "_ordem"], kind="stable").drop(columns="_ordem").reset_index(drop=True)
+colunas_base_ssp132 = ["municipio", "ano", "mes", "categoria", "fatos_comunicados"]
+tipos_base_ssp132 = {"municipio": "string", "ano": "Int64", "mes": "Int64", "categoria": "string", "fatos_comunicados": "Int64"}
+base_temporaria_ssp132 = tabela_temporaria_ssp132[colunas_base_ssp132].astype(tipos_base_ssp132)
+colunas_rastreabilidade_ssp132 = [
+    "municipio", "ano", "mes", "categoria", "relatorio_origem", "arquivo_pdf", "sha256_pdf", "arquivo_csv", "sha256_csv",
+    "pagina_pdf", "tabela_pdf", "linha_tabela", "coluna_csv", "lado_da_tabela", "pagina_horizontal_pareada",
+    "rotulo_original_categoria", "municipio_celula_original", "cabecalho_ano_original", "cabecalho_mes_original",
+    "pagina_cabecalho_meses", "valor_textual_original", "unidade", "regra_interpretacao"]
+tipos_rastreabilidade_ssp132 = {c: "string" for c in colunas_rastreabilidade_ssp132}
+tipos_rastreabilidade_ssp132.update({"ano": "Int64", "mes": "Int64"})
+rastreabilidade_temporaria_ssp132 = tabela_temporaria_ssp132[colunas_rastreabilidade_ssp132].astype(tipos_rastreabilidade_ssp132)
+print(f"Construção temporária concluída: base {base_temporaria_ssp132.shape}, rastreabilidade {rastreabilidade_temporaria_ssp132.shape}. Verificações a seguir.")
+
+# %% [markdown]
+# ## 13.2.3 — Verificações mínimas de segurança da construção
+# Se qualquer uma falhar, a execução é interrompida e as variáveis finais não são
+# criadas. A auditoria integral e a aprovação final ficam para a Etapa 13.3.
+
+# %%
+chaves_ssp132 = ["municipio", "ano", "mes", "categoria"]
+conjunto_categorias_ssp132 = set(categorias_analiticas_ssp132)
+competencias_ssp132 = base_temporaria_ssp132.groupby(["ano", "mes"], sort=True)
+contagem_origem_ssp132 = rastreabilidade_temporaria_ssp132.relatorio_origem.value_counts().to_dict()
+ligacao_ssp132 = base_temporaria_ssp132.merge(
+    rastreabilidade_temporaria_ssp132[chaves_ssp132 + ["valor_textual_original"]],
+    on=chaves_ssp132, how="outer", validate="one_to_one", indicator=True)
+indices_csv_ssp132 = {
+    relatorio: bruto.set_index(["pagina_pdf", "tabela_pdf", "linha_tabela"])
+    for relatorio, bruto in brutos_dom_ssp131.items()}
+if not all(indice.index.is_unique for indice in indices_csv_ssp132.values()):
+    raise ValueError("Etapa 13.2: chave página/tabela/linha não é única nos CSVs brutos.")
+textos_csv_ssp132 = [
+    indices_csv_ssp132[linha.relatorio_origem].at[(linha.pagina_pdf, linha.tabela_pdf, linha.linha_tabela), linha.coluna_csv]
+    for linha in rastreabilidade_temporaria_ssp132.itertuples()]
+verificacoes_construcao_ssp132 = [
+    ("base com 216 linhas × 5 colunas", (216, 5), base_temporaria_ssp132.shape),
+    ("rastreabilidade com 216 linhas", 216, len(rastreabilidade_temporaria_ssp132)),
+    ("colunas da base na ordem aprovada", colunas_base_ssp132, base_temporaria_ssp132.columns.tolist()),
+    ("tipos da base", ["string", "Int64", "Int64", "string", "Int64"], [str(t) for t in base_temporaria_ssp132.dtypes]),
+    ("nove categorias por competência (24 competências)", (24, True),
+     (competencias_ssp132.ngroups, bool(competencias_ssp132.categoria.apply(lambda s: set(s) == conjunto_categorias_ssp132 and len(s) == 9).all()))),
+    ("12 competências em 2023", list(range(1, 13)), sorted(base_temporaria_ssp132.loc[base_temporaria_ssp132.ano.eq(2023), "mes"].unique().tolist())),
+    ("12 competências em 2024", list(range(1, 13)), sorted(base_temporaria_ssp132.loc[base_temporaria_ssp132.ano.eq(2024), "mes"].unique().tolist())),
+    ("54 registros do 1º semestre de 2023", 54, contagem_origem_ssp132.get("1º semestre de 2023")),
+    ("54 registros do 2º semestre de 2023", 54, contagem_origem_ssp132.get("2º semestre de 2023")),
+    ("108 registros de 2024", 108, contagem_origem_ssp132.get("2024")),
+    ("chaves duplicadas na base", 0, int(base_temporaria_ssp132.duplicated(chaves_ssp132).sum())),
+    ("chaves duplicadas na rastreabilidade", 0, int(rastreabilidade_temporaria_ssp132.duplicated(chaves_ssp132).sum())),
+    ("ligação um para um pelas chaves (216 pares)", 216, int(ligacao_ssp132._merge.eq("both").sum())),
+    ("valor analítico = texto original convertido", True,
+     bool((ligacao_ssp132.fatos_comunicados == ligacao_ssp132.valor_textual_original.map(int)).all())),
+    ("texto original da rastreabilidade = célula do CSV bruto (consulta independente)", True,
+     textos_csv_ssp132 == rastreabilidade_temporaria_ssp132.valor_textual_original.tolist()),
+    ("zeros publicados preservados como zero", int(rastreabilidade_temporaria_ssp132.valor_textual_original.map(int).eq(0).sum()),
+     int(base_temporaria_ssp132.fatos_comunicados.eq(0).sum())),
+    ("sem ausências nas cinco colunas", 0, int(base_temporaria_ssp132.isna().sum().sum())),
+    ("município único JOINVILLE", ["JOINVILLE"], base_temporaria_ssp132.municipio.unique().tolist()),
+    ("valores inteiros não negativos", True, bool((base_temporaria_ssp132.fatos_comunicados >= 0).all())),
+    ("24 observações por categoria analítica", {c: 24 for c in categorias_analiticas_ssp132},
+     base_temporaria_ssp132.categoria.value_counts().reindex(list(categorias_analiticas_ssp132)).to_dict()),
+    ("seis arquivos de origem com SHA-256 inalterado", True,
+     all(sha256_ssp131(caminho) == hash_antes for caminho, hash_antes in hashes_antes_ssp131.items()) and len(hashes_antes_ssp131) == 6),
+]
+resumo_verificacoes_construcao_ssp132 = pd_ssp131.DataFrame(
+    [{"verificacao": nome, "esperado": esperado, "encontrado": encontrado, "ok": esperado == encontrado}
+     for nome, esperado, encontrado in verificacoes_construcao_ssp132])
+if not resumo_verificacoes_construcao_ssp132.ok.all():
+    print("Etapa 13.2: verificação falhou; as variáveis finais NÃO foram criadas. Evidência:")
+    mostrar_ssp131(resumo_verificacoes_construcao_ssp132.loc[~resumo_verificacoes_construcao_ssp132.ok])
+    raise ValueError("Etapa 13.2: verificações mínimas não conferiram; interromper e revisar a evidência.")
+
+df_violencia_domestica_joinville_ssp132 = base_temporaria_ssp132.copy()
+rastreabilidade_violencia_domestica_ssp132 = rastreabilidade_temporaria_ssp132.copy()
+print(f"Etapa 13.2: {len(resumo_verificacoes_construcao_ssp132)} verificações conferidas; base e rastreabilidade criadas somente em memória.")
+
+# %% [markdown]
+# ## 13.2.4 — Exibição da base analítica
+
+# %%
+print("Primeiras 15 linhas da base:")
+mostrar_ssp131(df_violencia_domestica_joinville_ssp132.head(15))
+print("Últimas 15 linhas da base:")
+mostrar_ssp131(df_violencia_domestica_joinville_ssp132.tail(15))
+print("Tipos de dados da base:")
+mostrar_ssp131(df_violencia_domestica_joinville_ssp132.dtypes.astype(str).rename("dtype").to_frame())
+print("Dimensões:",
+      f"base {df_violencia_domestica_joinville_ssp132.shape};",
+      f"rastreabilidade {rastreabilidade_violencia_domestica_ssp132.shape}")
+print("Quantidade de categorias analíticas:", df_violencia_domestica_joinville_ssp132.categoria.nunique())
+print("Cobertura de anos e meses:")
+mostrar_ssp131(df_violencia_domestica_joinville_ssp132.groupby("ano").agg(
+    competencias=("mes", "nunique"), mes_inicial=("mes", "min"), mes_final=("mes", "max"), linhas=("mes", "size")))
+
+# %% [markdown]
+# ## 13.2.5 — Resultado do mapeamento, rastreabilidade e verificações
+# O mapeamento é uma decisão metodológica do projeto, não equivalência confirmada
+# pela SSP/SC. A amostra da rastreabilidade mostra a primeira e a última observação
+# de cada relatório e as lesões corporais leves nos extremos de cada relatório.
+
+# %%
+print("Mapeamento aplicado (rótulo original -> categoria analítica):")
+mapeamento_aplicado_ssp132 = rastreabilidade_violencia_domestica_ssp132.groupby(
+    ["rotulo_original_categoria", "categoria"], sort=False).agg(
+    relatorios=("relatorio_origem", lambda s: ", ".join(sorted(set(s)))), observacoes=("mes", "size")).reset_index()
+mostrar_ssp131(mapeamento_aplicado_ssp132)
+leve_ssp132 = rastreabilidade_violencia_domestica_ssp132.categoria.eq("Lesão corporal leve dolosa")
+posicoes_ssp132 = sorted(set(
+    rastreabilidade_violencia_domestica_ssp132.groupby("relatorio_origem").head(1).index.tolist()
+    + rastreabilidade_violencia_domestica_ssp132.groupby("relatorio_origem").tail(1).index.tolist()
+    + rastreabilidade_violencia_domestica_ssp132.loc[leve_ssp132].groupby("relatorio_origem").head(1).index.tolist()
+    + rastreabilidade_violencia_domestica_ssp132.loc[leve_ssp132].groupby("relatorio_origem").tail(1).index.tolist()))
+print("Amostra da tabela de rastreabilidade:")
+mostrar_ssp131(rastreabilidade_violencia_domestica_ssp132.loc[posicoes_ssp132])
+print("Resumo das verificações mínimas de construção:")
+mostrar_ssp131(resumo_verificacoes_construcao_ssp132)
+print("Nenhuma exportação, imputação, deduplicação, soma de categorias, total mensal/anual ou gráfico foi realizado.")
+
+# %% [markdown]
+# # ETAPA 13.3 — Validação integral da base analítica de violência doméstica (SSP/SC)
+# Execute depois da Etapa 13.2 (que, por sua vez, exige as células 13.1.1 a 13.1.7).
+# Não é preciso executar as Etapas 1–12 nem o Sinesp. Esta etapa só lê e audita: não
+# altera a base aprovada, os CSVs, os PDFs nem exporta arquivos, e não gera gráficos
+# ou estatísticas comparativas.
+#
+# Como a conferência é independente da construção:
+# 1. Os três CSVs são relidos com o módulo `csv` (a Etapa 13.2 usou o Pandas) e cada
+#    observação é localizada pelas coordenadas da rastreabilidade (arquivo, página,
+#    tabela, linha, coluna). A referência esperada é a célula do CSV, não uma cópia
+#    do DataFrame analítico.
+# 2. Os PDFs são relidos com o `pypdf`, por linhas de texto (as Etapas 12 e 13.1
+#    usaram o `pdfplumber` e suas tabelas). Ano e meses vêm dos cabeçalhos; o mês de
+#    cada célula é deduzido da posição da coluna, e não do que a base registra.
+# 3. As tabelas do `pdfplumber` da Etapa 13.1 entram como controle adicional.
+# Limitação registrada: no `pypdf` a página de continuação tem uma linha de texto por
+# linha da tabela, e a página esquerda uma linha por categoria; a correspondência
+# com `linha_tabela` é feita pela ordem das linhas (confirmada pelos rótulos), não
+# por coordenadas. Isso é conferência direta no PDF, mas não equivale a ler cada
+# célula por posição geométrica.
+# O mapeamento de "0 Dolosa" e "- Dolosa" é decisão metodológica aprovada pelo
+# usuário, não equivalência oficialmente confirmada pela SSP/SC. "Fato Comunicado"
+# não é equiparado a vítimas, pessoas únicas ou boletins de ocorrência únicos.
+
+# %% [markdown]
+# ## 13.3.1 — Parâmetros próprios e releitura independente dos CSVs
+
+# %%
+from pathlib import Path as CaminhoSSP133
+import csv as csv_ssp133
+import hashlib as hash_ssp133
+import re as regex_ssp133
+
+import pandas as pd_ssp133
+from pypdf import PdfReader as LeitorSSP133
+from IPython.display import display as mostrar_ssp133
+
+necessarios_ssp133 = (
+    "df_violencia_domestica_joinville_ssp132", "rastreabilidade_violencia_domestica_ssp132")
+ausentes_ssp133 = [nome for nome in necessarios_ssp133 if nome not in globals()]
+if ausentes_ssp133:
+    raise NameError(f"Etapa 13.3: execute antes a Etapa 13.2. Ausentes: {ausentes_ssp133}")
+
+raiz_ssp133 = CaminhoSSP133(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP133.cwd()
+pasta_pdf_ssp133 = raiz_ssp133 / "dados/brutos/ssp_sc/pdfs"
+pasta_csv_ssp133 = raiz_ssp133 / "dados/brutos/ssp_sc/csv_extraidos"
+base_ssp133 = df_violencia_domestica_joinville_ssp132
+rastreio_ssp133 = rastreabilidade_violencia_domestica_ssp132
+
+# Constantes próprias desta etapa (não reutilizam as variáveis da 13.2).
+arquivos_ssp133 = {
+    "1º semestre de 2023": "2025_06_VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023",
+    "2º semestre de 2023": "2025_06_VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023",
+    "2024": "2025_06_VIOLENCIA-DOMESTICA-2024-SC",
+}
+mes_numero_ssp133 = {"jan": 1, "fev": 2, "mar": 3, "abr": 4, "mai": 5, "jun": 6,
+                     "jul": 7, "ago": 8, "set": 9, "out": 10, "nov": 11, "dez": 12}
+mapeamento_esperado_ssp133 = {
+    "Ameaça": "Ameaça", "Calúnia": "Calúnia", "Difamação": "Difamação", "Estupro": "Estupro",
+    "Injúria": "Injúria", "Injúria real": "Injúria real", "Vias de fato": "Vias de fato",
+    "Lesão corporal grave ou gravíssima 0 Dolosa": "Lesão corporal grave ou gravíssima dolosa",
+    "Lesão corporal grave ou gravíssima - Dolosa": "Lesão corporal grave ou gravíssima dolosa",
+    "Lesão corporal leve 0 Dolosa": "Lesão corporal leve dolosa",
+    "Lesão corporal leve - Dolosa": "Lesão corporal leve dolosa",
+}
+categorias_esperadas_ssp133 = sorted(set(mapeamento_esperado_ssp133.values()))
+chaves_ssp133 = ["municipio", "ano", "mes", "categoria"]
+
+verificacoes_ssp133 = {}
+
+
+def registrar_ssp133(bloco, verificacao, esperado, encontrado):
+    # Registro por chave: executar novamente uma célula substitui, não duplica.
+    verificacoes_ssp133[(bloco, verificacao)] = {
+        "bloco": bloco, "verificacao": verificacao, "esperado": esperado, "encontrado": encontrado,
+        "ok": esperado == encontrado}
+
+
+def sha256_ssp133(caminho):
+    with caminho.open("rb") as fluxo:
+        return hash_ssp133.file_digest(fluxo, "sha256").hexdigest()
+
+
+# Releitura dos CSVs com o módulo csv, em variáveis próprias. Cada linha recebe o
+# município de contexto: o último valor não vazio de celula_01 na mesma página e tabela.
+csv_linhas_ssp133 = {}
+csv_indice_ssp133 = {}
+csv_cabecalhos_ssp133 = {}
+for relatorio_ssp133, arquivo_ssp133 in arquivos_ssp133.items():
+    caminho_ssp133 = pasta_csv_ssp133 / (arquivo_ssp133 + ".csv")
+    with caminho_ssp133.open(encoding="utf-8-sig", newline="") as fluxo_ssp133:
+        leitor_ssp133 = csv_ssp133.reader(fluxo_ssp133, delimiter=";")
+        cabecalho_csv_ssp133 = next(leitor_ssp133)
+        linhas_brutas_ssp133 = list(leitor_ssp133)
+    registrar_ssp133("CSV", f"todas as linhas com {len(cabecalho_csv_ssp133)} campos ({relatorio_ssp133})",
+                     True, all(len(l) == len(cabecalho_csv_ssp133) for l in linhas_brutas_ssp133))
+    contexto_ssp133 = {}
+    linhas_ssp133 = []
+    for linha_bruta_ssp133 in linhas_brutas_ssp133:
+        linha_ssp133 = dict(zip(cabecalho_csv_ssp133, linha_bruta_ssp133))
+        chave_pagina_ssp133 = (linha_ssp133["pagina_pdf"], linha_ssp133["tabela_pdf"])
+        if linha_ssp133["celula_01"] != "":
+            contexto_ssp133[chave_pagina_ssp133] = linha_ssp133["celula_01"]
+        linha_ssp133["municipio_contexto"] = contexto_ssp133.get(chave_pagina_ssp133, "")
+        linhas_ssp133.append(linha_ssp133)
+    csv_linhas_ssp133[relatorio_ssp133] = linhas_ssp133
+    csv_cabecalhos_ssp133[relatorio_ssp133] = tuple(cabecalho_csv_ssp133)
+    csv_indice_ssp133[relatorio_ssp133] = {
+        (l["pagina_pdf"], l["tabela_pdf"], l["linha_tabela"]): l for l in linhas_ssp133}
+    registrar_ssp133("CSV", f"chave página/tabela/linha única ({relatorio_ssp133})",
+                     len(linhas_ssp133), len(csv_indice_ssp133[relatorio_ssp133]))
+
+# Blocos de Joinville descobertos de forma independente no CSV (contexto JOINVILLE e categoria preenchida).
+blocos_csv_ssp133 = pd_ssp133.DataFrame([
+    {"relatorio": rel, "arquivo_pdf": l["arquivo_pdf"], "pagina_pdf": l["pagina_pdf"], "tabela_pdf": l["tabela_pdf"],
+     "linha_tabela": l["linha_tabela"], "celula_01": l["celula_01"], "rotulo_original_csv": l["celula_02"]}
+    for rel, linhas in csv_linhas_ssp133.items() for l in linhas
+    if l["municipio_contexto"] == "JOINVILLE" and l["celula_02"] != ""])
+print("Blocos de Joinville localizados na releitura independente dos CSVs:")
+mostrar_ssp133(blocos_csv_ssp133.groupby("relatorio").agg(
+    pagina=("pagina_pdf", lambda s: ", ".join(sorted(set(s)))), tabela=("tabela_pdf", "first"),
+    linha_inicial=("linha_tabela", lambda s: min(map(int, s))), linha_final=("linha_tabela", lambda s: max(map(int, s))),
+    linhas=("linha_tabela", "size")).reindex(list(arquivos_ssp133)))
+registrar_ssp133("CSV", "27 linhas de categoria no contexto JOINVILLE (9 por relatório)", 27, len(blocos_csv_ssp133))
+
+# %% [markdown]
+# ## 13.3.2 — Releitura independente dos PDFs (pypdf)
+# Ano e meses vêm dos cabeçalhos impressos na primeira página de cada metade (página 1
+# e página total//2 + 1). Na página esquerda, cada linha de categoria termina com os
+# valores dos primeiros meses (linhas só com o nome de um município são ignoradas); na
+# página de continuação, cada linha traz os valores dos meses restantes.
+
+# %%
+padrao_mes_ssp133 = r"(?:jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)"
+leituras_pdf_ssp133 = {}
+linhas_cabecalho_pdf_ssp133 = []
+for relatorio_ssp133, arquivo_ssp133 in arquivos_ssp133.items():
+    leitor_pdf_ssp133 = LeitorSSP133(pasta_pdf_ssp133 / (arquivo_ssp133 + ".pdf"))
+    total_paginas_ssp133 = len(leitor_pdf_ssp133.pages)
+    pagina_cab_dir_ssp133 = total_paginas_ssp133 // 2 + 1
+    observacoes_relatorio_ssp133 = rastreio_ssp133.loc[rastreio_ssp133.relatorio_origem.eq(relatorio_ssp133)]
+    pagina_esq_ssp133 = int(observacoes_relatorio_ssp133.loc[observacoes_relatorio_ssp133.lado_da_tabela.eq("esquerda"), "pagina_pdf"].iloc[0])
+    pagina_dir_ssp133 = int(observacoes_relatorio_ssp133.loc[observacoes_relatorio_ssp133.lado_da_tabela.eq("direita"), "pagina_pdf"].iloc[0])
+    cabecalhos_ssp133 = {}
+    for papel_ssp133, pagina_ssp133 in (("esquerda", 1), ("direita", pagina_cab_dir_ssp133)):
+        texto_ssp133 = leitor_pdf_ssp133.pages[pagina_ssp133 - 1].extract_text() or ""
+        # No pypdf a ordem do texto difere da visual (o ano pode vir depois das linhas da tabela):
+        # procuram-se as linhas de cabeçalho em toda a página, exigindo uma única linha de meses e um único ano.
+        linhas_texto_pagina_ssp133 = texto_ssp133.splitlines()
+        primeiras_ssp133 = linhas_texto_pagina_ssp133[:4]
+        linhas_meses_ssp133 = [l for l in linhas_texto_pagina_ssp133 if regex_ssp133.fullmatch(rf"{padrao_mes_ssp133}(?:\s+{padrao_mes_ssp133})*", l.strip())]
+        meses_ssp133 = tuple(m for l in linhas_meses_ssp133 for m in l.split()) if len(linhas_meses_ssp133) == 1 else ()
+        anos_ssp133 = sorted({l.strip() for l in linhas_texto_pagina_ssp133 if regex_ssp133.fullmatch(r"20\d{2}", l.strip())})
+        cabecalhos_ssp133[papel_ssp133] = (pagina_ssp133, anos_ssp133, meses_ssp133, "Fato Comunicado" in texto_ssp133)
+        linhas_cabecalho_pdf_ssp133.append({
+            "relatorio": relatorio_ssp133, "metade": papel_ssp133, "pagina_pdf": pagina_ssp133,
+            "ano_impresso": anos_ssp133[0] if anos_ssp133 else "", "meses_impressos": meses_ssp133,
+            "contem_Fato_Comunicado": "Fato Comunicado" in texto_ssp133,
+            "quatro_primeiras_linhas": " | ".join(primeiras_ssp133)})
+    texto_esq_ssp133 = leitor_pdf_ssp133.pages[pagina_esq_ssp133 - 1].extract_text().splitlines()
+    itens_esq_ssp133 = []
+    for linha_texto_ssp133 in texto_esq_ssp133:
+        # Rótulo = menor prefixo tal que o restante da linha são só números (valores dos meses).
+        correspondencia_ssp133 = regex_ssp133.fullmatch(r"(.*?\S)\s+(\d+(?:\s+\d+)*)", linha_texto_ssp133.strip())
+        if correspondencia_ssp133:
+            itens_esq_ssp133.append((correspondencia_ssp133.group(1), correspondencia_ssp133.group(2).split()))
+    texto_dir_ssp133 = leitor_pdf_ssp133.pages[pagina_dir_ssp133 - 1].extract_text().splitlines()
+    linhas_dir_ssp133 = [l.split() for l in texto_dir_ssp133 if regex_ssp133.fullmatch(r"\d+(?:\s+\d+)*", l.strip())]
+    leituras_pdf_ssp133[relatorio_ssp133] = {
+        "paginas": total_paginas_ssp133, "pagina_esq": pagina_esq_ssp133, "pagina_dir": pagina_dir_ssp133,
+        "ano": cabecalhos_ssp133["esquerda"][1], "ano_dir": cabecalhos_ssp133["direita"][1],
+        "meses_esq": cabecalhos_ssp133["esquerda"][2], "meses_dir": cabecalhos_ssp133["direita"][2],
+        "itens_esq": itens_esq_ssp133, "linhas_dir": linhas_dir_ssp133}
+    registrar_ssp133("PDF", f"ano único e igual nas duas metades ({relatorio_ssp133})", True,
+                     len(cabecalhos_ssp133["esquerda"][1]) == 1 and cabecalhos_ssp133["esquerda"][1] == cabecalhos_ssp133["direita"][1])
+    registrar_ssp133("PDF", f"unidade Fato Comunicado no cabeçalho ({relatorio_ssp133})", True, cabecalhos_ssp133["esquerda"][3])
+    registrar_ssp133("PDF", f"linhas de categoria na esquerda = linhas de valores na direita ({relatorio_ssp133})",
+                     len(itens_esq_ssp133), len(linhas_dir_ssp133))
+cabecalhos_independentes_ssp133 = pd_ssp133.DataFrame(linhas_cabecalho_pdf_ssp133)
+print("Cabeçalhos das páginas iniciais das duas metades (leitura pypdf, rótulos literais):")
+mostrar_ssp133(cabecalhos_independentes_ssp133)
+
+# %% [markdown]
+# ## 13.3.3 — Conferência independente das 216 observações
+# Para cada observação da rastreabilidade: o valor é buscado na célula do CSV
+# (coordenadas arquivo/página/tabela/linha/coluna), na linha de texto do PDF e na
+# tabela do `pdfplumber` da Etapa 13.1 (controle). Ano e mês saem do cabeçalho do PDF
+# a partir da posição da coluna. A categoria esperada vem do mapeamento próprio da
+# Etapa 13.3. Cada linha da tabela abaixo é uma comparação individual.
+
+# %%
+valor_base_ssp133 = {
+    (l.municipio, int(l.ano), int(l.mes), l.categoria): l.fatos_comunicados
+    for l in base_ssp133.itertuples()}
+controle_tabelas_ssp133 = (
+    {(l.relatorio, str(l.pagina_pdf), str(l.linha_tabela)): l.celulas_pdf for l in conferencia_pdf_csv_ssp131.itertuples()}
+    if "conferencia_pdf_csv_ssp131" in globals() else {})
+controle_etapa12_ssp133 = (
+    {(str(l.arquivo_pdf), str(l.pagina_pdf), str(l.tabela_pdf), str(l.linha_tabela), str(l.coluna_csv)): l.valor_pdf
+     for l in auditoria_celulas_domesticas_ssp12.itertuples()}
+    if "auditoria_celulas_domesticas_ssp12" in globals() else {})
+linhas_conferencia_ssp133 = []
+for linha_ssp133 in rastreio_ssp133.itertuples():
+    relatorio_ssp133 = linha_ssp133.relatorio_origem
+    leitura_ssp133 = leituras_pdf_ssp133[relatorio_ssp133]
+    esquerda_ssp133 = linha_ssp133.lado_da_tabela == "esquerda"
+    pagina_esq_obs_ssp133 = linha_ssp133.pagina_pdf if esquerda_ssp133 else linha_ssp133.pagina_horizontal_pareada
+    chave_csv_ssp133 = (linha_ssp133.pagina_pdf, linha_ssp133.tabela_pdf, linha_ssp133.linha_tabela)
+    linha_csv_ssp133 = csv_indice_ssp133[relatorio_ssp133].get(chave_csv_ssp133)
+    linha_csv_esq_ssp133 = csv_indice_ssp133[relatorio_ssp133].get((pagina_esq_obs_ssp133, linha_ssp133.tabela_pdf, linha_ssp133.linha_tabela))
+    texto_csv_ssp133 = linha_csv_ssp133.get(linha_ssp133.coluna_csv) if linha_csv_ssp133 else None
+    # Posição do mês deduzida da coluna do CSV: a esquerda começa em celula_03 e a direita em celula_01.
+    posicao_ssp133 = int(linha_ssp133.coluna_csv[-2:]) - (3 if esquerda_ssp133 else 1)
+    meses_cab_ssp133 = leitura_ssp133["meses_esq"] if esquerda_ssp133 else leitura_ssp133["meses_dir"]
+    mes_rotulo_ssp133 = meses_cab_ssp133[posicao_ssp133] if 0 <= posicao_ssp133 < len(meses_cab_ssp133) else None
+    ano_pdf_ssp133 = int(leitura_ssp133["ano"][0]) if len(leitura_ssp133["ano"]) == 1 else None
+    numero_linha_ssp133 = int(linha_ssp133.linha_tabela)
+    itens_ssp133 = leitura_ssp133["itens_esq"]
+    rotulo_pdf_ssp133, tokens_esq_ssp133 = itens_ssp133[numero_linha_ssp133 - 1] if numero_linha_ssp133 <= len(itens_ssp133) else (None, [])
+    tokens_dir_ssp133 = leitura_ssp133["linhas_dir"][numero_linha_ssp133 - 1] if numero_linha_ssp133 <= len(leitura_ssp133["linhas_dir"]) else []
+    tokens_ssp133 = tokens_esq_ssp133 if esquerda_ssp133 else tokens_dir_ssp133
+    texto_pdf_ssp133 = tokens_ssp133[posicao_ssp133] if 0 <= posicao_ssp133 < len(tokens_ssp133) else None
+    celulas_tabela_ssp133 = controle_tabelas_ssp133.get((relatorio_ssp133, linha_ssp133.pagina_pdf, linha_ssp133.linha_tabela))
+    texto_tabela_ssp133 = celulas_tabela_ssp133[int(linha_ssp133.coluna_csv[-2:]) - 1] if celulas_tabela_ssp133 is not None else None
+    texto_etapa12_ssp133 = controle_etapa12_ssp133.get(
+        (linha_ssp133.arquivo_pdf, linha_ssp133.pagina_pdf, linha_ssp133.tabela_pdf, linha_ssp133.linha_tabela, linha_ssp133.coluna_csv))
+    mes_independente_ssp133 = mes_numero_ssp133.get(mes_rotulo_ssp133)
+    valor_analitico_ssp133 = valor_base_ssp133.get((linha_ssp133.municipio, int(linha_ssp133.ano), int(linha_ssp133.mes), linha_ssp133.categoria))
+    texto_inteiro_ssp133 = isinstance(texto_csv_ssp133, str) and texto_csv_ssp133.isascii() and texto_csv_ssp133.isdigit() and str(int(texto_csv_ssp133)) == texto_csv_ssp133
+    verificacoes_linha_ssp133 = {
+        "csv_linha_existe": linha_csv_ssp133 is not None,
+        "csv_pdf_arquivo": bool(linha_csv_ssp133) and linha_csv_ssp133["arquivo_pdf"] == linha_ssp133.arquivo_pdf,
+        "municipio_contexto_JOINVILLE": bool(linha_csv_esq_ssp133) and linha_csv_esq_ssp133["municipio_contexto"] == "JOINVILLE" == linha_ssp133.municipio,
+        "ano_pdf": ano_pdf_ssp133 is not None and ano_pdf_ssp133 == int(linha_ssp133.ano),
+        "mes_pela_coluna_e_cabecalho": mes_independente_ssp133 is not None and mes_independente_ssp133 == int(linha_ssp133.mes) and mes_rotulo_ssp133 == linha_ssp133.cabecalho_mes_original,
+        "rotulo_csv": bool(linha_csv_esq_ssp133) and linha_csv_esq_ssp133["celula_02"] == linha_ssp133.rotulo_original_categoria,
+        "rotulo_pdf": rotulo_pdf_ssp133 is not None and rotulo_pdf_ssp133.endswith(linha_ssp133.rotulo_original_categoria),
+        "categoria_mapeamento": mapeamento_esperado_ssp133.get(linha_ssp133.rotulo_original_categoria) == linha_ssp133.categoria,
+        "texto_csv_igual_rastreio": texto_csv_ssp133 == linha_ssp133.valor_textual_original,
+        "texto_inteiro_sem_alteracao": bool(texto_inteiro_ssp133),
+        "valor_base_igual_csv": bool(texto_inteiro_ssp133) and valor_analitico_ssp133 is not None and not pd_ssp133.isna(valor_analitico_ssp133) and int(valor_analitico_ssp133) == int(texto_csv_ssp133),
+        "valor_pdf_texto": texto_pdf_ssp133 is not None and texto_pdf_ssp133 == texto_csv_ssp133,
+        "valor_pdf_tabela_controle": texto_tabela_ssp133 is not None and texto_tabela_ssp133 == texto_csv_ssp133,
+    }
+    if controle_etapa12_ssp133:
+        verificacoes_linha_ssp133["valor_pdf_etapa12_controle"] = texto_etapa12_ssp133 is not None and texto_etapa12_ssp133 == texto_csv_ssp133
+    linhas_conferencia_ssp133.append({
+        "municipio": linha_ssp133.municipio, "ano": int(linha_ssp133.ano), "mes": int(linha_ssp133.mes), "categoria": linha_ssp133.categoria,
+        "relatorio_origem": relatorio_ssp133, "arquivo_pdf": linha_ssp133.arquivo_pdf, "pagina_pdf": linha_ssp133.pagina_pdf,
+        "tabela_pdf": linha_ssp133.tabela_pdf, "linha_tabela": linha_ssp133.linha_tabela, "coluna_csv": linha_ssp133.coluna_csv,
+        "municipio_contexto_csv": linha_csv_esq_ssp133["municipio_contexto"] if linha_csv_esq_ssp133 else None,
+        "ano_cabecalho_pdf": ano_pdf_ssp133, "mes_cabecalho_pdf": mes_rotulo_ssp133, "mes_numero_independente": mes_independente_ssp133,
+        "rotulo_original_rastreio": linha_ssp133.rotulo_original_categoria,
+        "rotulo_original_csv": linha_csv_esq_ssp133["celula_02"] if linha_csv_esq_ssp133 else None,
+        "rotulo_original_pdf": rotulo_pdf_ssp133, "categoria_esperada": mapeamento_esperado_ssp133.get(linha_ssp133.rotulo_original_categoria),
+        "valor_texto_rastreio": linha_ssp133.valor_textual_original, "valor_texto_csv": texto_csv_ssp133,
+        "valor_texto_pdf_pypdf": texto_pdf_ssp133, "valor_texto_pdf_tabela_13_1": texto_tabela_ssp133,
+        "valor_inteiro_base": int(valor_analitico_ssp133) if valor_analitico_ssp133 is not None and not pd_ssp133.isna(valor_analitico_ssp133) else None,
+        **verificacoes_linha_ssp133, "todas_conferem": all(verificacoes_linha_ssp133.values())})
+conferencia_valores_ssp133 = pd_ssp133.DataFrame(linhas_conferencia_ssp133)
+colunas_booleanas_ssp133 = [c for c in conferencia_valores_ssp133.columns if conferencia_valores_ssp133[c].dtype == bool]
+print(f"{len(conferencia_valores_ssp133)} comparações individuais (uma por observação). Resultado por tipo de conferência:")
+mostrar_ssp133(conferencia_valores_ssp133[colunas_booleanas_ssp133].sum().rename("observações conferidas").to_frame().T)
+registrar_ssp133("Valores", "216 observações conferidas individualmente", 216, len(conferencia_valores_ssp133))
+for coluna_ssp133 in colunas_booleanas_ssp133:
+    if coluna_ssp133 != "todas_conferem":
+        registrar_ssp133("Valores", f"{coluna_ssp133} em 216/216", 216, int(conferencia_valores_ssp133[coluna_ssp133].sum()))
+registrar_ssp133("Valores", "todas as conferências por observação", 216, int(conferencia_valores_ssp133.todas_conferem.sum()))
+registrar_ssp133("Valores", "controle da Etapa 12 disponível nesta sessão", bool(controle_etapa12_ssp133), bool(controle_etapa12_ssp133))
+print("Controle da Etapa 12 (auditoria_celulas_domesticas_ssp12) na sessão:", bool(controle_etapa12_ssp133),
+      "— se False, ele não foi usado; os controles efetivos são pypdf e pdfplumber da 13.1.")
+print("Conferência independente dos valores (216 linhas):")
+mostrar_ssp133(conferencia_valores_ssp133)
+
+# %% [markdown]
+# ## 13.3.4 — Completude: as 216 células esperadas, derivadas do CSV e dos cabeçalhos
+# O conjunto esperado de células é derivado sem usar a base: linhas de categoria do
+# bloco de Joinville no CSV × posições dos meses nos cabeçalhos do PDF. Ele deve ser
+# idêntico ao conjunto de células da rastreabilidade (nenhuma observação descartada,
+# duplicada ou acrescentada).
+
+# %%
+esperadas_ssp133 = set()
+for relatorio_ssp133, arquivo_ssp133 in arquivos_ssp133.items():
+    leitura_ssp133 = leituras_pdf_ssp133[relatorio_ssp133]
+    bloco_ssp133 = blocos_csv_ssp133.loc[blocos_csv_ssp133.relatorio.eq(relatorio_ssp133)]
+    for linha_ssp133 in bloco_ssp133.itertuples():
+        for posicao_ssp133 in range(len(leitura_ssp133["meses_esq"])):
+            esperadas_ssp133.add((arquivo_ssp133 + ".pdf", linha_ssp133.pagina_pdf, linha_ssp133.tabela_pdf, linha_ssp133.linha_tabela, f"celula_{3 + posicao_ssp133:02d}"))
+        for posicao_ssp133 in range(len(leitura_ssp133["meses_dir"])):
+            esperadas_ssp133.add((arquivo_ssp133 + ".pdf", str(leitura_ssp133["pagina_dir"]), linha_ssp133.tabela_pdf, linha_ssp133.linha_tabela, f"celula_{1 + posicao_ssp133:02d}"))
+presentes_ssp133 = set(zip(rastreio_ssp133.arquivo_pdf, rastreio_ssp133.pagina_pdf, rastreio_ssp133.tabela_pdf, rastreio_ssp133.linha_tabela, rastreio_ssp133.coluna_csv))
+registrar_ssp133("Completude", "células esperadas derivadas de CSV e cabeçalhos", 216, len(esperadas_ssp133))
+registrar_ssp133("Completude", "células da rastreabilidade distintas (sem duplicar a mesma célula de origem)", 216, len(presentes_ssp133))
+registrar_ssp133("Completude", "conjunto esperado = conjunto da rastreabilidade", (set(), set()), (esperadas_ssp133 - presentes_ssp133, presentes_ssp133 - esperadas_ssp133))
+print("Células esperadas:", len(esperadas_ssp133), "| células rastreadas:", len(presentes_ssp133),
+      "| faltando:", len(esperadas_ssp133 - presentes_ssp133), "| a mais:", len(presentes_ssp133 - esperadas_ssp133))
+
+# %% [markdown]
+# ## 13.3.5 — Validação das categorias
+# Onze rótulos originais preservados, nove categorias analíticas, 24 observações por
+# categoria, nenhuma categoria desconhecida e nenhuma agregação (cada observação vem
+# de uma única célula de origem). Mapeamento de "0 Dolosa" e "- Dolosa" = decisão
+# metodológica aprovada, não equivalência oficial da SSP/SC.
+
+# %%
+rotulos_csv_ssp133 = blocos_csv_ssp133.groupby("rotulo_original_csv").size()
+linhas_categorias_ssp133 = []
+for rotulo_ssp133, categoria_ssp133 in mapeamento_esperado_ssp133.items():
+    parte_ssp133 = rastreio_ssp133.loc[rastreio_ssp133.rotulo_original_categoria.eq(rotulo_ssp133)]
+    n_csv_ssp133 = int(rotulos_csv_ssp133.get(rotulo_ssp133, 0))
+    linhas_categorias_ssp133.append({
+        "rotulo_original": rotulo_ssp133, "categoria_analitica_esperada": categoria_ssp133,
+        "categorias_na_rastreabilidade": ", ".join(sorted(parte_ssp133.categoria.unique())),
+        "relatorios": ", ".join(sorted(parte_ssp133.relatorio_origem.unique())),
+        "linhas_de_categoria_no_csv": n_csv_ssp133, "observacoes": len(parte_ssp133),
+        "observacoes_esperadas": n_csv_ssp133 * 0 + int(len(parte_ssp133)),
+        "mapeamento_confere": set(parte_ssp133.categoria) == {categoria_ssp133} and n_csv_ssp133 > 0})
+conferencia_categorias_ssp133 = pd_ssp133.DataFrame(linhas_categorias_ssp133).drop(columns="observacoes_esperadas")
+mostrar_ssp133(conferencia_categorias_ssp133)
+contagem_categorias_ssp133 = base_ssp133.categoria.value_counts().sort_index()
+print("Observações por categoria analítica:")
+mostrar_ssp133(contagem_categorias_ssp133.rename("observacoes").to_frame())
+registrar_ssp133("Categorias", "11 rótulos originais distintos na rastreabilidade = 11 no CSV",
+                 sorted(mapeamento_esperado_ssp133), sorted(set(rastreio_ssp133.rotulo_original_categoria) & set(rotulos_csv_ssp133.index)))
+registrar_ssp133("Categorias", "nenhum rótulo desconhecido (rastreabilidade e CSV)", (set(), set()),
+                 (set(rastreio_ssp133.rotulo_original_categoria) - set(mapeamento_esperado_ssp133), set(rotulos_csv_ssp133.index) - set(mapeamento_esperado_ssp133)))
+registrar_ssp133("Categorias", "nove categorias analíticas", categorias_esperadas_ssp133, sorted(base_ssp133.categoria.unique()))
+registrar_ssp133("Categorias", "24 observações por categoria", {c: 24 for c in categorias_esperadas_ssp133}, contagem_categorias_ssp133.to_dict())
+registrar_ssp133("Categorias", "rótulos originais das quatro grafias de lesão preservados (6, 18, 6, 18)",
+                 {"Lesão corporal grave ou gravíssima 0 Dolosa": 6, "Lesão corporal grave ou gravíssima - Dolosa": 18,
+                  "Lesão corporal leve 0 Dolosa": 6, "Lesão corporal leve - Dolosa": 18},
+                 {r: int(rastreio_ssp133.rotulo_original_categoria.eq(r).sum()) for r in (
+                     "Lesão corporal grave ou gravíssima 0 Dolosa", "Lesão corporal grave ou gravíssima - Dolosa",
+                     "Lesão corporal leve 0 Dolosa", "Lesão corporal leve - Dolosa")})
+registrar_ssp133("Categorias", "sem agregação: cada observação tem célula de origem própria e única", 216, len(presentes_ssp133))
+registrar_ssp133("Categorias", "mapeamento da rastreabilidade = mapeamento esperado em 216/216", 216,
+                 int(conferencia_valores_ssp133.categoria_mapeamento.sum()))
+
+# %% [markdown]
+# ## 13.3.6 — Validação temporal
+# Doze meses em cada ano, nove categorias por competência, sem competências duplicadas
+# nem faltantes. O mês de cada célula foi deduzido do cabeçalho do PDF pela posição da
+# coluna (13.3.3), e não do nome do arquivo: os nomes dos arquivos não trazem mês e o
+# ano da base é conferido contra o ano impresso no cabeçalho de cada relatório.
+# Nenhuma data foi derivada.
+
+# %%
+conferencia_temporal_ssp133 = conferencia_valores_ssp133.groupby(["ano", "mes"]).agg(
+    categorias=("categoria", "nunique"), observacoes=("categoria", "size"),
+    relatorio_origem=("relatorio_origem", lambda s: ", ".join(sorted(set(s)))),
+    mes_cabecalho_pdf=("mes_cabecalho_pdf", lambda s: ", ".join(sorted(set(s)))),
+    colunas_csv=("coluna_csv", lambda s: ", ".join(sorted(set(s)))),
+    ano_cabecalho_pdf=("ano_cabecalho_pdf", lambda s: ", ".join(map(str, sorted(set(s)))))).reset_index()
+conferencia_temporal_ssp133["nove_categorias"] = conferencia_temporal_ssp133.categorias.eq(9) & conferencia_temporal_ssp133.observacoes.eq(9)
+mostrar_ssp133(conferencia_temporal_ssp133)
+grade_ssp133 = {(a, m) for a in (2023, 2024) for m in range(1, 13)}
+registrar_ssp133("Temporal", "24 competências esperadas presentes, sem faltantes nem extras", (set(), set()),
+                 (grade_ssp133 - set(zip(conferencia_temporal_ssp133.ano, conferencia_temporal_ssp133.mes)),
+                  set(zip(conferencia_temporal_ssp133.ano, conferencia_temporal_ssp133.mes)) - grade_ssp133))
+registrar_ssp133("Temporal", "12 meses em 2023", list(range(1, 13)), sorted(conferencia_temporal_ssp133.loc[conferencia_temporal_ssp133.ano.eq(2023), "mes"]))
+registrar_ssp133("Temporal", "12 meses em 2024", list(range(1, 13)), sorted(conferencia_temporal_ssp133.loc[conferencia_temporal_ssp133.ano.eq(2024), "mes"]))
+registrar_ssp133("Temporal", "nenhuma competência duplicada na tabela (24 linhas)", 24, len(conferencia_temporal_ssp133))
+registrar_ssp133("Temporal", "nove categorias e nove observações em cada uma das 24 competências", 24, int(conferencia_temporal_ssp133.nove_categorias.sum()))
+registrar_ssp133("Temporal", "mês pela posição da coluna e cabeçalho do PDF = mês da base (216/216)", 216, int(conferencia_valores_ssp133.mes_pela_coluna_e_cabecalho.sum()))
+registrar_ssp133("Temporal", "ano da base = ano impresso no cabeçalho (216/216)", 216, int(conferencia_valores_ssp133.ano_pdf.sum()))
+registrar_ssp133("Temporal", "uma competência vem de um único relatório",
+                 24, int(conferencia_temporal_ssp133.relatorio_origem.map(lambda s: "," not in s).sum()))
+registrar_ssp133("Temporal", "nomes dos arquivos sem indicação de mês (competência não pode vir deles)", True,
+                 all(not regex_ssp133.search(r"jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez", nome.lower()) for nome in arquivos_ssp133.values()))
+
+# %% [markdown]
+# ## 13.3.7 — Validação dos valores
+# Todos os valores devem ser inteiros não negativos, sem arredondamento nem
+# preenchimento. Zeros e ausências são contados na releitura independente do CSV.
+# A unidade permanece "Fato Comunicado" (não equivale a vítimas, pessoas únicas ou BOs únicos).
+
+# %%
+textos_csv_ssp133 = conferencia_valores_ssp133.valor_texto_csv
+zeros_csv_ssp133 = int(textos_csv_ssp133.eq("0").sum())
+vazios_csv_ssp133 = int(textos_csv_ssp133.isna().sum() + textos_csv_ssp133.eq("").sum())
+resumo_valores_ssp133 = pd_ssp133.DataFrame([
+    {"indicador": "observações", "resultado": len(base_ssp133)},
+    {"indicador": "zeros publicados no CSV (texto '0')", "resultado": zeros_csv_ssp133},
+    {"indicador": "zeros na base analítica", "resultado": int(base_ssp133.fatos_comunicados.eq(0).sum())},
+    {"indicador": "células vazias ou não numéricas nas 216 coordenadas", "resultado": vazios_csv_ssp133 + int((~conferencia_valores_ssp133.texto_inteiro_sem_alteracao).sum())},
+    {"indicador": "ausências (NA) na base", "resultado": int(base_ssp133.isna().sum().sum())},
+    {"indicador": "valor mínimo", "resultado": int(base_ssp133.fatos_comunicados.min())},
+    {"indicador": "valor máximo", "resultado": int(base_ssp133.fatos_comunicados.max())},
+    {"indicador": "unidade registrada", "resultado": ", ".join(sorted(rastreio_ssp133.unidade.unique()))}])
+mostrar_ssp133(resumo_valores_ssp133)
+registrar_ssp133("Valores", "27 zeros publicados preservados (CSV e base)", (27, 27), (zeros_csv_ssp133, int(base_ssp133.fatos_comunicados.eq(0).sum())))
+registrar_ssp133("Valores", "nenhuma ausência real nas 216 coordenadas", 0, vazios_csv_ssp133 + int((~conferencia_valores_ssp133.texto_inteiro_sem_alteracao).sum()))
+registrar_ssp133("Valores", "nenhuma ausência na base (cinco colunas)", 0, int(base_ssp133.isna().sum().sum()))
+registrar_ssp133("Valores", "todos inteiros não negativos, sem alteração do texto (sem arredondamento)", 216, int(conferencia_valores_ssp133.texto_inteiro_sem_alteracao.sum()))
+registrar_ssp133("Valores", "soma dos valores da base = soma dos valores do CSV (sem preenchimento, descarte ou duplicação)",
+                 int(sum(int(t) for t in textos_csv_ssp133)), int(base_ssp133.fatos_comunicados.sum()))
+registrar_ssp133("Valores", "unidade única 'Fato Comunicado'", ["Fato Comunicado"], sorted(rastreio_ssp133.unidade.unique()))
+registrar_ssp133("Valores", "tipos da base (string, Int64, Int64, string, Int64)", ["string", "Int64", "Int64", "string", "Int64"], [str(t) for t in base_ssp133.dtypes])
+registrar_ssp133("Valores", "dimensão da base 216 × 5", (216, 5), base_ssp133.shape)
+
+# %% [markdown]
+# ## 13.3.8 — Validação da rastreabilidade e dos hashes
+# Ligação um para um, referências existentes e válidas, preservação dos campos
+# estruturalmente vazios ou não aplicáveis do município e hashes SHA-256 dos seis
+# arquivos originais comparados com o inventário histórico.
+
+# %%
+ligacao_ssp133 = base_ssp133[chaves_ssp133].merge(
+    rastreio_ssp133[chaves_ssp133], on=chaves_ssp133, how="outer", validate="one_to_one", indicator=True)
+paginas_pdf_ssp133 = {rel: len(LeitorSSP133(pasta_pdf_ssp133 / (arq + ".pdf")).pages) for rel, arq in arquivos_ssp133.items()}
+manifesto_ssp133 = pd_ssp133.read_csv(raiz_ssp133 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv", dtype=str, keep_default_na=False)
+linhas_hash_ssp133 = []
+for relatorio_ssp133, arquivo_ssp133 in arquivos_ssp133.items():
+    for caminho_ssp133, coluna_hash_ssp133 in ((pasta_pdf_ssp133 / (arquivo_ssp133 + ".pdf"), "sha256_pdf"), (pasta_csv_ssp133 / (arquivo_ssp133 + ".csv"), "sha256_csv")):
+        atual_ssp133 = sha256_ssp133(caminho_ssp133)
+        historico_ssp133 = manifesto_ssp133.loc[manifesto_ssp133.caminho_destino_planejado.eq(caminho_ssp133.relative_to(raiz_ssp133).as_posix()), "sha256"].tolist()
+        no_rastreio_ssp133 = sorted(rastreio_ssp133.loc[rastreio_ssp133.relatorio_origem.eq(relatorio_ssp133), coluna_hash_ssp133].unique())
+        linhas_hash_ssp133.append({
+            "arquivo": caminho_ssp133.name, "sha256_atual": atual_ssp133, "sha256_historico": historico_ssp133[0] if len(historico_ssp133) == 1 else None,
+            "sha256_na_rastreabilidade": no_rastreio_ssp133[0] if len(no_rastreio_ssp133) == 1 else None,
+            "igual_ao_historico": historico_ssp133 == [atual_ssp133], "igual_ao_rastreio": no_rastreio_ssp133 == [atual_ssp133]})
+hashes_ssp133 = pd_ssp133.DataFrame(linhas_hash_ssp133)
+esquerda_rastreio_ssp133 = rastreio_ssp133.loc[rastreio_ssp133.lado_da_tabela.eq("esquerda")]
+direita_rastreio_ssp133 = rastreio_ssp133.loc[rastreio_ssp133.lado_da_tabela.eq("direita")]
+referencias_validas_ssp133 = [
+    (pasta_pdf_ssp133 / l.arquivo_pdf).is_file() and (pasta_csv_ssp133 / l.arquivo_csv).is_file()
+    and 1 <= int(l.pagina_pdf) <= paginas_pdf_ssp133[l.relatorio_origem] and 1 <= int(l.pagina_horizontal_pareada) <= paginas_pdf_ssp133[l.relatorio_origem]
+    and l.tabela_pdf == "1" and l.coluna_csv in csv_cabecalhos_ssp133[l.relatorio_origem]
+    and (l.pagina_pdf, l.tabela_pdf, l.linha_tabela) in csv_indice_ssp133[l.relatorio_origem]
+    for l in rastreio_ssp133.itertuples()]
+conferencia_rastreabilidade_ssp133 = pd_ssp133.DataFrame([
+    {"verificacao": "chaves distintas na base", "resultado": int(base_ssp133[chaves_ssp133].drop_duplicates().shape[0])},
+    {"verificacao": "chaves distintas na rastreabilidade", "resultado": int(rastreio_ssp133[chaves_ssp133].drop_duplicates().shape[0])},
+    {"verificacao": "pares ligados um para um", "resultado": int(ligacao_ssp133._merge.eq("both").sum())},
+    {"verificacao": "referências (arquivos, página, tabela, linha, coluna) válidas", "resultado": int(sum(referencias_validas_ssp133))},
+    {"verificacao": "rótulo original = célula celula_02 do CSV", "resultado": int(conferencia_valores_ssp133.rotulo_csv.sum())},
+    {"verificacao": "valor textual = célula do CSV", "resultado": int(conferencia_valores_ssp133.texto_csv_igual_rastreio.sum())},
+    {"verificacao": "observações da página esquerda", "resultado": len(esquerda_rastreio_ssp133)},
+    {"verificacao": "observações da página direita", "resultado": len(direita_rastreio_ssp133)},
+    {"verificacao": "município da célula original = JOINVILLE (só 1ª categoria à esquerda)", "resultado": int(esquerda_rastreio_ssp133.municipio_celula_original.eq("JOINVILLE").sum())},
+    {"verificacao": "município da célula original vazio (continuação do bloco, esquerda)", "resultado": int(esquerda_rastreio_ssp133.municipio_celula_original.eq("").sum())},
+    {"verificacao": "município não aplicável (<NA>, páginas de continuação)", "resultado": int(direita_rastreio_ssp133.municipio_celula_original.isna().sum())}])
+mostrar_ssp133(conferencia_rastreabilidade_ssp133)
+print("Hashes SHA-256 dos seis arquivos originais:")
+mostrar_ssp133(hashes_ssp133)
+registrar_ssp133("Rastreabilidade", "216 chaves distintas na base e na rastreabilidade", (216, 216), (conferencia_rastreabilidade_ssp133.resultado[0], conferencia_rastreabilidade_ssp133.resultado[1]))
+registrar_ssp133("Rastreabilidade", "ligação um para um (216 pares, sem órfãos)", (216, 216), (int(ligacao_ssp133._merge.eq("both").sum()), len(ligacao_ssp133)))
+registrar_ssp133("Rastreabilidade", "referências válidas em 216/216", 216, int(sum(referencias_validas_ssp133)))
+registrar_ssp133("Rastreabilidade", "rótulo original e valor textual iguais ao CSV em 216/216", (216, 216),
+                 (int(conferencia_valores_ssp133.rotulo_csv.sum()), int(conferencia_valores_ssp133.texto_csv_igual_rastreio.sum())))
+registrar_ssp133("Rastreabilidade", "município original: 6 JOINVILLE + 48 vazios à esquerda; 162 não aplicáveis (<NA>) à direita", (6, 48, 162),
+                 (int(esquerda_rastreio_ssp133.municipio_celula_original.eq("JOINVILLE").sum()), int(esquerda_rastreio_ssp133.municipio_celula_original.eq("").sum()),
+                  int(direita_rastreio_ssp133.municipio_celula_original.isna().sum())))
+registrar_ssp133("Rastreabilidade", "SHA-256 dos seis arquivos = inventário histórico", 6, int(hashes_ssp133.igual_ao_historico.sum()))
+registrar_ssp133("Rastreabilidade", "SHA-256 dos seis arquivos = hash registrado na rastreabilidade", 6, int(hashes_ssp133.igual_ao_rastreio.sum()))
+registrar_ssp133("Rastreabilidade", "cabeçalho de meses registrado na página 1 ou total//2+1 (216/216)", 216,
+                 int(sum(str(l.pagina_cabecalho_meses) == str(1 if l.lado_da_tabela == "esquerda" else paginas_pdf_ssp133[l.relatorio_origem] // 2 + 1) for l in rastreio_ssp133.itertuples())))
+
+# %% [markdown]
+# ## 13.3.9 — Resumo das validações, amostras e inconsistências
+
+# %%
+resumo_validacoes_ssp133 = pd_ssp133.DataFrame(list(verificacoes_ssp133.values()))
+print("Resumo das validações da Etapa 13.3:")
+mostrar_ssp133(resumo_validacoes_ssp133.groupby("bloco", sort=False).agg(verificacoes=("ok", "size"), aprovadas=("ok", "sum")))
+mostrar_ssp133(resumo_validacoes_ssp133)
+print("Amostras da conferência independente (primeiras 3, últimas 3 e lesão leve em cada relatório):")
+colunas_amostra_ssp133 = ["relatorio_origem", "ano", "mes", "categoria", "pagina_pdf", "linha_tabela", "coluna_csv",
+                          "mes_cabecalho_pdf", "rotulo_original_csv", "valor_texto_csv", "valor_texto_pdf_pypdf",
+                          "valor_texto_pdf_tabela_13_1", "valor_inteiro_base", "todas_conferem"]
+amostra_ssp133 = pd_ssp133.concat([
+    conferencia_valores_ssp133.groupby("relatorio_origem").head(3), conferencia_valores_ssp133.groupby("relatorio_origem").tail(3),
+    conferencia_valores_ssp133.loc[conferencia_valores_ssp133.categoria.eq("Lesão corporal leve dolosa")].groupby("relatorio_origem").head(1),
+    conferencia_valores_ssp133.loc[conferencia_valores_ssp133.categoria.eq("Lesão corporal leve dolosa")].groupby("relatorio_origem").tail(1)]).drop_duplicates(
+    subset=["ano", "mes", "categoria"]).sort_values(["ano", "mes"], kind="stable")
+mostrar_ssp133(amostra_ssp133[colunas_amostra_ssp133])
+inconsistencias_ssp133 = resumo_validacoes_ssp133.loc[~resumo_validacoes_ssp133.ok]
+observacoes_com_divergencia_ssp133 = conferencia_valores_ssp133.loc[~conferencia_valores_ssp133.todas_conferem]
+print("Inconsistências encontradas:")
+if inconsistencias_ssp133.empty and observacoes_com_divergencia_ssp133.empty:
+    print("Nenhuma.")
+else:
+    mostrar_ssp133(inconsistencias_ssp133)
+    mostrar_ssp133(observacoes_com_divergencia_ssp133)
+total_ssp133 = len(resumo_validacoes_ssp133)
+aprovadas_ssp133 = int(resumo_validacoes_ssp133.ok.sum())
+print(f"Etapa 13.3: {aprovadas_ssp133}/{total_ssp133} verificações aprovadas; {int(conferencia_valores_ssp133.todas_conferem.sum())}/216 observações com todas as conferências individuais.")
+print("Ressalvas: (1) a correspondência pypdf entre linha de texto e linha_tabela é por ordem das linhas, não por coordenada geométrica; "
+      "(2) o mapeamento de '0 Dolosa' e '- Dolosa' e a regra de aplicar o cabeçalho de meses à tabela contínua são decisões metodológicas do projeto, "
+      "não confirmações oficiais da SSP/SC; (3) 'Fato Comunicado' não é definido operacionalmente nos PDFs e não equivale a vítimas, pessoas únicas ou BOs únicos.")
+print("Nenhum arquivo foi exportado e a base analítica não foi alterada.")
+
+# %% [markdown]
+# # ETAPA 14.1 — Análise exploratória e estatísticas descritivas da violência doméstica (SSP/SC)
+# Execute depois das Etapas 13.1, 13.2 e 13.3 (não é preciso executar as Etapas 1–12
+# nem o Sinesp). Usa somente a base analítica validada
+# `df_violencia_domestica_joinville_ssp132` (216 × 5) e a rastreabilidade
+# `rastreabilidade_violencia_domestica_ssp132` (216 × 23). Nada é exportado e os
+# DataFrames de origem não são modificados: os cálculos usam cópias e, ao final, a
+# base e a rastreabilidade são comparadas com retratos feitos no início.
+#
+# Cuidados de interpretação (valem para todas as tabelas desta etapa):
+# - A unidade é "Fato Comunicado", conforme publicada pela SSP/SC. Não é vítima,
+#   pessoa única nem boletim de ocorrência único; a definição operacional não consta
+#   dos PDFs consultados.
+# - As diferenças entre 2023 e 2024 são mudanças nas contagens publicadas; não
+#   medem, necessariamente, mudanças na incidência real da violência.
+# - Não há total geral por soma das categorias, taxa populacional, dado territorial,
+#   dado de vítimas nem inferência causal.
+# - As duas grafias "0 Dolosa" e "- Dolosa" das lesões corporais foram unificadas por
+#   decisão metodológica do projeto (Etapa 13.2), não por confirmação oficial da SSP/SC.
+# - 2023 vem de dois relatórios semestrais e 2024 de um relatório anual.
+
+# %% [markdown]
+# ## 14.1.1 — Pré-condições e retratos de preservação
+
+# %%
+import math as matematica_eda141
+import statistics as estatistica_eda141
+
+import pandas as pd_eda141
+from IPython.display import display as mostrar_eda141
+
+necessarios_eda141 = (
+    "df_violencia_domestica_joinville_ssp132", "rastreabilidade_violencia_domestica_ssp132", "resumo_validacoes_ssp133")
+ausentes_eda141 = [nome for nome in necessarios_eda141 if nome not in globals()]
+if ausentes_eda141:
+    raise NameError(f"Etapa 14.1: execute antes as Etapas 13.1, 13.2 e 13.3. Ausentes: {ausentes_eda141}")
+if resumo_validacoes_ssp133.empty or not resumo_validacoes_ssp133.ok.all():
+    raise ValueError("Etapa 14.1: a auditoria da Etapa 13.3 não está integralmente aprovada nesta sessão; interromper.")
+print(f"Controle da Etapa 13.3 confirmado nesta sessão: {len(resumo_validacoes_ssp133)} verificações, todas aprovadas.")
+
+categorias_eda141 = (
+    "Ameaça", "Calúnia", "Difamação", "Estupro", "Injúria", "Injúria real",
+    "Lesão corporal grave ou gravíssima dolosa", "Lesão corporal leve dolosa", "Vias de fato")
+anos_eda141 = (2023, 2024)
+unidade_eda141 = "Fato Comunicado"
+chaves_eda141 = ["municipio", "ano", "mes", "categoria"]
+
+# Retratos profundos para provar, no final, que os DataFrames de origem não mudaram.
+retrato_base_eda141 = df_violencia_domestica_joinville_ssp132.copy(deep=True)
+retrato_rastreio_eda141 = rastreabilidade_violencia_domestica_ssp132.copy(deep=True)
+# Cópia de trabalho: todos os cálculos partem dela.
+base_eda141 = df_violencia_domestica_joinville_ssp132.copy()
+base_eda141["valor_float"] = base_eda141.fatos_comunicados.astype("float64")
+base_eda141["competencia"] = base_eda141.ano.astype(str) + "-" + base_eda141.mes.astype(str).str.zfill(2)
+print("Cópia de trabalho criada; a base original permanece intacta.")
+
+# %% [markdown]
+# ## 14.1.2 — Inspeção analítica da base
+
+# %%
+print("Dimensões da base:", df_violencia_domestica_joinville_ssp132.shape)
+print("\nNomes e tipos das colunas:")
+mostrar_eda141(df_violencia_domestica_joinville_ssp132.dtypes.astype(str).rename("dtype").to_frame())
+print("Categorias identificadas (ordem analítica):")
+mostrar_eda141(pd_eda141.DataFrame({"categoria": categorias_eda141,
+                                    "presente_na_base": [c in set(base_eda141.categoria) for c in categorias_eda141]}))
+print("Competências disponíveis:")
+competencias_eda141 = base_eda141.groupby(["ano", "mes"]).agg(
+    competencia=("competencia", "first"), categorias=("categoria", "nunique"), observacoes=("categoria", "size")).reset_index()
+mostrar_eda141(competencias_eda141)
+print("Observações por ano:")
+mostrar_eda141(base_eda141.groupby("ano").size().rename("observacoes").to_frame())
+print("Observações por categoria:")
+mostrar_eda141(base_eda141.groupby("categoria").size().reindex(list(categorias_eda141)).rename("observacoes").to_frame())
+print("Zeros publicados por categoria e ano (contagem de meses com valor 0):")
+zeros_eda141 = base_eda141.loc[base_eda141.fatos_comunicados.eq(0)]
+mostrar_eda141(zeros_eda141.pivot_table(index="categoria", columns="ano", values="mes", aggfunc="size", fill_value=0)
+               .reindex(list(categorias_eda141), fill_value=0).assign(total=lambda t: t.sum(axis=1)))
+print(f"Zeros publicados identificáveis: {len(zeros_eda141)} linhas (lista completa a seguir):")
+mostrar_eda141(zeros_eda141[["ano", "mes", "categoria", "fatos_comunicados"]].reset_index(drop=True))
+print("Ausências por coluna:")
+mostrar_eda141(df_violencia_domestica_joinville_ssp132.isna().sum().rename("ausencias").to_frame())
+print("Duplicidades:",
+      f"linhas totalmente duplicadas = {int(df_violencia_domestica_joinville_ssp132.duplicated().sum())};",
+      f"chaves (município, ano, mês, categoria) duplicadas = {int(df_violencia_domestica_joinville_ssp132.duplicated(chaves_eda141).sum())}")
+
+# %% [markdown]
+# ## 14.1.3 — Estatísticas descritivas por categoria
+# Cada categoria é tratada separadamente, sobre os valores mensais publicados. O
+# desvio-padrão é descritivo (`ddof=0`). Não há somatório entre categorias.
+
+# %%
+def estatisticas_eda141(dados):
+    grupos = dados.groupby("categoria")["valor_float"]
+    tabela = pd_eda141.DataFrame({
+        "soma_publicada": grupos.sum(), "media_mensal": grupos.mean(), "mediana_mensal": grupos.median(),
+        "minimo": grupos.min(), "maximo": grupos.max(), "desvio_padrao_ddof0": grupos.std(ddof=0),
+        "meses_observados": grupos.count(), "meses_com_zero": grupos.apply(lambda s: int((s == 0).sum()))})
+    tabela = tabela.reindex(list(categorias_eda141))
+    for coluna in ("soma_publicada", "minimo", "maximo", "meses_observados"):
+        tabela[coluna] = tabela[coluna].astype("Int64")
+    tabela["unidade"] = unidade_eda141
+    return tabela.round({"media_mensal": 4, "mediana_mensal": 4, "desvio_padrao_ddof0": 4})
+
+
+estatisticas_2023_eda141 = estatisticas_eda141(base_eda141.loc[base_eda141.ano.eq(2023)])
+estatisticas_2024_eda141 = estatisticas_eda141(base_eda141.loc[base_eda141.ano.eq(2024)])
+estatisticas_24_meses_eda141 = estatisticas_eda141(base_eda141)
+for titulo_eda141, tabela_eda141 in (("2023 (12 meses)", estatisticas_2023_eda141), ("2024 (12 meses)", estatisticas_2024_eda141),
+                                     ("24 meses (jan/2023 a dez/2024)", estatisticas_24_meses_eda141)):
+    print(f"\nEstatísticas descritivas — {titulo_eda141} — unidade: {unidade_eda141}")
+    mostrar_eda141(tabela_eda141)
+
+# %% [markdown]
+# ## 14.1.4 — Comparação anual 2023 × 2024
+# Valor acumulado dos 12 meses de cada ano, diferença absoluta (2024 − 2023) e
+# variação percentual, que só existe quando o valor de 2023 é maior que zero; caso
+# contrário fica `<NA>` ("não aplicável"), sem substituir a divisão por zero. As
+# diferenças são mudanças nas contagens publicadas, não necessariamente na
+# incidência real. Em categorias de poucos casos, variações percentuais grandes
+# podem refletir diferenças de poucas unidades.
+
+# %%
+acumulados_eda141 = base_eda141.groupby(["categoria", "ano"])["fatos_comunicados"].sum().unstack("ano").reindex(list(categorias_eda141))
+meses_por_ano_eda141 = base_eda141.groupby(["categoria", "ano"]).size().unstack("ano").reindex(list(categorias_eda141))
+comparacao_anual_eda141 = pd_eda141.DataFrame({
+    "categoria": list(categorias_eda141),
+    "meses_2023": meses_por_ano_eda141[2023].astype("Int64").to_numpy(), "acumulado_2023": acumulados_eda141[2023].astype("Int64").to_numpy(),
+    "meses_2024": meses_por_ano_eda141[2024].astype("Int64").to_numpy(), "acumulado_2024": acumulados_eda141[2024].astype("Int64").to_numpy()})
+comparacao_anual_eda141["diferenca_absoluta"] = comparacao_anual_eda141.acumulado_2024 - comparacao_anual_eda141.acumulado_2023
+comparacao_anual_eda141["variacao_percentual"] = pd_eda141.Series(
+    [round((float(d) / float(a)) * 100, 2) if a > 0 else pd_eda141.NA
+     for d, a in zip(comparacao_anual_eda141.diferenca_absoluta, comparacao_anual_eda141.acumulado_2023)], dtype="Float64")
+comparacao_anual_eda141["observacao_variacao"] = [
+    "não aplicável (2023 = 0)" if a == 0 else "calculada sobre 2023" for a in comparacao_anual_eda141.acumulado_2023]
+comparacao_anual_eda141["unidade"] = unidade_eda141
+print("Comparação anual por categoria (somas de 12 meses de cada ano; sem total entre categorias):")
+mostrar_eda141(comparacao_anual_eda141)
+
+# %% [markdown]
+# ## 14.1.5 — Análise mensal
+# Tabela longa (ano, mês, categoria, fatos comunicados) e visão comparativa mês a mês
+# de 2023 e 2024 por categoria. Os extremos preservam todos os meses empatados.
+
+# %%
+ordem_categoria_eda141 = {c: i for i, c in enumerate(categorias_eda141)}
+mensal_longo_eda141 = base_eda141.assign(_ordem=base_eda141.categoria.map(ordem_categoria_eda141)).sort_values(
+    ["_ordem", "ano", "mes"], kind="stable")[["ano", "mes", "categoria", "fatos_comunicados"]].reset_index(drop=True)
+print("Tabela mensal (ano, mês, categoria, fatos comunicados) — 216 linhas:")
+mostrar_eda141(mensal_longo_eda141)
+comparativo_mensal_eda141 = base_eda141.pivot(index=["categoria", "mes"], columns="ano", values="fatos_comunicados")
+comparativo_mensal_eda141.columns = [f"fatos_{ano}" for ano in comparativo_mensal_eda141.columns]
+comparativo_mensal_eda141 = comparativo_mensal_eda141.reset_index()
+comparativo_mensal_eda141 = comparativo_mensal_eda141.assign(_ordem=comparativo_mensal_eda141.categoria.map(ordem_categoria_eda141)).sort_values(
+    ["_ordem", "mes"], kind="stable").drop(columns="_ordem").reset_index(drop=True)
+comparativo_mensal_eda141["diferenca_2024_menos_2023"] = comparativo_mensal_eda141.fatos_2024 - comparativo_mensal_eda141.fatos_2023
+print("Comparativo mensal 2023 × 2024 por categoria (valores publicados; sem causalidade):")
+mostrar_eda141(comparativo_mensal_eda141)
+
+
+def extremos_eda141(dados, rotulo):
+    linhas = []
+    for categoria in categorias_eda141:
+        parte = dados.loc[dados.categoria.eq(categoria)]
+        maximo, minimo = parte.fatos_comunicados.max(), parte.fatos_comunicados.min()
+        meses_max = parte.loc[parte.fatos_comunicados.eq(maximo), "competencia"].tolist()
+        meses_min = parte.loc[parte.fatos_comunicados.eq(minimo), "competencia"].tolist()
+        linhas.append({"categoria": categoria, "periodo": rotulo, "valor_maximo": int(maximo), "competencias_do_maximo": ", ".join(meses_max),
+                       "empate_no_maximo": len(meses_max) > 1, "valor_minimo": int(minimo), "competencias_do_minimo": ", ".join(meses_min),
+                       "empate_no_minimo": len(meses_min) > 1})
+    return pd_eda141.DataFrame(linhas)
+
+
+extremos_eda141_tabela = pd_eda141.concat([
+    extremos_eda141(base_eda141.loc[base_eda141.ano.eq(2023)], "2023"),
+    extremos_eda141(base_eda141.loc[base_eda141.ano.eq(2024)], "2024"),
+    extremos_eda141(base_eda141, "24 meses")], ignore_index=True)
+print("Maiores e menores valores mensais por categoria (competência = aaaa-mm; empates preservados, todos os meses listados):")
+mostrar_eda141(extremos_eda141_tabela)
+
+# %% [markdown]
+# ## 14.1.6 — Validações da Etapa 14.1
+# Recalcula tudo por outro caminho (listas e o módulo `statistics`, a partir do texto
+# publicado na rastreabilidade) e confere preservação e integridade. Se qualquer
+# validação falhar, a execução é interrompida e nenhuma atividade seguinte (README,
+# testes, commit) deve ser realizada.
+
+# %%
+referencia_eda141 = {
+    (int(l.ano), int(l.mes), l.categoria): int(l.valor_textual_original)
+    for l in retrato_rastreio_eda141.itertuples()}
+verificacoes_eda141 = []
+
+
+def verificar_eda141(nome, esperado, encontrado):
+    verificacoes_eda141.append({"verificacao": nome, "esperado": esperado, "encontrado": encontrado, "ok": esperado == encontrado})
+
+
+def proximo_eda141(a, b, tolerancia=1e-9):
+    return pd_eda141.isna(a) and pd_eda141.isna(b) or (not pd_eda141.isna(a) and not pd_eda141.isna(b) and matematica_eda141.isclose(float(a), float(b), abs_tol=tolerancia))
+
+
+def serie_eda141(categoria, ano=None):
+    return [v for (a, m, c), v in sorted(referencia_eda141.items()) if c == categoria and (ano is None or a == ano)]
+
+
+# Preservação das 216 observações e da rastreabilidade
+verificar_eda141("216 observações preservadas (base = retrato inicial)", True,
+                 bool(base_eda141[list(retrato_base_eda141.columns)].equals(retrato_base_eda141)) and len(base_eda141) == 216)
+verificar_eda141("chaves da base = chaves da rastreabilidade (216)", set((int(l.ano), int(l.mes), l.categoria) for l in retrato_base_eda141.itertuples()), set(referencia_eda141))
+verificar_eda141("valores da base = texto original da rastreabilidade convertido (216)", True,
+                 all(referencia_eda141[(int(l.ano), int(l.mes), l.categoria)] == int(l.fatos_comunicados) for l in retrato_base_eda141.itertuples()))
+verificar_eda141("rastreabilidade com 216 linhas e 23 colunas", (216, 23), retrato_rastreio_eda141.shape)
+verificar_eda141("unidade Fato Comunicado na rastreabilidade", [unidade_eda141], sorted(retrato_rastreio_eda141.unidade.unique()))
+verificar_eda141("nove categorias, sem agregação", sorted(categorias_eda141), sorted(base_eda141.categoria.unique()))
+verificar_eda141("tabelas por categoria com exatamente nove linhas (sem linha de total)", (9, 9, 9, 9),
+                 (len(estatisticas_2023_eda141), len(estatisticas_2024_eda141), len(estatisticas_24_meses_eda141), len(comparacao_anual_eda141)))
+verificar_eda141("12 competências por categoria em 2023 e em 2024", True,
+                 all(len(serie_eda141(c, a)) == 12 and sorted(m for (aa, m, cc) in referencia_eda141 if cc == c and aa == a) == list(range(1, 13))
+                     for c in categorias_eda141 for a in anos_eda141))
+verificar_eda141("ausências na base", 0, int(base_eda141[list(retrato_base_eda141.columns)].isna().sum().sum()))
+verificar_eda141("27 zeros publicados identificáveis (inspeção e base)", (27, 27),
+                 (len(zeros_eda141), sum(1 for v in referencia_eda141.values() if v == 0)))
+verificar_eda141("zeros: soma de meses_com_zero de 2023 e 2024 = 27", 27,
+                 int(estatisticas_2023_eda141.meses_com_zero.sum() + estatisticas_2024_eda141.meses_com_zero.sum()))
+verificar_eda141("zeros dos 24 meses = soma dos zeros anuais", True,
+                 bool((estatisticas_24_meses_eda141.meses_com_zero == estatisticas_2023_eda141.meses_com_zero + estatisticas_2024_eda141.meses_com_zero).all()))
+verificar_eda141("nenhuma chave duplicada", 0, int(base_eda141.duplicated(chaves_eda141).sum()))
+# Estatísticas recalculadas com listas Python e o módulo statistics
+vistas_eda141 = {"2023": (estatisticas_2023_eda141, 2023), "2024": (estatisticas_2024_eda141, 2024), "24 meses": (estatisticas_24_meses_eda141, None)}
+for nome_vista_eda141, (tabela_eda141, ano_eda141) in vistas_eda141.items():
+    resultados_eda141 = []
+    for categoria_eda141 in categorias_eda141:
+        valores_eda141 = serie_eda141(categoria_eda141, ano_eda141)
+        linha_eda141 = tabela_eda141.loc[categoria_eda141]
+        resultados_eda141.append(all([
+            int(linha_eda141.soma_publicada) == sum(valores_eda141),
+            proximo_eda141(linha_eda141.media_mensal, sum(valores_eda141) / len(valores_eda141), 5e-5),
+            proximo_eda141(linha_eda141.mediana_mensal, estatistica_eda141.median(valores_eda141), 5e-5),
+            int(linha_eda141.minimo) == min(valores_eda141), int(linha_eda141.maximo) == max(valores_eda141),
+            proximo_eda141(linha_eda141.desvio_padrao_ddof0, estatistica_eda141.pstdev(valores_eda141), 5e-5),
+            int(linha_eda141.meses_observados) == len(valores_eda141),
+            int(linha_eda141.meses_com_zero) == sum(1 for v in valores_eda141 if v == 0)]))
+    verificar_eda141(f"soma, média, mediana, mínimo, máximo, desvio (ddof=0), meses e zeros corretos — {nome_vista_eda141} (9 categorias)", 9, sum(resultados_eda141))
+verificar_eda141("meses observados: 12, 12 e 24 em todas as categorias", (True, True, True),
+                 (bool(estatisticas_2023_eda141.meses_observados.eq(12).all()), bool(estatisticas_2024_eda141.meses_observados.eq(12).all()),
+                  bool(estatisticas_24_meses_eda141.meses_observados.eq(24).all())))
+verificar_eda141("somatórios anuais = soma dos 12 valores mensais (comparação anual)", True,
+                 all(int(l.acumulado_2023) == sum(serie_eda141(l.categoria, 2023)) and int(l.acumulado_2024) == sum(serie_eda141(l.categoria, 2024))
+                     for l in comparacao_anual_eda141.itertuples()))
+verificar_eda141("comparação anual: 12 meses em cada ano, sem misturar períodos", True,
+                 bool(comparacao_anual_eda141.meses_2023.eq(12).all() and comparacao_anual_eda141.meses_2024.eq(12).all()))
+verificar_eda141("comparação anual: acumulado_2023 + acumulado_2024 = soma_publicada dos 24 meses", True,
+                 bool((comparacao_anual_eda141.set_index("categoria").acumulado_2023 + comparacao_anual_eda141.set_index("categoria").acumulado_2024
+                       == estatisticas_24_meses_eda141.soma_publicada).all()))
+verificar_eda141("diferença absoluta = 2024 − 2023", True,
+                 all(int(l.diferenca_absoluta) == int(l.acumulado_2024) - int(l.acumulado_2023) for l in comparacao_anual_eda141.itertuples()))
+verificar_eda141("variação percentual: <NA> se e somente se 2023 = 0; senão (2024−2023)/2023×100", True,
+                 all((pd_eda141.isna(l.variacao_percentual) if l.acumulado_2023 == 0
+                      else (not pd_eda141.isna(l.variacao_percentual) and matematica_eda141.isclose(float(l.variacao_percentual), (int(l.diferenca_absoluta) / int(l.acumulado_2023)) * 100, abs_tol=0.0051)))
+                     for l in comparacao_anual_eda141.itertuples()))
+verificar_eda141("tabela mensal longa com 216 linhas e valores iguais à referência", True,
+                 len(mensal_longo_eda141) == 216 and all(referencia_eda141[(int(l.ano), int(l.mes), l.categoria)] == int(l.fatos_comunicados) for l in mensal_longo_eda141.itertuples()))
+verificar_eda141("comparativo mensal: 108 linhas e valores de 2023 e 2024 corretos", True,
+                 len(comparativo_mensal_eda141) == 108 and all(
+                     referencia_eda141[(2023, int(l.mes), l.categoria)] == int(l.fatos_2023) and referencia_eda141[(2024, int(l.mes), l.categoria)] == int(l.fatos_2024)
+                     for l in comparativo_mensal_eda141.itertuples()))
+extremos_corretos_eda141 = []
+for l in extremos_eda141_tabela.itertuples():
+    ano_extremo_eda141 = None if l.periodo == "24 meses" else int(l.periodo)
+    itens_eda141 = {f"{a}-{m:02d}": v for (a, m, c), v in referencia_eda141.items() if c == l.categoria and (ano_extremo_eda141 is None or a == ano_extremo_eda141)}
+    maior_eda141, menor_eda141 = max(itens_eda141.values()), min(itens_eda141.values())
+    extremos_corretos_eda141.append(
+        l.valor_maximo == maior_eda141 and l.valor_minimo == menor_eda141
+        and sorted(l.competencias_do_maximo.split(", ")) == sorted(k for k, v in itens_eda141.items() if v == maior_eda141)
+        and sorted(l.competencias_do_minimo.split(", ")) == sorted(k for k, v in itens_eda141.items() if v == menor_eda141))
+verificar_eda141("extremos mensais corretos, com todos os empates preservados (27 linhas)", 27, sum(extremos_corretos_eda141))
+# Imutabilidade dos DataFrames de origem
+verificar_eda141("df_violencia_domestica_joinville_ssp132 inalterado (comparação exata com o retrato inicial)", True,
+                 bool(df_violencia_domestica_joinville_ssp132.equals(retrato_base_eda141)) and df_violencia_domestica_joinville_ssp132.dtypes.equals(retrato_base_eda141.dtypes))
+verificar_eda141("rastreabilidade_violencia_domestica_ssp132 inalterada (comparação exata com o retrato inicial)", True,
+                 bool(rastreabilidade_violencia_domestica_ssp132.equals(retrato_rastreio_eda141)) and rastreabilidade_violencia_domestica_ssp132.dtypes.equals(retrato_rastreio_eda141.dtypes))
+verificar_eda141("colunas da base de origem sem colunas auxiliares", ["municipio", "ano", "mes", "categoria", "fatos_comunicados"], df_violencia_domestica_joinville_ssp132.columns.tolist())
+verificacoes_quadro_eda141 = pd_eda141.DataFrame(verificacoes_eda141)
+print("Quadro das verificações da Etapa 14.1:")
+mostrar_eda141(verificacoes_quadro_eda141)
+if not verificacoes_quadro_eda141.ok.all():
+    mostrar_eda141(verificacoes_quadro_eda141.loc[~verificacoes_quadro_eda141.ok])
+    raise ValueError("Etapa 14.1: validação falhou; interromper as atividades seguintes e NÃO fazer commit.")
+print(f"Etapa 14.1: {len(verificacoes_quadro_eda141)} verificações aprovadas; nenhum DataFrame de origem foi modificado; nada foi exportado.")
+
+# %% [markdown]
+# ## 14.1.7 — Leitura dos resultados (observado × cuidado metodológico)
+# As tabelas abaixo só reordenam resultados já calculados, para leitura. Elas não
+# somam categorias nem sugerem causas.
+
+# %%
+ranking_eda141 = comparacao_anual_eda141.set_index("categoria")[["acumulado_2023", "acumulado_2024"]].join(
+    estatisticas_24_meses_eda141[["soma_publicada", "media_mensal"]]).sort_values("soma_publicada", ascending=False)
+print("1) Categorias ordenadas pela contagem publicada nos 24 meses (apenas ordenação; sem total geral):")
+mostrar_eda141(ranking_eda141)
+variacoes_eda141 = comparacao_anual_eda141.set_index("categoria")[["acumulado_2023", "acumulado_2024", "diferenca_absoluta", "variacao_percentual"]]
+print("2) Variações 2023 → 2024 em contagens publicadas, ordenadas pela diferença absoluta:")
+mostrar_eda141(variacoes_eda141.sort_values("diferenca_absoluta", key=lambda s: s.abs(), ascending=False))
+print("3) Meses com maior e menor valor por categoria nos 24 meses (empates preservados):")
+mostrar_eda141(extremos_eda141_tabela.loc[extremos_eda141_tabela.periodo.eq("24 meses"), [
+    "categoria", "valor_maximo", "competencias_do_maximo", "valor_minimo", "competencias_do_minimo"]].reset_index(drop=True))
+print("Limites: (a) contagens publicadas de 'Fato Comunicado' não são vítimas nem incidência real; (b) variação entre anos não prova mudança de incidência "
+      "nem tem causa identificada nestes dados; (c) categorias de poucos casos (Estupro, Injúria real, lesão grave ou gravíssima) variam muito com poucas unidades; "
+      "(d) 2023 e 2024 vêm de relatórios diferentes, cuja definição de contagem não está documentada; (e) a unificação das grafias de lesão corporal é decisão do projeto.")
