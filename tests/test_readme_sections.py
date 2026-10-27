@@ -27,8 +27,16 @@ def test_main_script_exposes_authorized_stages_and_keeps_exports_inactive():
         "ETAPA 14.1 — Análise exploratória e estatísticas descritivas da violência doméstica",
     ):
         assert f"# # {stage}" in pipeline
+    # Etapa 14.2 (visualizações da violência doméstica): seis figuras em memória, nomeadas no roteiro.
+    assert "# # ETAPA 14.2 — Visualizações da violência doméstica de Joinville" in pipeline
+    for figure in (
+        "fig_anual_maiores_ssp142", "fig_anual_intermediarias_ssp142", "fig_anual_menores_ssp142",
+        "fig_mensal_ameaca_ssp142", "fig_mensal_lesao_leve_ssp142", "fig_mensal_injuria_ssp142",
+        "conferencia_visualizacoes_viz142",
+    ):
+        assert figure in pipeline
     # Etapas futuras não podem aparecer como implementadas.
-    assert "ETAPA 14.2" not in pipeline
+    assert "ETAPA 14.3" not in pipeline
     assert "from scripts import transform" in pipeline
     assert "read_excel(" in pipeline and "read_csv(" in pipeline
     assert "data_referencia_joinville_20" in pipeline

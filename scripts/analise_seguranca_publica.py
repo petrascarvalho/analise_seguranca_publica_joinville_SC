@@ -3828,3 +3828,283 @@ mostrar_eda141(extremos_eda141_tabela.loc[extremos_eda141_tabela.periodo.eq("24 
 print("Limites: (a) contagens publicadas de 'Fato Comunicado' não são vítimas nem incidência real; (b) variação entre anos não prova mudança de incidência "
       "nem tem causa identificada nestes dados; (c) categorias de poucos casos (Estupro, Injúria real, lesão grave ou gravíssima) variam muito com poucas unidades; "
       "(d) 2023 e 2024 vêm de relatórios diferentes, cuja definição de contagem não está documentada; (e) a unificação das grafias de lesão corporal é decisão do projeto.")
+
+# %% [markdown]
+# # ETAPA 14.2 — Visualizações da violência doméstica de Joinville (SSP/SC)
+# Execute depois das Etapas 13.1, 13.2, 13.3 e 14.1 (não é preciso executar as Etapas
+# 1–12 nem o Sinesp). As seis figuras Matplotlib usam apenas as tabelas validadas das
+# Etapas 13.2 e 14.1 (`comparacao_anual_eda141` e `comparativo_mensal_eda141`);
+# nenhum valor é recalculado para o gráfico e nada é exportado: as figuras ficam em
+# memória. Elas são objetos `Figure` criados fora do `pyplot`, para não serem exibidas
+# antes da validação; cada uma é exibida em sua própria célula com `display()`.
+#
+# Cuidados de leitura (repetidos nas figuras):
+# - A unidade é "fatos comunicados" (contagem publicada pela SSP/SC), não vítimas.
+# - Cada categoria é plotada separadamente; não há total geral nem soma de categorias.
+# - Variações percentuais não são destacadas (categorias de poucos casos são instáveis).
+# - Diferenças entre 2023 e 2024 são mudanças nas contagens publicadas, não
+#   necessariamente na incidência real, e não têm causa identificada nestes dados.
+# - O mapeamento das grafias de lesão corporal e a associação dos meses às páginas
+#   seguintes das tabelas são decisões metodológicas do projeto.
+
+# %% [markdown]
+# ## 14.2.1 — Pré-condições, retratos de preservação e construção das figuras
+
+# %%
+import math as matematica_viz142
+import textwrap as quebra_viz142
+
+import pandas as pd_viz142
+from IPython.display import display as mostrar_viz142
+from matplotlib.figure import Figure as Figura_viz142
+from matplotlib.ticker import FuncFormatter as Formatador_viz142
+from matplotlib.ticker import MaxNLocator as LocalizadorInteiro_viz142
+
+necessarios_viz142 = (
+    "df_violencia_domestica_joinville_ssp132", "rastreabilidade_violencia_domestica_ssp132",
+    "comparacao_anual_eda141", "comparativo_mensal_eda141", "verificacoes_quadro_eda141")
+ausentes_viz142 = [nome for nome in necessarios_viz142 if nome not in globals()]
+if ausentes_viz142:
+    raise NameError(f"Etapa 14.2: execute antes as Etapas 13.1 a 14.1. Ausentes: {ausentes_viz142}")
+if verificacoes_quadro_eda141.empty or not verificacoes_quadro_eda141.ok.all():
+    raise ValueError("Etapa 14.2: as validações da Etapa 14.1 não estão integralmente aprovadas nesta sessão; interromper.")
+print(f"Controle da Etapa 14.1 confirmado: {len(verificacoes_quadro_eda141)} verificações aprovadas.")
+
+# Retratos para provar, ao final, que nada de origem foi alterado.
+retrato_base_viz142 = df_violencia_domestica_joinville_ssp132.copy(deep=True)
+retrato_rastreio_viz142 = rastreabilidade_violencia_domestica_ssp132.copy(deep=True)
+retrato_anual_viz142 = comparacao_anual_eda141.copy(deep=True)
+retrato_mensal_viz142 = comparativo_mensal_eda141.copy(deep=True)
+
+# Referência independente: texto publicado na rastreabilidade, convertido para inteiro.
+referencia_viz142 = {(int(l.ano), int(l.mes), l.categoria): int(l.valor_textual_original) for l in retrato_rastreio_viz142.itertuples()}
+anual_ref_viz142 = {(a, c): sum(v for (aa, m, cc), v in referencia_viz142.items() if aa == a and cc == c)
+                    for a in (2023, 2024) for c in {c for (_, _, c) in referencia_viz142}}
+
+cores_viz142 = {2023: "#2563A6", 2024: "#D97706"}  # azul e laranja: distinguíveis, inclusive em daltonismo
+meses_rotulos_viz142 = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+fonte_viz142 = ("Fonte: SSP/SC — relatórios de violência doméstica. Joinville/SC, janeiro/2023 a dezembro/2024. "
+                "Unidade: fatos comunicados (contagem publicada).")
+nota_viz142 = ("Nota: contagens publicadas, não necessariamente incidência real; sem total entre categorias. "
+               "Grafias de lesão corporal unificadas por decisão metodológica do projeto.")
+
+
+def formatar_inteiro_viz142(valor):
+    return f"{int(valor):,}".replace(",", ".")
+
+
+def rodape_viz142(figura):
+    # Duas faixas separadas no rodapé (fonte acima, nota abaixo), sem sobreposição.
+    figura.text(0.01, 0.125, "\n".join(quebra_viz142.wrap(fonte_viz142, 125)), fontsize=8.5, color="#333333", ha="left", va="top")
+    figura.text(0.01, 0.012, "\n".join(quebra_viz142.wrap(nota_viz142, 125)), fontsize=8.5, color="#333333", ha="left", va="bottom")
+
+
+def figura_anual_viz142(categorias, titulo):
+    """Barras agrupadas 2023 × 2024 (soma dos 12 meses), um eixo único iniciado em zero."""
+    dados = comparacao_anual_eda141.set_index("categoria").loc[list(categorias), ["acumulado_2023", "acumulado_2024"]].astype(int)
+    figura = Figura_viz142(figsize=(10, 6.6), dpi=120)
+    eixo = figura.add_axes([0.10, 0.27, 0.87, 0.53])
+    posicoes = list(range(len(categorias)))
+    largura = 0.38
+    barras = {}
+    for deslocamento, ano in ((-largura / 2, 2023), (largura / 2, 2024)):
+        barras[ano] = eixo.bar([p + deslocamento for p in posicoes], dados[f"acumulado_{ano}"].tolist(), width=largura,
+                               color=cores_viz142[ano], label=str(ano), edgecolor="white")
+        eixo.bar_label(barras[ano], labels=[formatar_inteiro_viz142(v) for v in dados[f"acumulado_{ano}"]], padding=3, fontsize=11)
+    eixo.set_ylim(0, matematica_viz142.ceil(dados.to_numpy().max() * 1.15))
+    eixo.yaxis.set_major_locator(LocalizadorInteiro_viz142(integer=True))
+    eixo.yaxis.set_major_formatter(Formatador_viz142(lambda valor, _: formatar_inteiro_viz142(valor)))
+    eixo.set_xticks(posicoes)
+    eixo.set_xticklabels(["\n".join(quebra_viz142.wrap(c, 20)) for c in categorias], fontsize=11)
+    eixo.set_ylabel("Fatos comunicados (soma dos 12 meses do ano)", fontsize=11)
+    eixo.set_xlabel("Categoria", fontsize=11)
+    eixo.set_title("Soma dos 12 meses de cada ano, por categoria (mesmo eixo vertical, iniciado em zero)", fontsize=10.5, color="#333333")
+    eixo.grid(axis="y", color="#DDDDDD", linewidth=0.8)
+    eixo.set_axisbelow(True)
+    eixo.spines[["top", "right"]].set_visible(False)
+    eixo.legend(title="Ano", fontsize=11, title_fontsize=11, loc="upper right", frameon=False)
+    figura.suptitle("\n".join(quebra_viz142.wrap(titulo, 75)), fontsize=13, fontweight="bold", x=0.01, ha="left", y=0.985)
+    rodape_viz142(figura)
+    return figura
+
+
+def figura_mensal_viz142(categoria):
+    """Linhas de 2023 e 2024 por mês para uma única categoria, eixo vertical iniciado em zero."""
+    dados = comparativo_mensal_eda141.loc[comparativo_mensal_eda141.categoria.eq(categoria)].sort_values("mes")
+    figura = Figura_viz142(figsize=(10, 6.6), dpi=120)
+    eixo = figura.add_axes([0.10, 0.27, 0.87, 0.53])
+    for ano in (2023, 2024):
+        eixo.plot(dados.mes.astype(int).tolist(), dados[f"fatos_{ano}"].astype(int).tolist(), marker="o", linewidth=2.2, markersize=6,
+                  color=cores_viz142[ano], label=str(ano))
+    eixo.set_xticks(range(1, 13))
+    eixo.set_xticklabels(meses_rotulos_viz142, fontsize=11)
+    eixo.set_ylim(0, matematica_viz142.ceil(max(dados.fatos_2023.astype(int).max(), dados.fatos_2024.astype(int).max()) * 1.12))
+    eixo.yaxis.set_major_locator(LocalizadorInteiro_viz142(integer=True))
+    eixo.yaxis.set_major_formatter(Formatador_viz142(lambda valor, _: formatar_inteiro_viz142(valor)))
+    eixo.set_ylabel("Fatos comunicados por mês", fontsize=11)
+    eixo.set_xlabel("Mês", fontsize=11)
+    eixo.set_title(f"Categoria: {categoria} — 2023 × 2024, janeiro a dezembro (eixo vertical iniciado em zero)", fontsize=10.5, color="#333333")
+    eixo.grid(axis="y", color="#DDDDDD", linewidth=0.8)
+    eixo.set_axisbelow(True)
+    eixo.spines[["top", "right"]].set_visible(False)
+    eixo.legend(title="Ano", fontsize=11, title_fontsize=11, loc="lower right", frameon=False)
+    figura.suptitle("\n".join(quebra_viz142.wrap(f"Violência doméstica em Joinville/SC — {categoria}: fatos comunicados por mês", 75)),
+                    fontsize=13, fontweight="bold", x=0.01, ha="left", y=0.985)
+    rodape_viz142(figura)
+    return figura
+
+
+especificacoes_viz142 = {
+    "fig_anual_maiores_ssp142": ("anual", ("Ameaça", "Lesão corporal leve dolosa", "Injúria"),
+                                 "Violência doméstica em Joinville/SC — categorias de maiores contagens publicadas: 2023 × 2024"),
+    "fig_anual_intermediarias_ssp142": ("anual", ("Vias de fato", "Difamação", "Calúnia"),
+                                        "Violência doméstica em Joinville/SC — categorias de contagens intermediárias: 2023 × 2024"),
+    "fig_anual_menores_ssp142": ("anual", ("Estupro", "Lesão corporal grave ou gravíssima dolosa", "Injúria real"),
+                                 "Violência doméstica em Joinville/SC — categorias de menores contagens publicadas: 2023 × 2024"),
+    "fig_mensal_ameaca_ssp142": ("mensal", ("Ameaça",), None),
+    "fig_mensal_lesao_leve_ssp142": ("mensal", ("Lesão corporal leve dolosa",), None),
+    "fig_mensal_injuria_ssp142": ("mensal", ("Injúria",), None),
+}
+figuras_viz142 = {}
+for nome_viz142, (tipo_viz142, categorias_viz142, titulo_viz142) in especificacoes_viz142.items():
+    figuras_viz142[nome_viz142] = (figura_anual_viz142(categorias_viz142, titulo_viz142) if tipo_viz142 == "anual"
+                                   else figura_mensal_viz142(categorias_viz142[0]))
+print("Seis figuras construídas em memória (ainda não exibidas):", ", ".join(figuras_viz142))
+
+# %% [markdown]
+# ## 14.2.2 — Validação das figuras antes de exibi-las
+# Os valores são lidos dos próprios elementos gráficos (alturas das barras, rótulos
+# sobre as barras e coordenadas das linhas) e comparados com a tabela da Etapa 14.1 e
+# com a soma/valor obtidos do texto publicado na rastreabilidade. Também são conferidos
+# títulos, legendas, eixos, fonte e ausência de total geral. Se algo divergir, a
+# execução é interrompida e as figuras não devem ser aprovadas.
+
+# %%
+linhas_valores_viz142 = []
+linhas_conferencia_viz142 = []
+
+
+def registrar_viz142(figura, verificacao, esperado, encontrado):
+    linhas_conferencia_viz142.append({"figura": figura, "verificacao": verificacao, "esperado": esperado, "encontrado": encontrado,
+                                      "ok": esperado == encontrado})
+
+
+def textos_da_figura_viz142(figura):
+    eixo = figura.axes[0]
+    textos = [t.get_text() for t in figura.texts] + [figura.get_suptitle(), eixo.get_title(), eixo.get_xlabel(), eixo.get_ylabel()]
+    legenda = eixo.get_legend()
+    if legenda is not None:
+        textos += [legenda.get_title().get_text()] + [t.get_text() for t in legenda.get_texts()]
+    return [t for t in textos if t]
+
+
+for nome_viz142, (tipo_viz142, categorias_viz142, _) in especificacoes_viz142.items():
+    figura_viz142 = figuras_viz142[nome_viz142]
+    eixo_viz142 = figura_viz142.axes[0]
+    textos_viz142 = " | ".join(textos_da_figura_viz142(figura_viz142))
+    registrar_viz142(nome_viz142, "um único eixo (mesma escala vertical para 2023 e 2024)", 1, len(figura_viz142.axes))
+    registrar_viz142(nome_viz142, "eixo vertical começa em zero e comporta o maior valor", True,
+                     eixo_viz142.get_ylim()[0] == 0)
+    registrar_viz142(nome_viz142, "título, eixos, fonte SSP/SC, Joinville/SC, período e unidade presentes", True,
+                     all(trecho in textos_viz142 for trecho in ("Joinville/SC", "SSP/SC", "janeiro/2023 a dezembro/2024", "fatos comunicados", "Fatos comunicados", "2023", "2024")))
+    registrar_viz142(nome_viz142, "sem a palavra 'vítima' e sem 'total' nos textos", True, "vítima" not in textos_viz142.lower() and "total geral" not in textos_viz142.lower())
+    registrar_viz142(nome_viz142, "legenda com 2023 e 2024", ["2023", "2024"], [t.get_text() for t in eixo_viz142.get_legend().get_texts()])
+    registrar_viz142(nome_viz142, "cores de 2023 e 2024 diferentes", 2, len({cores_viz142[2023], cores_viz142[2024]}))
+    if tipo_viz142 == "anual":
+        rotulos_eixo_viz142 = [t.get_text().replace("\n", " ") for t in eixo_viz142.get_xticklabels()]
+        registrar_viz142(nome_viz142, "categorias no eixo horizontal (ordem da especificação)", list(categorias_viz142), rotulos_eixo_viz142)
+        registrar_viz142(nome_viz142, "duas séries de barras (2023 e 2024) com uma barra por categoria", (3, 3), (len(eixo_viz142.containers[0]), len(eixo_viz142.containers[1])))
+        registrar_viz142(nome_viz142, "total de barras = 2 × categorias", 6, len(eixo_viz142.patches))
+        topo_viz142 = eixo_viz142.get_ylim()[1]
+        for contador_viz142, ano_viz142 in enumerate((2023, 2024)):
+            contêiner_viz142 = eixo_viz142.containers[contador_viz142]
+            rotulos_valor_viz142 = [t.get_text() for t in eixo_viz142.texts][contador_viz142 * 3:(contador_viz142 + 1) * 3]
+            for posicao_viz142, categoria_viz142 in enumerate(categorias_viz142):
+                plotado_viz142 = contêiner_viz142[posicao_viz142].get_height()
+                tabela_viz142 = int(comparacao_anual_eda141.set_index("categoria").loc[categoria_viz142, f"acumulado_{ano_viz142}"])
+                independente_viz142 = anual_ref_viz142[(ano_viz142, categoria_viz142)]
+                linhas_valores_viz142.append({
+                    "figura": nome_viz142, "categoria": categoria_viz142, "ano": ano_viz142, "mes": pd_viz142.NA, "valor_plotado": int(plotado_viz142),
+                    "rotulo_sobre_a_barra": rotulos_valor_viz142[posicao_viz142], "valor_tabela_14_1": tabela_viz142,
+                    "valor_rastreabilidade_soma_12_meses": independente_viz142,
+                    "conferem": int(plotado_viz142) == tabela_viz142 == independente_viz142 == int(rotulos_valor_viz142[posicao_viz142].replace(".", "")) and plotado_viz142 == int(plotado_viz142)})
+        registrar_viz142(nome_viz142, "valor máximo cabe no eixo (topo > maior barra)", True, topo_viz142 > max(p.get_height() for p in eixo_viz142.patches))
+    else:
+        categoria_viz142 = categorias_viz142[0]
+        linhas_eixo_viz142 = eixo_viz142.lines
+        registrar_viz142(nome_viz142, "duas linhas (2023 e 2024), cada uma com 12 pontos", [(12, 12)], [(len(linhas_eixo_viz142[0].get_ydata()), len(linhas_eixo_viz142[1].get_ydata()))])
+        registrar_viz142(nome_viz142, "eixo horizontal de janeiro a dezembro", meses_rotulos_viz142, [t.get_text() for t in eixo_viz142.get_xticklabels()])
+        registrar_viz142(nome_viz142, "meses plotados 1 a 12 em ambas as linhas", True,
+                         all(list(l.get_xdata()) == list(range(1, 13)) for l in linhas_eixo_viz142))
+        registrar_viz142(nome_viz142, "uma única categoria no gráfico", [categoria_viz142], [categoria_viz142])
+        registrar_viz142(nome_viz142, "título menciona a categoria", True, categoria_viz142 in figura_viz142.get_suptitle() and categoria_viz142 in eixo_viz142.get_title())
+        maior_viz142 = max(max(l.get_ydata()) for l in linhas_eixo_viz142)
+        registrar_viz142(nome_viz142, "valor máximo cabe no eixo (topo > maior valor)", True, eixo_viz142.get_ylim()[1] > maior_viz142)
+        for linha_viz142, ano_viz142 in zip(linhas_eixo_viz142, (2023, 2024)):
+            registrar_viz142(nome_viz142, f"rótulo da linha de {ano_viz142}", str(ano_viz142), linha_viz142.get_label())
+            for mes_viz142, plotado_viz142 in zip(linha_viz142.get_xdata(), linha_viz142.get_ydata()):
+                tabela_viz142 = int(comparativo_mensal_eda141.loc[comparativo_mensal_eda141.categoria.eq(categoria_viz142) & comparativo_mensal_eda141.mes.eq(int(mes_viz142)), f"fatos_{ano_viz142}"].iloc[0])
+                independente_viz142 = referencia_viz142[(ano_viz142, int(mes_viz142), categoria_viz142)]
+                linhas_valores_viz142.append({
+                    "figura": nome_viz142, "categoria": categoria_viz142, "ano": ano_viz142, "mes": int(mes_viz142), "valor_plotado": int(plotado_viz142),
+                    "rotulo_sobre_a_barra": pd_viz142.NA, "valor_tabela_14_1": tabela_viz142, "valor_rastreabilidade_soma_12_meses": independente_viz142,
+                    "conferem": int(plotado_viz142) == tabela_viz142 == independente_viz142 and plotado_viz142 == int(plotado_viz142)})
+valores_plotados_viz142 = pd_viz142.DataFrame(linhas_valores_viz142)
+valores_plotados_viz142 = valores_plotados_viz142.rename(columns={"valor_rastreabilidade_soma_12_meses": "valor_rastreabilidade (soma de 12 meses nas figuras anuais)"})
+# Cada categoria mantém os próprios valores: nenhum valor aparece em mais de uma categoria por engano e não há categoria "Total".
+categorias_plotadas_viz142 = set(valores_plotados_viz142.categoria)
+registrar_viz142("todas", "nove categorias plotadas, cada uma com os valores próprios", 9, len(categorias_plotadas_viz142 & {c for (_, _, c) in referencia_viz142}))
+registrar_viz142("todas", "nenhuma categoria agregada ou 'Total' plotada", True, all("total" not in c.lower() for c in categorias_plotadas_viz142))
+registrar_viz142("todas", "valores plotados: 18 anuais + 72 mensais, todos conferidos", (18, 72, 90), (
+    int(valores_plotados_viz142.mes.isna().sum()), int(valores_plotados_viz142.mes.notna().sum()), int(valores_plotados_viz142.conferem.sum())))
+registrar_viz142("todas", "12 meses de cada ano em cada série mensal (3 figuras × 2 anos × 12)", 72, int(valores_plotados_viz142.mes.notna().sum()))
+registrar_viz142("todas", "base analítica inalterada", True, bool(df_violencia_domestica_joinville_ssp132.equals(retrato_base_viz142)) and df_violencia_domestica_joinville_ssp132.dtypes.equals(retrato_base_viz142.dtypes))
+registrar_viz142("todas", "rastreabilidade inalterada", True, bool(rastreabilidade_violencia_domestica_ssp132.equals(retrato_rastreio_viz142)))
+registrar_viz142("todas", "tabelas da Etapa 14.1 inalteradas", True, bool(comparacao_anual_eda141.equals(retrato_anual_viz142)) and bool(comparativo_mensal_eda141.equals(retrato_mensal_viz142)))
+conferencia_visualizacoes_viz142 = pd_viz142.DataFrame(linhas_conferencia_viz142)
+print("Valores lidos dos elementos gráficos e comparados com a Etapa 14.1 e com a rastreabilidade (90 valores):")
+mostrar_viz142(valores_plotados_viz142)
+print("Conferência das visualizações:")
+mostrar_viz142(conferencia_visualizacoes_viz142)
+if not conferencia_visualizacoes_viz142.ok.all() or not valores_plotados_viz142.conferem.all():
+    mostrar_viz142(conferencia_visualizacoes_viz142.loc[~conferencia_visualizacoes_viz142.ok])
+    mostrar_viz142(valores_plotados_viz142.loc[~valores_plotados_viz142.conferem])
+    raise ValueError("Etapa 14.2: conferência das figuras falhou; não aprovar nem integrar as visualizações.")
+print(f"Etapa 14.2: {len(conferencia_visualizacoes_viz142)} verificações e {len(valores_plotados_viz142)} valores plotados conferidos; "
+      "dados de origem inalterados; nenhuma imagem exportada.")
+
+# %% [markdown]
+# ## 14.2.3 — Figura 1: categorias de maiores contagens (Ameaça, Lesão corporal leve dolosa, Injúria)
+
+# %%
+mostrar_viz142(figuras_viz142["fig_anual_maiores_ssp142"])
+
+# %% [markdown]
+# ## 14.2.4 — Figura 2: categorias de contagens intermediárias (Vias de fato, Difamação, Calúnia)
+
+# %%
+mostrar_viz142(figuras_viz142["fig_anual_intermediarias_ssp142"])
+
+# %% [markdown]
+# ## 14.2.5 — Figura 3: categorias de menores contagens (Estupro, Lesão corporal grave ou gravíssima dolosa, Injúria real)
+
+# %%
+mostrar_viz142(figuras_viz142["fig_anual_menores_ssp142"])
+
+# %% [markdown]
+# ## 14.2.6 — Figura 4: Ameaça, mês a mês, 2023 × 2024
+
+# %%
+mostrar_viz142(figuras_viz142["fig_mensal_ameaca_ssp142"])
+
+# %% [markdown]
+# ## 14.2.7 — Figura 5: Lesão corporal leve dolosa, mês a mês, 2023 × 2024
+
+# %%
+mostrar_viz142(figuras_viz142["fig_mensal_lesao_leve_ssp142"])
+
+# %% [markdown]
+# ## 14.2.8 — Figura 6: Injúria, mês a mês, 2023 × 2024
+
+# %%
+mostrar_viz142(figuras_viz142["fig_mensal_injuria_ssp142"])

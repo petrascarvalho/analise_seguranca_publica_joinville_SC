@@ -1,6 +1,6 @@
 # Segurança Pública de Joinville
 
-Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. As etapas Sinesp 1–10 e as etapas SSP/SC 11, 12, 13.1, 13.2, 13.3 e 14.1 (violência doméstica de Joinville) foram implementadas e executadas em memória; os resultados abaixo foram observados nessas execuções, sem reexecutar o ETL durante a atualização documental. As visualizações da violência doméstica (Etapa 14.2), a integração ao Streamlit, o tratamento da Prefeitura e o deploy permanecem pendentes.
+Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. As etapas Sinesp 1–10 e as etapas SSP/SC 11, 12, 13.1, 13.2, 13.3, 14.1 e 14.2 (violência doméstica de Joinville) foram implementadas e executadas em memória; os resultados abaixo foram observados nessas execuções, sem reexecutar o ETL durante a atualização documental. A integração dos resultados e figuras ao Streamlit, o tratamento da Prefeitura e o deploy permanecem pendentes.
 
 ## 1. Título e resumo
 
@@ -20,7 +20,7 @@ O escopo inclui feminicídio, tentativa de feminicídio, violência doméstica e
 
 Requisitos acadêmicos registrados: trabalho individual do SENAI/LAB365, Módulo 2, Semana 13; ETL em Python, EDA, estatísticas, gráficos com fontes, painel interativo Streamlit, README, repositório dedicado, publicação da aplicação, vídeo de até três minutos e envio dos links ao AVA/repositório da turma conforme enunciado. O prazo informado é **30/10/2026 às 22h, horário de Brasília**, sujeito a comunicados posteriores. Regras finais de visibilidade do repositório, divulgação e marcações do vídeo devem ser conferidas no enunciado vigente antes da entrega.
 
-As etapas Sinesp 1–10 e as etapas SSP/SC 11–14.1 estão implementadas e foram executadas em memória. A próxima etapa prevista é a **Etapa 14.2 — visualizações da violência doméstica**, ainda não implementada. Tratamento da Prefeitura, integração analítica ao Streamlit, exportações, publicação e entrega final permanecem pendentes.
+As etapas Sinesp 1–10 e as etapas SSP/SC 11–14.2 (incluindo as seis visualizações da violência doméstica, produzidas em memória) estão implementadas e foram executadas. A próxima prioridade é a **integração dos resultados Sinesp e SSP/SC ao Streamlit**. Tratamento da Prefeitura, exportações, deploy e entrega final permanecem pendentes.
 
 ## 4. Fonte e autorização
 
@@ -56,7 +56,7 @@ O roteiro principal é [scripts/analise_seguranca_publica.py](scripts/analise_se
 | 13.2. Base analítica | Implementada e executada | `df_violencia_domestica_joinville_ssp132` (216 × 5) e rastreabilidade (216 × 23), somente em memória |
 | 13.3. Validação integral | Implementada e executada | 67 verificações aprovadas; 216 observações conferidas individualmente contra CSV e PDF |
 | 14.1. EDA da violência doméstica | Implementada e executada | Inspeção, estatísticas por categoria, comparação 2023 × 2024 e análise mensal; 28 verificações aprovadas; sem gráficos |
-| 14.2. Visualizações | **Pendente; não implementada** | Aguarda aprovação |
+| 14.2. Visualizações da violência doméstica | Implementada e executada | Seis figuras Matplotlib em memória (três anuais e três mensais); 79 verificações aprovadas e 90 valores plotados conferidos; nenhuma imagem exportada |
 | Exportação de resultados | Pendente; não autorizada | Nenhuma base ou figura nova foi exportada |
 
 A chave observacional mantém UF, município, evento, competência e abrangência; agente, arma e faixa etária permanecem disponíveis na camada original. Na última reconstrução houve zero duplicidade exata e zero repetição nas chaves que incluem abrangência. O controle sem abrangência identificou 20 grupos/40 linhas de mandados estaduais e PF, preservados separadamente.
@@ -67,7 +67,7 @@ Datas: sistema Excel 1900 confirmado nos sete arquivos, origem `1899-12-30`, sem
 
 O catálogo auxiliar tem 12 combinações evento/abrangência, com medida, unidade, natureza e limitações. As estatísticas não misturam vítimas com mandados; somas temporais usam apenas a medida apropriada. Desvio-padrão descritivo usa `ddof=0`; médias/medianas informam seus meses de observação. Nenhum valor ausente foi convertido em zero.
 
-**SSP/SC — violência doméstica (Etapas 11–14.1).** As etapas leem os 45 PDFs e CSVs brutos sem alterá-los (os hashes SHA-256 são conferidos contra o inventário histórico). A base analítica reúne os três relatórios de violência doméstica (1º e 2º semestres de 2023 e ano de 2024) em nove categorias e 24 competências mensais (216 observações), com `municipio`, `ano`, `mes`, `categoria` e `fatos_comunicados`. Três decisões metodológicas aprovadas pelo projeto, **sem confirmação oficial da SSP/SC**: (i) as grafias "0 Dolosa" e "- Dolosa" das duas lesões corporais foram mapeadas por dicionário explícito para "Lesão corporal leve dolosa" e "Lesão corporal grave ou gravíssima dolosa", e os rótulos originais permanecem na rastreabilidade; (ii) o cabeçalho de meses da primeira página de cada metade da tabela é aplicado às páginas seguintes da mesma tabela contínua (nas páginas dos blocos de Joinville o cabeçalho de meses não é reimpresso); (iii) o município de Joinville é atribuído pelo contexto do bloco, pois a célula de município fica vazia nas linhas de continuação. A rastreabilidade registra, por observação, PDF e hash, CSV, página, tabela, linha, coluna, rótulo e valor originais. Linhas extraídas e células de tabela não equivalem a ocorrências policiais.
+**SSP/SC — violência doméstica (Etapas 11–14.2).** As etapas leem os 45 PDFs e CSVs brutos sem alterá-los (os hashes SHA-256 são conferidos contra o inventário histórico). A base analítica reúne os três relatórios de violência doméstica (1º e 2º semestres de 2023 e ano de 2024) em nove categorias e 24 competências mensais (216 observações), com `municipio`, `ano`, `mes`, `categoria` e `fatos_comunicados`. Três decisões metodológicas aprovadas pelo projeto, **sem confirmação oficial da SSP/SC**: (i) as grafias "0 Dolosa" e "- Dolosa" das duas lesões corporais foram mapeadas por dicionário explícito para "Lesão corporal leve dolosa" e "Lesão corporal grave ou gravíssima dolosa", e os rótulos originais permanecem na rastreabilidade; (ii) o cabeçalho de meses da primeira página de cada metade da tabela é aplicado às páginas seguintes da mesma tabela contínua (nas páginas dos blocos de Joinville o cabeçalho de meses não é reimpresso); (iii) o município de Joinville é atribuído pelo contexto do bloco, pois a célula de município fica vazia nas linhas de continuação. A rastreabilidade registra, por observação, PDF e hash, CSV, página, tabela, linha, coluna, rótulo e valor originais. Linhas extraídas e células de tabela não equivalem a ocorrências policiais.
 
 Os módulos [extract.py](scripts/extract.py), [transform.py](scripts/transform.py) e [analysis.py](scripts/analysis.py) são de fase anterior e podem gravar resultados quando chamados como programas. Não são equivalentes ao roteiro atual e não devem ser executados automaticamente. Na SSP, os 45 CSVs brutos intermediários diferem dos quatro CSVs municipais históricos. Uma seleção de snapshots não é deduplicação genérica nem soma de boletins.
 
@@ -224,6 +224,21 @@ Estatísticas mensais dos 24 meses (desvio-padrão descritivo, `ddof=0`):
 
 Os 27 zeros publicados estão distribuídos em Injúria real (17), Lesão corporal grave ou gravíssima dolosa (8) e Estupro (2). Maiores valores mensais (24 meses): Ameaça 209 (janeiro/2024), Lesão corporal leve dolosa 109 (dezembro/2023), Injúria 78 (março/2024), Vias de fato 32 (novembro/2024); Difamação 24 empata em janeiro/2023 e fevereiro/2024, e Estupro 5 empata em janeiro/2024 e julho/2024 (empates preservados na execução). Categorias com poucos casos (Estupro, Injúria real e lesão corporal grave ou gravíssima) variam muito com poucas unidades; seus percentuais devem ser lidos com cautela. Há aumento publicado em sete das nove categorias e redução em duas (lesão corporal leve e lesão corporal grave ou gravíssima); essa descrição não identifica causa.
 
+### SSP/SC: visualizações da violência doméstica (Etapa 14.2)
+
+Seis figuras Matplotlib foram construídas em memória, exclusivamente a partir das tabelas validadas das Etapas 13.2 e 14.1, e **nenhuma imagem foi exportada**. Cada figura traz o município (Joinville/SC), a fonte (SSP/SC), o período (janeiro/2023 a dezembro/2024), a unidade ("fatos comunicados") e a nota de que se trata de contagens publicadas, sem total entre categorias; o eixo vertical começa em zero. Não há percentuais destacados nem número de vítimas.
+
+| Figura (variável) | Conteúdo | Valores plotados (2023 / 2024) |
+|---|---|---|
+| `fig_anual_maiores_ssp142` | Barras 2023 × 2024: categorias de maiores contagens | Ameaça 1.957 / 2.085; Lesão corporal leve dolosa 989 / 959; Injúria 541 / 716 |
+| `fig_anual_intermediarias_ssp142` | Barras 2023 × 2024: contagens intermediárias | Vias de fato 229 / 281; Difamação 190 / 211; Calúnia 109 / 119 |
+| `fig_anual_menores_ssp142` | Barras 2023 × 2024: menores contagens | Estupro 22 / 30; Lesão corporal grave ou gravíssima dolosa 19 / 10; Injúria real 2 / 6 |
+| `fig_mensal_ameaca_ssp142` | Linhas mensais, janeiro a dezembro | Ameaça, 12 meses de 2023 e 12 de 2024 |
+| `fig_mensal_lesao_leve_ssp142` | Linhas mensais, janeiro a dezembro | Lesão corporal leve dolosa, 12 meses de cada ano |
+| `fig_mensal_injuria_ssp142` | Linhas mensais, janeiro a dezembro | Injúria, 12 meses de cada ano |
+
+Validação: **79 verificações aprovadas** e **90 valores gráficos conferidos** (18 das barras anuais e 72 dos pontos mensais), lidos dos próprios elementos gráficos e comparados com a tabela da Etapa 14.1 e com os textos publicados na rastreabilidade; os DataFrames de origem permaneceram idênticos. As seis figuras foram inspecionadas visualmente; a inspeção levou à correção de títulos cortados e de rodapés sobrepostos. As figuras ainda **não estão integradas ao Streamlit** e não há deploy público confirmado. As mesmas ressalvas se aplicam: "Fato Comunicado" não representa necessariamente vítimas ou pessoas únicas; o mapeamento de "0 Dolosa" e "- Dolosa" e a aplicação do cabeçalho de meses às tabelas contínuas são decisões metodológicas; não há total geral nem inferência causal.
+
 ### Outras fontes: histórico preservado, ainda fora do fluxo analítico atualizado
 
 Os 294 snapshots municipais de homicídio SSP/SC e os demais resultados históricos anteriores à Etapa 12 permanecem como histórico e não constituem série definitiva. Os boletins reapresentam anos e acumulados; datas de atualização podem variar por tabela.
@@ -248,7 +263,7 @@ Para uso operacional, seriam necessários dicionários estáveis, atualização 
 
 ## 10. Aplicação Streamlit
 
-Ponto de entrada: [scripts/painel_streamlit.py](scripts/painel_streamlit.py). Há duas páginas locais: [Projeto](dashboard/pages/home.py) e [Qualidade dos dados](dashboard/pages/quality.py). As tabelas e quatro figuras novas do Sinesp e as tabelas e estatísticas da violência doméstica SSP/SC (Etapas 13–14.1) **ainda não foram integradas**. O texto da página Projeto ainda menciona cobertura antiga e resultados pendentes; essa atualização do painel é tarefa futura, não executada aqui.
+Ponto de entrada: [scripts/painel_streamlit.py](scripts/painel_streamlit.py). Há duas páginas locais: [Projeto](dashboard/pages/home.py) e [Qualidade dos dados](dashboard/pages/quality.py). As tabelas e quatro figuras novas do Sinesp e as tabelas, estatísticas e seis figuras da violência doméstica SSP/SC (Etapas 13–14.2) **ainda não foram integradas**. O texto da página Projeto ainda menciona cobertura antiga e resultados pendentes; essa atualização do painel é tarefa futura, não executada aqui.
 
 A página Qualidade consulta arquivos em `dados/processados/sinesp/`, `dados/processados/ssp_sc/` e `dados/processados/prefeitura/` pelo módulo `scripts.analysis`. Sem esses arquivos, a função retorna uma lista vazia e a página apresenta aviso; isso não equivale a um painel analítico funcional.
 
@@ -284,13 +299,13 @@ python -m scripts.analise_seguranca_publica
 python -m streamlit run scripts/painel_streamlit.py
 ```
 
-O primeiro comando executa todas as células do roteiro (Etapas 1–14.1), inclusive a preparação da cópia analítica e os quatro gráficos Sinesp em memória, e as etapas SSP/SC, que leem os 45 PDFs e CSVs locais. Não é um comando limitado a imports ou leitura; não o use para uma tarefa restrita à documentação. Ele não exporta os resultados novos.
+O primeiro comando executa todas as células do roteiro (Etapas 1–14.2), inclusive a preparação da cópia analítica e os quatro gráficos Sinesp em memória, e as etapas SSP/SC, que leem os 45 PDFs e CSVs locais. Não é um comando limitado a imports ou leitura; não o use para uma tarefa restrita à documentação. Ele não exporta os resultados novos.
 
 Para trabalhar **somente Sinesp**, execute as células 1–2 e depois 5–10 no mesmo Python Interactive, com os sete XLSX e a auditoria disponíveis. Isso dispensa a leitura das entradas SSP/Prefeitura das células 3–4. Para trabalhar **somente a violência doméstica SSP/SC**, execute em ordem as células das Etapas 13.1 a 13.3 e depois 14.1 (cada etapa SSP/SC declara em comentário suas pré-condições), sem executar as Etapas 1–12 nem o Sinesp; é preciso ter localmente os três PDFs e CSVs de violência doméstica e o inventário de hashes. Os DataFrames e figuras ficam no kernel para inspeção no Data Viewer; as execuções mais recentes desta sessão foram conferidas em processos Python, sem pressupor que variáveis persistam em outra sessão do VS Code.
 
 ### Testes
 
-Os testes de documentação podem ser executados sem ETL (conferem a estrutura do README e a presença das etapas 1–14.1, das subetapas 13.1–13.3 e das rotinas no roteiro, sem executá-lo):
+Os testes de documentação podem ser executados sem ETL (conferem a estrutura do README e a presença das etapas 1–14.2, das subetapas 13.1–13.3, das seis figuras e das rotinas no roteiro, sem executá-lo):
 
 ```powershell
 python -m pytest tests/test_readme_sections.py -q
@@ -307,7 +322,7 @@ requirements.txt                  intervalos de dependências
 .env.example                      exemplo sem credenciais
 .vscode/settings.json             .venv e raiz do Python Interactive
 scripts/
-  analise_seguranca_publica.py     roteiro acadêmico: etapas 1–10 (Sinesp) e 11–14.1 (SSP/SC); 14.2 pendente
+  analise_seguranca_publica.py     roteiro acadêmico: etapas 1–10 (Sinesp) e 11–14.2 (SSP/SC)
   painel_streamlit.py             entrada do painel
   extract.py, transform.py        módulos anteriores; podem gerar arquivos
   analysis.py, utils.py           análises históricas e resolução de caminhos
@@ -339,7 +354,7 @@ O README de continuidade e seus backups permanecem **fora do repositório**. Nen
 - O painel ainda não apresenta os resultados Sinesp validados; sua página Projeto contém textos desatualizados.
 - A Etapa 12 auditou 58 grupos de períodos repetidos nos boletins SSP/SC, 41 com valores divergentes (37 sem explicação documental suficiente); isso não autoriza exclusão automática, nem soma de snapshots, nem a escolha de uma versão definitiva de homicídios, que permanece pendente. O boletim de janeiro/2025 (página 8) e os rótulos de fevereiro (28/02 e 29/02) seguem como inconsistências documentadas.
 - Violência doméstica: "Fato Comunicado" não tem definição operacional nos PDFs (não equivale automaticamente a vítimas, pessoas únicas ou boletins de ocorrência únicos); o mapeamento de "0 Dolosa" e "- Dolosa" e a aplicação do cabeçalho de meses às páginas seguintes são decisões metodológicas, sem confirmação oficial da SSP/SC; 2023 vem de dois relatórios semestrais e 2024 de um relatório anual; categorias de poucos casos geram variações percentuais instáveis; os resultados não sustentam causalidade nem incidência real.
-- Próxima etapa: Etapa 14.2 (visualizações da violência doméstica), pendente de aprovação, seguida de integração ao Streamlit.
+- Próxima prioridade: integrar ao Streamlit os resultados e figuras Sinesp (Etapas 1–10) e SSP/SC (Etapas 13–14.2), que hoje existem apenas em memória no roteiro; em seguida, Prefeitura/SEPROT, deploy e entrega.
 - A seleção histórica de homicídios SSP usa o último valor anual por referência e uma edição única para janeiro–julho; precisa de revisão contextual no novo fluxo.
 - A Prefeitura requer esclarecimento da unidade, documentação da transcrição e integração própria. Não há cobertura municipal de 2026 nessa série.
 - A regra `fillna(0)` no módulo histórico `scripts/analysis.py` não faz parte do roteiro Sinesp atual e precisa de revisão antes de reutilização.
@@ -359,7 +374,7 @@ Licença do código e permissões de redistribuição dos dados ainda devem ser 
 
 ## 15. Links de entrega
 
-- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém o primeiro commit (etapas Sinesp 1–10) e o ajuste de créditos do README. As etapas SSP/SC 11–14.1 foram versionadas apenas localmente, sem envio ao remoto até nova autorização.
+- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém o primeiro commit (etapas Sinesp 1–10), o ajuste de créditos do README e as etapas SSP/SC 11–14.2 com a documentação e o teste documental atualizados (publicados na branch `main`). Isso não representa deploy da aplicação.
 - URL Git exata: `https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC.git`.
 - Pasta local: repositório Git na branch `main`, com `origin` configurado.
 - Aplicação Streamlit publicada: pendente.
@@ -377,4 +392,4 @@ O fluxo Sinesp preservou 900 linhas originais, produziu uma cópia analítica 90
 
 O fluxo SSP/SC inspecionou 45 PDFs/CSVs, auditou 58 grupos de republicações (41 divergentes, sem versão definitiva escolhida) e construiu e validou uma base de violência doméstica de Joinville (216 × 5, com rastreabilidade 216 × 23), da qual se obtiveram estatísticas descritivas por categoria e a comparação 2023 × 2024 em "Fato Comunicado".
 
-A análise sustenta descrições dos valores publicados e comparações temporais equivalentes, com atenção a pequenas contagens. Não sustenta total geral de criminalidade, causalidade, estimativa de subnotificação, equivalência entre "Fato Comunicado" e vítimas, taxa populacional ou distribuição por bairros. A Prefeitura ainda precisa de tratamento próprio; as visualizações da violência doméstica (Etapa 14.2), a integração ao Streamlit, o deploy e a entrega final permanecem pendentes.
+A análise sustenta descrições dos valores publicados e comparações temporais equivalentes, com atenção a pequenas contagens. Não sustenta total geral de criminalidade, causalidade, estimativa de subnotificação, equivalência entre "Fato Comunicado" e vítimas, taxa populacional ou distribuição por bairros. A Prefeitura ainda precisa de tratamento próprio; a integração das figuras e tabelas ao Streamlit, o deploy e a entrega final permanecem pendentes.
