@@ -1,7 +1,8 @@
-# Preparação do deploy no Streamlit Community Cloud
+# Deploy no Streamlit Community Cloud
 
-**Nenhum deploy foi feito e não existe URL pública.** Este roteiro só prepara a publicação, que depende de autorização
-separada do responsável.
+**Deploy realizado.** Aplicação publicada em <https://seguranca-publica-joinville-sinesp.streamlit.app/>. A página inicial abriu corretamente no navegador; as demais páginas,
+os gráficos e o uso em dispositivos móveis **ainda não foram revisados visualmente** (etapa posterior). Este documento registra a
+configuração usada e a conferência pós-deploy.
 
 ## Configuração do app
 
@@ -29,18 +30,30 @@ O painel usa **Streamlit, Pandas e Matplotlib**. `requirements.txt` também list
 pypdf, lxml, pyarrow, pytest); o Cloud os instalará, o que só aumenta o tempo de build. Versões testadas localmente: Streamlit 1.66.0,
 Pandas 3.0.6, Matplotlib 3.11.2, Python 3.12. As faixas de `requirements.txt` não foram testadas em versões mais antigas.
 
-## Passos (quando autorizado)
+## Passos executados (e para refazer o deploy)
 
 1. Confirmar que `main` e `origin/main` estão iguais e que o commit contém `dashboard/data_publica/` com os dois CSVs e o manifesto.
 2. Em <https://share.streamlit.io>, *Create app* → repositório, branch e arquivo principal acima.
 3. Aguardar o build; abrir as três páginas (**Projeto**, **Indicadores Sinesp**, **Qualidade e metodologia**); conferir *Qualidade e
    metodologia* (SHA-256 dos arquivos = manifesto; última competência 2026-09; PRF 2026-08).
-4. Só então registrar a URL real no README (`## 15. Links de entrega`).
+4. A URL real está registrada no README (`## 15. Links de entrega`) e na documentação do escopo.
+
+## Conferência pós-deploy
+
+Após cada push em `main` o Cloud reconstrói o aplicativo (alguns minutos). Conferir, em <https://seguranca-publica-joinville-sinesp.streamlit.app/>:
+
+* as **três páginas** na barra lateral (Projeto, Indicadores Sinesp, Qualidade e metodologia) e nenhuma mensagem de erro;
+* em *Qualidade e metodologia*: arquivos com "confere com o manifesto", versão `20261027T114400Z`, última competência 2026-09 (PRF 2026-08);
+* em *Indicadores Sinesp*: indicador padrão Homicídio doloso/Estadual, KPIs de 2025 (29) e janeiro–setembro de 2026 (25);
+* se o aplicativo estiver "dormindo" (inatividade), acioná-lo e aguardar a reativação; se a versão exibida for antiga, reiniciar o app para limpar o `st.cache_data`.
+
+Se o build falhar, verificar `requirements.txt` (Python 3.12) antes de qualquer alteração no código.
 
 ## Verificação visual
 
 Os testes automatizados (`AppTest`) e a inicialização do servidor não substituem a inspeção visual em desktop e celular. Ela deve ser
-feita manualmente no navegador antes de divulgar o link.
+feita manualmente no navegador, em todas as páginas, antes de divulgar o link; a validação em celular e o aperfeiçoamento dos
+gráficos estão pendentes.
 
 ## Atualização dos dados depois do deploy
 

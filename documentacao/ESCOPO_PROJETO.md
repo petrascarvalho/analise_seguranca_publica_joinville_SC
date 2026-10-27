@@ -61,8 +61,9 @@ horário ou corporação; identificação de pessoas, microdados pessoais, previ
 | EDA e estatística | Exploração e comparações reproduzíveis | Implementadas (etapas 5–10 do roteiro e página *Indicadores Sinesp*) |
 | Visualização | Gráficos dos indicadores | Implementada (Matplotlib; quatro figuras da Etapa 10 e figuras filtráveis) |
 | BI | Aplicação Streamlit | Implementada: três páginas (Projeto, Indicadores Sinesp, Qualidade e metodologia) |
-| Documentação | README, dependências, execução, atualização | Concluída nesta etapa |
-| Entrega | Deploy, vídeo, repositório da turma e AVA | **Pendentes** (nenhum deploy realizado; sem URL pública) |
+| Documentação | README, roteiro `scripts/analise_sinesp.py`, dependências, execução, atualização | Concluída (Etapa 19: pós-deploy) |
+| Deploy | Streamlit Community Cloud | **Realizado:** <https://seguranca-publica-joinville-sinesp.streamlit.app/> (revisão visual e aperfeiçoamento dos gráficos pendentes) |
+| Entrega | Vídeo, repositório da turma e AVA | **Pendentes** |
 
 O planejamento no Trello foi **dispensado por orientação do professor**.
 

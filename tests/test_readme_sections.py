@@ -2,6 +2,7 @@ import re
 
 from scripts.utils import project_path
 
+URL_STREAMLIT = "https://seguranca-publica-joinville-sinesp.streamlit.app/"
 DOCUMENTOS_ATIVOS = {
     "README.md": ("README.md",),
     "ESCOPO_PROJETO.md": ("documentacao", "ESCOPO_PROJETO.md"),
@@ -27,19 +28,13 @@ def test_readme_has_all_16_academic_items_and_real_results():
         assert not list(project_path(directory).rglob("README.md"))
 
 
-def test_roteiro_expoe_etapas_sinesp_e_nao_exporta_arquivos():
-    pipeline = _ler("scripts", "analise_seguranca_publica.py")
-    assert "# %%" in pipeline
-    for stage in range(1, 11):
-        assert f"ETAPA {stage} " in pipeline
-    assert "from scripts import transform" in pipeline
-    assert "df_sinesp_joinville_analitico" in pipeline
-    assert "fig_homicidio_anual_sinesp" in pipeline and "fig_mulher_jan_ago_sinesp" in pipeline
-    # O roteiro continua sem exportar arquivos: nenhuma linha ativa (não comentada) grava dados ou figuras.
-    for line in pipeline.splitlines():
-        code = line.split("#", 1)[0]
-        for call in (".to_csv(", ".to_excel(", ".to_parquet(", ".savefig("):
-            assert call not in code
+def test_roteiro_principal_e_o_novo_roteiro_sinesp_e_o_antigo_e_historico():
+    novo = _ler("scripts", "analise_sinesp.py")
+    assert "# %%" in novo and "Fonte única: base de dados nacional" in novo
+    assert project_path("scripts", "analise_seguranca_publica.py").is_file()  # roteiro antigo preservado (histórico SSP/SC)
+    readme = _ler("README.md")
+    assert "scripts/analise_sinesp.py" in readme and "python -m scripts.analise_sinesp" in readme
+    assert "histórico" in readme.split("scripts/analise_seguranca_publica.py", 1)[1][:400].lower()
 
 
 def test_readme_declara_fonte_unica_sinesp_e_trata_ssp_e_prefeitura_como_historico():
@@ -52,7 +47,8 @@ def test_readme_declara_fonte_unica_sinesp_e_trata_ssp_e_prefeitura_como_histori
     for proibido in ("quatro páginas", "4 páginas", "Violência doméstica SSP/SC**:", "várias fontes", "múltiplas fontes"):
         assert proibido not in readme, proibido
     # Pendências de entrega continuam pendentes; nenhum link inventado; Trello dispensado.
-    assert "Aplicação Streamlit publicada: pendente." in readme and "streamlit.app" not in readme
+    assert f"Aplicação Streamlit publicada: <{URL_STREAMLIT}>" in readme and "Aplicação Streamlit publicada: pendente" not in readme
+    assert "revisão visual" in readme and "dispositivos móveis" in readme  # deploy feito; revisão visual e celular não afirmados
     assert "Trello" in readme and "dispensad" in readme
     for pendente in ("Repositório oficial da turma: pendente", "Vídeo", "AVA"):
         assert pendente in readme, pendente
@@ -72,14 +68,16 @@ def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_in
     for expected in (
         "python -m scripts.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
         "documentacao/ATUALIZACAO_DE_DADOS.md", "documentacao/DEPLOY_STREAMLIT.md", "não pôde ser confirmado", "CC BY-ND",
-        "Nenhum deploy foi feito e não existe URL pública", "python -m pytest tests -q", "python -m pytest tests_historicos -q",
+        "Deploy realizado", "python -m pytest tests -q", "python -m pytest tests_historicos -q",
         "20261027T114400Z",
     ):
         assert expected in readme, expected
     assert re.search(r"\*\*\d+ testes aprovados\*\*", readme), "o README deve informar a contagem de testes da suíte ativa"
     for documento in ("ATUALIZACAO_DE_DADOS.md", "DEPLOY_STREAMLIT.md"):
         assert project_path("documentacao", documento).is_file()
-    assert "streamlit.app" not in _ler("documentacao", "DEPLOY_STREAMLIT.md").replace("share.streamlit.io", "")
+    for documento in ("README.md", "documentacao/DEPLOY_STREAMLIT.md", "documentacao/ESCOPO_PROJETO.md"):
+        assert URL_STREAMLIT in _ler(*documento.split("/")), documento
+    assert "streamlit.app" not in _ler("dashboard", "data_publica", "LEIAME.md")  # dados mínimos não dependem da URL
     regras = [l.strip() for l in project_path(".gitignore").read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]
     assert "/atualizacao/" in regras and "/dados/" in regras  # entradas/candidatas locais e acervo bruto ficam fora do Git
     assert "README_IA*.md" in regras

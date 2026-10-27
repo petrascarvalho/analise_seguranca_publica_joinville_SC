@@ -125,7 +125,7 @@ Restaura a versão preservada (também revalidada) e preserva a que foi substitu
 2. `git add` **explícito** dos arquivos de `dashboard/data_publica/` (2 CSVs, manifesto e `LEIAME.md`); nunca `git add .`.
 3. Commit e `git push origin main` (autorização do responsável).
 4. O Streamlit Community Cloud reimplanta a partir do GitHub; se necessário, reiniciar o app para limpar o `st.cache_data`.
-5. Conferir na página *Qualidade e metodologia* a versão, a última competência por série e o SHA-256 dos arquivos.
+5. Conferir em <https://seguranca-publica-joinville-sinesp.streamlit.app/>, na página *Qualidade e metodologia*, a versão, a última competência por série e o SHA-256 dos arquivos (lista completa em [DEPLOY_STREAMLIT.md](DEPLOY_STREAMLIT.md)).
 
 `atualizacao/` (entradas baixadas, candidatas, versões anteriores e verificações) é **local** e está no `.gitignore`.
 

@@ -1,6 +1,6 @@
 # Segurança Pública de Joinville
 
-Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. O produto usa **exclusivamente dados do Sinesp/MJSP para Joinville/SC** (fonte única): ETL em Python, análise exploratória e estatísticas descritivas, visualizações Matplotlib e um dashboard Streamlit de três páginas (Projeto, Indicadores Sinesp e Qualidade e metodologia), com dados mínimos agregados e versionados em `dashboard/data_publica/` e um fluxo manual e controlado de atualização (verificar → preparar → aprovar). Período realmente disponível: **janeiro/2020 a setembro/2026** (2026 parcial; a série da PRF termina em agosto/2026). O trabalho anterior com a SSP/SC e com a Prefeitura/SEPROT permanece registrado como histórico e **fora do escopo** da entrega. O deploy, o vídeo, o repositório da turma e o AVA permanecem pendentes; não há URL pública.
+Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. O produto usa **exclusivamente dados do Sinesp/MJSP para Joinville/SC** (fonte única): ETL em Python, análise exploratória e estatísticas descritivas, visualizações Matplotlib e um dashboard Streamlit de três páginas (Projeto, Indicadores Sinesp e Qualidade e metodologia), com dados mínimos agregados e versionados em `dashboard/data_publica/` e um fluxo manual e controlado de atualização (verificar → preparar → aprovar). Período realmente disponível: **janeiro/2020 a setembro/2026** (2026 parcial; a série da PRF termina em agosto/2026). A aplicação está **publicada no Streamlit Community Cloud**: <https://seguranca-publica-joinville-sinesp.streamlit.app/>. O roteiro acadêmico de referência é [scripts/analise_sinesp.py](scripts/analise_sinesp.py). O trabalho anterior com a SSP/SC e com a Prefeitura/SEPROT permanece registrado como histórico e **fora do escopo** da entrega. A revisão visual e o aperfeiçoamento dos gráficos, o vídeo, o repositório da turma e o AVA permanecem pendentes.
 
 ## 1. Título e resumo
 
@@ -22,7 +22,7 @@ O objetivo é produzir uma análise municipal reproduzível, com origem auditáv
 
 Requisitos acadêmicos registrados: trabalho individual do SENAI/LAB365, Módulo 2, Semana 13; ETL em Python, EDA, estatísticas, gráficos com fontes, painel interativo Streamlit, README, repositório dedicado, publicação da aplicação, vídeo de até três minutos e envio dos links ao AVA/repositório da turma conforme enunciado. O prazo informado é **30/10/2026 às 22h, horário de Brasília**, sujeito a comunicados posteriores. O planejamento no Trello foi **dispensado por orientação do professor**. Regras finais de visibilidade do repositório, divulgação e marcações do vídeo devem ser conferidas no enunciado vigente antes da entrega.
 
-Situação: ETL, EDA, estatísticas, figuras e dashboard (três páginas) implementados e testados; atualização controlada dos dados implementada e executada com a competência de setembro/2026; dashboard preparado para o Streamlit Community Cloud (seção 10), mas **não implantado**. Pendentes: inspeção visual em navegador, deploy, vídeo, repositório da turma e AVA.
+Situação: ETL, EDA, estatísticas, figuras e dashboard (três páginas) implementados e testados; atualização controlada dos dados implementada e executada com a competência de setembro/2026; dashboard **publicado** no Streamlit Community Cloud (seção 10), com a página inicial conferida em navegador. Pendentes: revisão visual e aperfeiçoamento dos gráficos (etapa posterior), validação em dispositivos móveis, vídeo, repositório da turma e AVA.
 
 ## 4. Fonte e autorização
 
@@ -36,23 +36,22 @@ Os dados brutos ficam fora do Git. A disponibilidade pública de uma fonte não 
 
 ## 5. Pipeline e metodologia
 
-O roteiro acadêmico é [scripts/analise_seguranca_publica.py](scripts/analise_seguranca_publica.py), organizado em células `# %%`; suas etapas 1–10 tratam o Sinesp (as etapas 11–14.2 do mesmo arquivo são o trabalho histórico da SSP/SC, preservado e fora do escopo). O roteiro reconstrói os recortes pelos XLSX originais no mesmo processo, mantém resultados em memória e não chama rotinas de exportação. A **atualização dos dados do painel não depende do roteiro**: usa `scripts/atualizacao_dados.py`, um ETL independente que aplica as mesmas regras e foi verificado como equivalente (reproduz byte a byte os dados ativos a partir dos originais auditados).
+O roteiro acadêmico de referência é [scripts/analise_sinesp.py](scripts/analise_sinesp.py) (357 linhas, 21 células `# %%`), dedicado só ao Sinesp e executável no VS Code Interactive ou por `python -m scripts.analise_sinesp`. Ele lê os XLSX do acervo local, refaz o ETL passo a passo, valida o resultado e **confere que a base reconstruída é idêntica à publicada** (mesmo SHA-256 do manifesto). Não grava arquivos. Sem os XLSX, entra em **modo demonstração**: usa a base já publicada (dado derivado, não bruto) e avisa que isso não reproduz a extração. O roteiro anterior, [scripts/analise_seguranca_publica.py](scripts/analise_seguranca_publica.py), é **histórico**: contém as primeiras etapas Sinesp (1–10) e o trabalho da SSP/SC (11–14.2), preservado e fora do escopo.
 
-| Etapa | Situação | Operação e controle |
-|---|---|---|
-| 1. Importação | Implementada | Pandas, leitores e caminhos do pacote `scripts` |
-| 2. Diretórios | Implementada | Raiz do projeto e arquivos locais |
-| 5. Concatenação Sinesp | Implementada e executada | Sete recortes exatos `SC`/`JOINVILLE`; compatibilidade das 14 colunas; 900 linhas (versão auditada inicial, até agosto/2026) |
-| 6. Diagnóstico | Implementada e executada | Duplicidades, ausências e tipos; sem preenchimento ou exclusão |
-| 7. Investigação | Implementada e executada | 20 linhas com sexo incompleto, 20 pares de mandados e propostas de campos/tipos |
-| 8. Base analítica | Implementada e executada | Cópia 900 × 10; datas e cinco medidas `Int64`; original 900 × 14 intacto |
-| 9. EDA | Implementada e executada | Tabelas mensais/anuais, períodos equivalentes e estatísticas por indicador/abrangência |
-| 10. Visualizações | Implementada e executada | Quatro figuras Matplotlib em memória; valores conferidos contra as tabelas |
-| 15. Dashboard Streamlit | Implementada e testada | Dados mínimos agregados e versionados; manifesto com SHA-256 |
-| 18. Reestruturação | Concluída | Fonte única Sinesp/MJSP; três páginas; dados de setembro/2026 aprovados; documentação e suíte ativa/histórica separadas |
-| Exportação de resultados do roteiro | Não autorizada | Nenhuma base ou figura nova é exportada pelo roteiro |
+| Seção do roteiro | Conteúdo |
+|---|---|
+| 1. Objetivo e bibliotecas | Pergunta analítica; Pandas e módulos validados do projeto |
+| 2. Leitura e inspeção | Localiza os 7 XLSX, confere SHA-256 com o manifesto e extrai apenas SC/JOINVILLE (911 linhas) |
+| 3. Identificação dos campos | Dicionário das 14 colunas; ausências por campo; eventos e abrangências |
+| 4. ETL | Conversão de datas (serial Excel), escolha da medida (vítimas × mandados), tratamento de ausências e linhas repetidas |
+| 5. Validação | Colunas, chaves, meses consecutivos, unidade única, valores; igualdade com a base aprovada |
+| 6. Base analítica | 911 observações × 6 colunas e catálogo de 12 séries |
+| 7. Análise exploratória | Cobertura, zeros, ausências, totais por ano completo, períodos equivalentes (janeiro–agosto e janeiro–setembro) |
+| 8. Estatísticas descritivas | Soma, média, mediana, mínimo, máximo e desvio-padrão (`ddof=0`); diferença absoluta e percentual com base positiva |
+| 9. Visualizações | Reutiliza as funções validadas de `dashboard/graficos.py` (sem alterá-las) |
+| 10. Conclusões e limitações | Textos calculados a partir dos dados |
 
-(As etapas 3 e 4 do roteiro leem amostras e inspecionam arquivos; as etapas 11–14.2 são históricas da SSP/SC.)
+A **atualização dos dados do painel não depende do roteiro**: usa `scripts/atualizacao_dados.py`, um ETL independente que aplica as mesmas regras e reproduz byte a byte os dados ativos. Os dois caminhos (roteiro e atualização) são verificados contra os mesmos dois CSVs publicados.
 
 **Regras do ETL (Sinesp).** Filtro exato `SC`/`JOINVILLE`. A chave observacional mantém UF, município, evento, competência e abrangência; na versão auditada houve zero duplicidade exata e zero repetição nas chaves com abrangência, e 20 grupos/40 linhas de mandados estaduais e PF foram preservados separadamente. As dez colunas analíticas são `uf`, `municipio`, `evento`, `data_referencia`, `feminino`, `masculino`, `nao_informado`, `total_vitima`, `total` e `abrangencia`; agente, arma, faixa etária e peso estão 100% ausentes e continuam intactos no original.
 
@@ -64,9 +63,23 @@ O catálogo auxiliar tem 12 combinações evento/abrangência, com medida, unida
 
 ## 6. Bibliotecas e tecnologias
 
-Ambiente local conferido: Python **3.12.14**, Pandas **3.0.6**, Matplotlib **3.11.2**, Streamlit **1.66.0**, openpyxl **3.1.5**, lxml **6.1.3**, pytest **8.4.2** e ipykernel **7.4.0** (os demais pacotes de `requirements.txt` servem ao histórico da SSP/SC).
+Ambiente local conferido: Python **3.12.14**, Pandas **3.0.6**, Matplotlib **3.11.2**, Streamlit **1.66.0**, openpyxl **3.1.5**, lxml **6.1.3**, pytest **8.4.2** e ipykernel **7.4.0**.
 
 Os intervalos de instalação estão em [requirements.txt](requirements.txt); não constituem um arquivo de versões travadas. `ipykernel` é uma dependência adicional para uso interativo e não está declarado nesse arquivo. A validação em ambiente limpo e eventual fixação de versões continuam pendentes.
+
+Uso de cada biblioteca (levantamento por importações no código):
+
+| Biblioteca | Papel |
+|---|---|
+| `streamlit`, `pandas`, `matplotlib` | Execução do painel publicado (e do roteiro `analise_sinesp.py`) |
+| `lxml` | ETL Sinesp: leitura do XML das planilhas (`scripts/transform.py`) |
+| `openpyxl` | Testes (geração de XLSX sintéticos) e módulos de fase anterior |
+| `pytest` | Testes |
+| `ipykernel` | Execução das células no VS Code Interactive (não declarado) |
+| `pdfplumber`, `pypdf` | Somente código histórico da SSP/SC e teste histórico |
+| `pyarrow` | Nenhum código ativo (somente `scripts/analysis.py`, módulo histórico) |
+
+**Proposta de simplificação (não aplicada):** separar um `requirements.txt` mínimo para o Streamlit Cloud (`streamlit`, `pandas`, `matplotlib`) e um arquivo de desenvolvimento com `lxml`, `openpyxl`, `pytest` e `ipykernel`, movendo `pdfplumber`, `pypdf` e `pyarrow` para um arquivo histórico. Nenhuma biblioteca foi removida porque a mudança ainda não foi testada em ambiente limpo e reconstruiria o aplicativo publicado.
 
 ## 7. Resultados encontrados
 
@@ -218,7 +231,7 @@ Para uso operacional, seriam necessários dicionários estáveis, atualização 
 
 ## 10. Aplicação Streamlit
 
-O painel é uma aplicação Streamlit com **três páginas** e navegação lateral (`st.navigation`/`st.Page`), layout amplo, filtros, indicadores com unidade e período explícitos, figuras Matplotlib com fonte e formatação numérica brasileira. **Não há deploy público confirmado e nenhuma URL de aplicação publicada.** A aplicação roda localmente a partir de arquivos mínimos e **não executa o roteiro analítico, não lê `dados/` e não acessa a rede** durante a navegação.
+O painel é uma aplicação Streamlit com **três páginas** e navegação lateral (`st.navigation`/`st.Page`), layout amplo, filtros, indicadores com unidade e período explícitos, figuras Matplotlib com fonte e formatação numérica brasileira. **A aplicação está publicada no Streamlit Community Cloud: <https://seguranca-publica-joinville-sinesp.streamlit.app/>** (a página inicial foi conferida em navegador; as demais páginas, os gráficos e o uso em dispositivos móveis ainda não foram revisados visualmente). A aplicação funciona a partir de arquivos mínimos e **não executa o roteiro analítico, não lê `dados/` e não acessa a rede** durante a navegação.
 
 ### Arquitetura e páginas
 
@@ -274,20 +287,19 @@ O painel usa Streamlit, Pandas e Matplotlib e funciona **sem `dados/`**; se os a
 
 ### Testes e verificações
 
-Suíte **ativa**: **116 testes aprovados** (`python -m pytest tests -q`): `test_dashboard_dados.py` (30), `test_dashboard_graficos.py` (6), `test_dashboard_app.py` (16, `AppTest`), `test_atualizacao_fontes.py` (16, cliente HTTP falso), `test_atualizacao_fluxo.py` (38, XLSX sintéticos gerados a partir dos dados ativos), `test_acervo_sinesp.py` (3; reconstroem os dados a partir dos XLSX auditados e são pulados se o acervo local não existir) e `test_readme_sections.py` (7). Cobrem: integridade e manifesto; totais conferidos com as tabelas deste README; nova dimensão (911 observações, 12 séries) e cobertura por série (2026-09; PRF 2026-08); valores históricos preservados; unidades; zeros e ausências; períodos equivalentes; navegação de três páginas; gráficos e filtros; página de qualidade; detecção de nova competência, de revisão histórica, de alteração de esquema e de falha de consulta (sem alterar dados); download com repetição só de quedas de conexão e sem contornar bloqueios; promoção apenas com aprovação explícita; versão anterior preservada e reversão automática em falha da troca; painel em clone limpo, sem os dados mínimos, com esquema inválido, com hash divergente e com uma competência futura sintética.
+Suíte **ativa**: **120 testes aprovados** (`python -m pytest tests -q`): `test_dashboard_dados.py` (30), `test_dashboard_graficos.py` (6), `test_dashboard_app.py` (16, `AppTest`), `test_atualizacao_fontes.py` (16, cliente HTTP falso), `test_atualizacao_fluxo.py` (38, XLSX sintéticos gerados a partir dos dados ativos), `test_acervo_sinesp.py` (3; reconstroem os dados a partir dos XLSX auditados e são pulados se o acervo local não existir), `test_roteiro_sinesp.py` (4; estrutura do roteiro acadêmico, execução em modo demonstração e reconstrução da base aprovada, esta pulada sem o acervo) e `test_readme_sections.py` (7). Cobrem: integridade e manifesto; totais conferidos com as tabelas deste README; nova dimensão (911 observações, 12 séries) e cobertura por série (2026-09; PRF 2026-08); valores históricos preservados; unidades; zeros e ausências; períodos equivalentes; navegação de três páginas; gráficos e filtros; página de qualidade; detecção de nova competência, de revisão histórica, de alteração de esquema e de falha de consulta (sem alterar dados); download com repetição só de quedas de conexão e sem contornar bloqueios; promoção apenas com aprovação explícita; versão anterior preservada e reversão automática em falha da troca; painel em clone limpo, sem os dados mínimos, com esquema inválido, com hash divergente e com uma competência futura sintética.
 
-Suíte **histórica** (fora da entrega): **11 testes** em `tests_historicos/` (`python -m pytest tests_historicos -q`): `test_project_integrity.py` (9; dependem do acervo bruto e de saídas históricas locais, incluindo SSP/SC e Prefeitura) e `test_roteiro_historico_ssp.py` (2; etapas SSP/SC do roteiro e índice histórico). Não são necessárias para o painel.
+Suíte **histórica** (fora da entrega): **12 testes** em `tests_historicos/` (`python -m pytest tests_historicos -q`): `test_project_integrity.py` (9; dependem do acervo bruto e de saídas históricas locais, incluindo SSP/SC e Prefeitura) e `test_roteiro_historico_ssp.py` (3; etapas SSP/SC e Sinesp 1–10 do roteiro antigo e índice histórico). Não são necessárias para o painel.
 
-Verificações adicionais: verificação de sintaxe (`ast`) dos módulos, `git diff --check` e execução local do servidor com `python -m streamlit run scripts/painel_streamlit.py`. **O painel completo não foi inspecionado visualmente em navegador (desktop e celular)**: não houve acesso a navegador neste ambiente; layout e responsividade dependem de verificação manual. Testes que dependem de acesso externo não são executados: a verificação real da fonte e o download dos XLSX foram executados manualmente (resultado na seção 7).
+Verificações adicionais: verificação de sintaxe (`ast`) dos módulos, `git diff --check` e execução local do servidor com `python -m streamlit run scripts/painel_streamlit.py`. **O painel completo não foi validado visualmente em dispositivos móveis nem teve todas as páginas e gráficos revisados em navegador**: a revisão visual é a próxima etapa; layout e responsividade dependem de verificação manual. Testes que dependem de acesso externo não são executados: a verificação real da fonte e o download dos XLSX foram executados manualmente (resultado na seção 7).
 
-### Preparação para o Streamlit Community Cloud
+### Publicação no Streamlit Community Cloud
 
-Ponto de entrada `scripts/painel_streamlit.py`; dependências em `requirements.txt` (versões testadas: Python 3.12, Streamlit 1.66.0, Pandas 3.0.6, Matplotlib 3.11.2; faixas mais antigas não testadas); caminhos relativos; sem segredos; dados mínimos no clone público. Passo a passo em [documentacao/DEPLOY_STREAMLIT.md](documentacao/DEPLOY_STREAMLIT.md). **Nenhum deploy foi feito e não existe URL pública** (depende de autorização separada).
+Ponto de entrada `scripts/painel_streamlit.py`; dependências em `requirements.txt` (versões testadas: Python 3.12, Streamlit 1.66.0, Pandas 3.0.6, Matplotlib 3.11.2; faixas mais antigas não testadas); caminhos relativos; sem segredos; dados mínimos no clone público. Passo a passo e conferência pós-deploy em [documentacao/DEPLOY_STREAMLIT.md](documentacao/DEPLOY_STREAMLIT.md). **Deploy realizado:** <https://seguranca-publica-joinville-sinesp.streamlit.app/>. O Cloud reconstrói o aplicativo a partir da branch `main` do GitHub a cada push.
 
 ### Pendências
 
-- Autorização e execução do deploy; registro da URL real (seção 15) somente depois de existir.
-- Inspeção manual no navegador (desktop e celular) e ajustes finos de layout.
+- Revisão visual completa no navegador (todas as páginas, desktop e celular) e aperfeiçoamento dos gráficos (etapa posterior; nada foi alterado nesta etapa).
 - Vídeo, envio ao repositório da turma e AVA.
 - Confirmar o uso dos dados com o MJSP (licença do catálogo não confirmada).
 
@@ -301,6 +313,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 # Opcional para Python Interactive, se ainda não estiver instalado:
 python -m pip install ipykernel
+python -m scripts.analise_sinesp                      # roteiro acadêmico completo (ou célula a célula no VS Code)
 python -m streamlit run scripts/painel_streamlit.py   # painel (usa apenas dashboard/data_publica/)
 python -m pytest tests -q                              # suíte ativa
 python -m pytest tests_historicos -q                   # suíte histórica (exige o acervo local)
@@ -310,15 +323,15 @@ O workspace [configura a .venv e o diretório do Jupyter](.vscode/settings.json)
 
 ### Restaurar as entradas que não ficam no Git (só para refazer o ETL)
 
-O painel e a suíte ativa funcionam sem elas. Para refazer o ETL pelo roteiro ou pela atualização controlada:
+O painel e a suíte ativa funcionam sem elas (os testes que dependem do acervo são pulados). Para refazer o ETL pelo roteiro ou pela atualização controlada:
 
 1. Obtenha os XLSX 2020–2026 no [catálogo oficial](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados), usando `bancovde-ANO.xlsx` (padrão de download: `https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-ANO.xlsx/@@download/file`).
 2. **Atualização controlada (recomendada):** salve todos os anos em uma pasta e siga `verificar → preparar → aprovar` (seção 10). Ela não depende do roteiro nem do acervo SSP/SC.
-3. **Roteiro acadêmico (reprodução da versão auditada, até agosto/2026):** coloque 2023–2026 em `dados/brutos/sinesp/` e 2020–2022 em `dados/brutos/sinesp/pendente_validacao_origem/` (nome histórico; a origem foi validada) e confira tamanho e SHA-256 contra [o inventário versionado](documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv). O roteiro interrompe se os arquivos forem diferentes dos auditados: como o Sinesp republicou os arquivos (hashes diferentes, valores de Joinville iguais), a reprodução pelo roteiro exige os originais auditados; a atualização controlada, não.
+3. **Roteiro acadêmico [scripts/analise_sinesp.py](scripts/analise_sinesp.py):** salve os sete arquivos (`bancovde-2020.xlsx` a `bancovde-2026.xlsx`) em qualquer subpasta de `dados/brutos/sinesp/` (ou aponte outra pasta com a variável de ambiente `SINESP_PASTA_XLSX`). O roteiro compara o SHA-256 de cada arquivo com o do manifesto; se o arquivo for de outra edição, avisa e a comparação final com a base publicada indica se os valores diferem. Sem os arquivos, roda em modo demonstração.
 
 ### Executar o roteiro e as células
 
-Para trabalhar **somente com o Sinesp**, execute as células das Etapas 1–2 e depois 5–10 no mesmo Python Interactive, com os sete XLSX auditados disponíveis. As etapas 3–4 e 11–14.2 leem entradas da SSP/SC e da Prefeitura (histórico fora do escopo) e **não** são necessárias. Executar o arquivo inteiro (`python -m scripts.analise_seguranca_publica`) roda também as etapas históricas e exige o acervo SSP/SC; não é um comando limitado a imports e não deve ser usado para tarefas de documentação. O roteiro não exporta os resultados.
+No VS Code, abra a pasta do projeto, selecione a `.venv` como interpretador e abra `scripts/analise_sinesp.py`: use *Run Cell* em cada célula `# %%` ou *Run All Cells* (Python Interactive; requer `ipykernel`). No terminal: `python -m scripts.analise_sinesp` (cerca de um minuto com os XLSX, por causa da leitura de ~170 MB). O roteiro não grava arquivos. O roteiro histórico `scripts/analise_seguranca_publica.py` não é necessário e, por incluir as etapas da SSP/SC, exige o acervo dessa fonte; não o execute para reproduzir a entrega.
 
 ## 12. Estrutura de pastas
 
@@ -329,7 +342,8 @@ requirements.txt                  intervalos de dependências
 .env.example                      exemplo sem credenciais
 .vscode/settings.json             .venv e raiz do Python Interactive
 scripts/
-  analise_seguranca_publica.py     roteiro acadêmico: etapas 1–10 (Sinesp); 11–14.2 são histórico SSP/SC
+  analise_sinesp.py               roteiro acadêmico principal (Sinesp): células # %% para o VS Code Interactive
+  analise_seguranca_publica.py     roteiro histórico: Sinesp 1–10 (primeira versão) e SSP/SC 11–14.2; fora do escopo
   painel_streamlit.py             entrada do painel (st.navigation com 3 páginas)
   gerar_dados_dashboard.py        geração inicial reprodutível de dashboard/data_publica/ (Sinesp)
   fontes_oficiais.py              verificar: consulta metadados do Sinesp/MJSP (somente leitura)
@@ -343,7 +357,7 @@ dashboard/
   dados_publicos.py, calculos.py,
   graficos.py, formatacao.py, ui.py  módulos do painel (sem Streamlit, exceto ui.py)
   data_publica/                  2 CSVs Sinesp + manifesto versionado + LEIAME (ver seção 10)
-tests/                           suíte ativa (116 testes)
+tests/                           suíte ativa (120 testes)
 tests_historicos/                suíte histórica (acervo local e roteiro SSP/SC)
 historico/ssp_sc/LEIAME.md       índice do trabalho histórico SSP/SC e Prefeitura (fora do escopo)
 notebooks/                       notebook SSP de inspeção (histórico), sem saídas gravadas
@@ -370,7 +384,7 @@ Pastas vazias não são preservadas pelo Git. O README de continuidade e seus ba
 - A fonte pode **revisar** valores históricos; a atualização controlada detecta revisões, e elas só entram com aprovação específica. Os XLSX oficiais foram republicados em 27/10/2026 com hashes diferentes, sem mudança nos valores de Joinville; uma nova auditoria é necessária se isso mudar.
 - Condições de reutilização com ressalvas: licença do catálogo do MJSP não confirmada; CC BY-ND 3.0 no rodapé do portal. Nenhuma proibição específica foi encontrada, mas não há autorização específica explícita.
 - O gov.br não oferece API pública nem data por arquivo; a verificação é indício, não prova, e o download integral (~24 MB por arquivo) pode ser interrompido e exigir repetição ou obtenção manual.
-- O painel não foi inspecionado visualmente em navegador e não foi feito deploy.
+- O deploy foi feito, mas a revisão visual do painel (todas as páginas, desktop e celular) e o aperfeiçoamento dos gráficos estão pendentes.
 - Melhorias possíveis: inspeção responsiva em celular, fixação de versões de dependências com validação em ambiente limpo, definição de licença do código, relatórios exportáveis e, se houver base demográfica oficial compatível, taxas por habitante.
 - A SSP/SC e a Prefeitura/SEPROT ficam fora do escopo; reintegrá-las exigiria nova decisão metodológica e um fluxo auditado próprio (ver [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md)).
 - A regra `fillna(0)` no módulo histórico `scripts/analysis.py` não faz parte do fluxo atual e precisa de revisão antes de reutilização. O notebook histórico ainda contém um caminho antigo `pdfs/csv_extraidos`.
@@ -384,19 +398,19 @@ Licença do código e permissões de redistribuição dos dados ainda devem ser 
 
 ## 15. Links de entrega
 
-- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém o roteiro, o dashboard de três páginas, os dados mínimos agregados (`dashboard/data_publica/`), o fluxo de atualização controlada, os testes e a documentação (branch `main`). Isso não representa deploy da aplicação.
+- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém o roteiro, o dashboard de três páginas, os dados mínimos agregados (`dashboard/data_publica/`), o fluxo de atualização controlada, os testes e a documentação (branch `main`).
 - URL Git exata: `https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC.git`.
 - Pasta local: repositório Git na branch `main`, com `origin` configurado.
-- Aplicação Streamlit publicada: pendente.
+- Aplicação Streamlit publicada: <https://seguranca-publica-joinville-sinesp.streamlit.app/> (deploy realizado; revisão visual e aperfeiçoamento dos gráficos pendentes).
 - Repositório oficial da turma: pendente.
 - Vídeo e link de leitura no Drive: pendentes.
 - AVA e demais itens administrativos: pendentes.
 - Trello: dispensado por orientação do professor.
 
-Antes de preparar arquivos para versionar, conferir o [gitignore](.gitignore): `dados/`, `atualizacao/`, tabelas/imagens derivadas locais, ambientes, segredos, logs, backups e o README de continuidade não devem entrar. Novos envios ao remoto dependem de autorização; usar `git push` normal, sem sobrescrever ou forçar atualização. Nenhum deploy foi feito.
+Antes de preparar arquivos para versionar, conferir o [gitignore](.gitignore): `dados/`, `atualizacao/`, tabelas/imagens derivadas locais, ambientes, segredos, logs, backups e o README de continuidade não devem entrar. Novos envios ao remoto dependem de autorização; usar `git push` normal, sem sobrescrever ou forçar atualização.
 
 ## 16. Conclusões sustentadas pelas análises
 
 O fluxo Sinesp preservou 900 linhas originais na versão auditada, produziu uma cópia analítica 900 × 10, manteve ausências e abrangências, gerou tabelas descritivas por série e exibiu figuras sem exportação. A atualização controlada incorporou setembro/2026 (911 observações em 12 séries) sem alterar nenhum valor histórico de Joinville. Homicídio doloso e suas tentativas, feminicídio e suas tentativas permaneceram distintos.
 
-A análise sustenta descrições dos valores publicados e comparações temporais equivalentes, com atenção a pequenas contagens. Não sustenta total geral de criminalidade, causalidade, estimativa de subnotificação, taxa populacional ou distribuição por bairros. O dashboard de três páginas apresenta a pergunta, a fonte única, o período real, os indicadores, as estatísticas, as figuras e a qualidade dos dados; o deploy, o vídeo e a entrega final permanecem pendentes.
+A análise sustenta descrições dos valores publicados e comparações temporais equivalentes, com atenção a pequenas contagens. Não sustenta total geral de criminalidade, causalidade, estimativa de subnotificação, taxa populacional ou distribuição por bairros. O dashboard de três páginas apresenta a pergunta, a fonte única, o período real, os indicadores, as estatísticas, as figuras e a qualidade dos dados; o aplicativo está publicado, e a revisão visual dos gráficos, o vídeo, o repositório da turma e o AVA permanecem pendentes.

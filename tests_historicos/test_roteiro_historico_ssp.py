@@ -38,3 +38,16 @@ def test_documentacao_historica_ssp_sc_esta_indexada():
     assert "bad9723" in indice and "Fora do escopo do produto entregue" in indice
     for caminho in ("documentacao/fontes/SSP_SC.md", "documentacao/fontes/CSV_COMPLEMENTARES.md", "documentacao/auditoria/ssp_csv_extraction_etapa_1_1.md"):
         assert caminho in indice and project_path(*caminho.split("/")).is_file()
+
+
+def test_roteiro_antigo_preserva_as_etapas_sinesp_1_a_10_sem_exportar_arquivos():
+    pipeline = project_path("scripts", "analise_seguranca_publica.py").read_text(encoding="utf-8")
+    assert "# %%" in pipeline
+    for stage in range(1, 11):
+        assert f"ETAPA {stage} " in pipeline
+    assert "from scripts import transform" in pipeline and "df_sinesp_joinville_analitico" in pipeline
+    assert "fig_homicidio_anual_sinesp" in pipeline and "fig_mulher_jan_ago_sinesp" in pipeline
+    for line in pipeline.splitlines():
+        code = line.split("#", 1)[0]
+        for call in (".to_csv(", ".to_excel(", ".to_parquet(", ".savefig("):
+            assert call not in code

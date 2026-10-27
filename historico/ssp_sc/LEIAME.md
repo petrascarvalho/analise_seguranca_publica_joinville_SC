@@ -21,7 +21,7 @@ páginas e os dados SSP/SC é `bad9723`.
 
 | Item | Onde |
 |---|---|
-| Etapas 11–14.2 do roteiro | `scripts/analise_seguranca_publica.py` (ainda presentes, como histórico; **não** fazem parte do painel nem dos dados ativos) |
+| Etapas 11–14.2 do roteiro | `scripts/analise_seguranca_publica.py` (ainda presentes, como histórico; **não** fazem parte do painel nem dos dados ativos; o roteiro de referência da entrega é `scripts/analise_sinesp.py`) |
 | Documentação da fonte e da extração | `documentacao/fontes/SSP_SC.md`, `documentacao/fontes/CSV_COMPLEMENTARES.md`, `documentacao/auditoria/ssp_csv_extraction_etapa_1_1.md` |
 | Extração histórica | `scripts/legacy/extrair_ssp_joinville.py`, `notebooks/ssp_csv_data_viewer.ipynb` |
 | Página do dashboard | `dashboard/pages/violencia_domestica.py` (removida da navegação; recuperável no commit `bad9723`) |
