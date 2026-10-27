@@ -1,11 +1,19 @@
-"""Ponto de entrada do dashboard Segurança Pública de Joinville (fonte única: Sinesp/MJSP).
+r"""Ponto de entrada do dashboard Segurança Pública de Joinville (fonte única: Sinesp/MJSP).
 
 Execução local (a partir da raiz do projeto)::
 
-    python -m streamlit run scripts/painel_streamlit.py
+    .\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py
 
-O painel usa somente os arquivos mínimos de ``dashboard/data_publica/``; não lê ``dados/`` nem executa
-o roteiro analítico durante a navegação.
+O Streamlit Community Cloud usa este mesmo arquivo como ponto de entrada (não mude o caminho).
+
+Como funciona:
+    • O Streamlit executa este arquivo de cima para baixo a cada interação do usuário (clique, filtro, troca de página).
+    • ``st.set_page_config`` define título da aba, ícone e layout largo.
+    • ``st.Page`` declara cada página (um arquivo em ``dashboard/pages/``) e ``st.navigation`` monta o menu lateral com elas;
+      ``navigation.run()`` executa a página escolhida.
+
+O painel usa somente os arquivos mínimos de ``dashboard/data_publica/``; não lê ``dados/`` nem executa o ETL durante a navegação.
+Os cálculos ficam em ``dashboard/calculos.py``, os gráficos em ``dashboard/graficos.py`` e os componentes reutilizáveis em ``dashboard/ui.py``.
 """
 
 import sys
@@ -21,12 +29,15 @@ import streamlit as st  # noqa: E402
 
 from scripts.utils import project_path  # noqa: E402
 
+# Configuração da página: precisa ser o primeiro comando do Streamlit.
 st.set_page_config(page_title="Segurança Pública de Joinville", page_icon="🛡️", layout="wide")
 
+# As três páginas do painel. url_path define o endereço (ex.: /sinesp) e default=True indica a página inicial.
 pages = [
     st.Page(str(project_path("dashboard", "pages", "home.py")), title="Projeto", icon="🛡️", url_path="projeto", default=True),
     st.Page(str(project_path("dashboard", "pages", "sinesp.py")), title="Indicadores Sinesp", icon="📊", url_path="sinesp"),
     st.Page(str(project_path("dashboard", "pages", "quality.py")), title="Qualidade e metodologia", icon="🔎", url_path="qualidade"),
 ]
+# Menu lateral com as páginas; run() executa a página que o usuário escolheu.
 navigation = st.navigation(pages, position="sidebar")
 navigation.run()

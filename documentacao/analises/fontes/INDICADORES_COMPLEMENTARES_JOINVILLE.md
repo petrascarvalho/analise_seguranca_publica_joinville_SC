@@ -1,6 +1,6 @@
 # Indicadores complementares de Joinville — investigação de fontes (Etapa 20.4)
 
-Consulta feita em 27/10/2026. **Nada deste documento foi incorporado ao dashboard nem à base Sinesp** (911 observações, 12 séries, manifesto `20261027T114400Z`, inalterados). O protótipo separado está em `prototipos/complementares_joinville/indicadores_complementares_joinville.csv` (não publicado). Dados estaduais não foram usados como se fossem de Joinville.
+Consulta feita em 27/10/2026. **Nada deste documento foi incorporado ao dashboard nem à base Sinesp** (911 observações, 12 séries, manifesto `20261027T114400Z`, inalterados). O protótipo separado está em `documentacao/analises/fontes/indicadores_complementares_joinville.csv` (não publicado). Dados estaduais não foram usados como se fossem de Joinville.
 
 ## 1. O que o Sinesp realmente traz para Joinville
 

@@ -36,7 +36,7 @@ def test_roteiro_preserva_as_etapas_historicas_ssp_sc():
 def test_documentacao_historica_ssp_sc_esta_indexada():
     indice = project_path("historico", "ssp_sc", "LEIAME.md").read_text(encoding="utf-8")
     assert "bad9723" in indice and "Fora do escopo do produto entregue" in indice
-    for caminho in ("documentacao/fontes/SSP_SC.md", "documentacao/fontes/CSV_COMPLEMENTARES.md", "documentacao/auditoria/ssp_csv_extraction_etapa_1_1.md"):
+    for caminho in ("historico/ssp_sc/documentacao/SSP_SC.md", "historico/ssp_sc/documentacao/CSV_COMPLEMENTARES.md", "historico/ssp_sc/documentacao/ssp_csv_extraction_etapa_1_1.md"):
         assert caminho in indice and project_path(*caminho.split("/")).is_file()
 
 

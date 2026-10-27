@@ -5,9 +5,9 @@ from scripts.utils import project_path
 URL_STREAMLIT = "https://seguranca-publica-joinville-sinesp.streamlit.app/"
 DOCUMENTOS_ATIVOS = {
     "README.md": ("README.md",),
-    "ESCOPO_PROJETO.md": ("documentacao", "ESCOPO_PROJETO.md"),
-    "ATUALIZACAO_DE_DADOS.md": ("documentacao", "ATUALIZACAO_DE_DADOS.md"),
-    "DEPLOY_STREAMLIT.md": ("documentacao", "DEPLOY_STREAMLIT.md"),
+    "ESCOPO_PROJETO.md": ("documentacao", "analises", "ESCOPO_PROJETO.md"),
+    "ATUALIZACAO_DE_DADOS.md": ("documentacao", "analises", "ATUALIZACAO_DE_DADOS.md"),
+    "DEPLOY_STREAMLIT.md": ("documentacao", "painel", "DEPLOY_STREAMLIT.md"),
     "LEIAME.md": ("dashboard", "data_publica", "LEIAME.md"),
 }
 
@@ -28,12 +28,16 @@ def test_readme_has_all_16_academic_items_and_real_results():
         assert not list(project_path(directory).rglob("README.md"))
 
 
-def test_roteiro_principal_e_o_novo_roteiro_sinesp_e_o_antigo_e_historico():
-    novo = _ler("scripts", "analise_sinesp.py")
-    assert "# %%" in novo and "Fonte única: base de dados nacional" in novo
+def test_etl_e_notebook_sao_os_roteiros_principais_e_o_antigo_e_historico():
+    etl = _ler("scripts", "etl_sinesp.py")
+    assert "# %%" in etl and "ETAPA 01" in etl and "ETAPA 18" in etl
+    assert project_path("notebooks", "analise_sinesp.ipynb").is_file()
+    assert not project_path("scripts", "analise_sinesp.py").exists()  # renomeado para etl_sinesp.py
     assert project_path("scripts", "analise_seguranca_publica.py").is_file()  # roteiro antigo preservado (histórico SSP/SC)
     readme = _ler("README.md")
-    assert "scripts/analise_sinesp.py" in readme and "python -m scripts.analise_sinesp" in readme
+    assert "scripts/etl_sinesp.py" in readme and "-m scripts.etl_sinesp" in readme
+    assert "notebooks/analise_sinesp.ipynb" in readme and "dados/processados/sinesp" in readme
+    assert r".\.venv\Scripts\python.exe" in readme  # comandos testados no Windows
     assert "histórico" in readme.split("scripts/analise_seguranca_publica.py", 1)[1][:400].lower()
 
 
@@ -67,15 +71,15 @@ def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_in
     readme = _ler("README.md")
     for expected in (
         "python -m scripts.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
-        "documentacao/ATUALIZACAO_DE_DADOS.md", "documentacao/DEPLOY_STREAMLIT.md", "não pôde ser confirmado", "CC BY-ND",
-        "Deploy realizado", "python -m pytest tests -q", "python -m pytest tests_historicos -q",
+        "documentacao/analises/ATUALIZACAO_DE_DADOS.md", "documentacao/painel/DEPLOY_STREAMLIT.md", "não pôde ser confirmado", "CC BY-ND",
+        "Deploy realizado", "-m pytest tests -q", "-m pytest tests_historicos -q",
         "20261027T114400Z",
     ):
         assert expected in readme, expected
     assert re.search(r"\*\*\d+ testes aprovados\*\*", readme), "o README deve informar a contagem de testes da suíte ativa"
-    for documento in ("ATUALIZACAO_DE_DADOS.md", "DEPLOY_STREAMLIT.md"):
-        assert project_path("documentacao", documento).is_file()
-    for documento in ("README.md", "documentacao/DEPLOY_STREAMLIT.md", "documentacao/ESCOPO_PROJETO.md"):
+    for documento in ("analises/ATUALIZACAO_DE_DADOS.md", "painel/DEPLOY_STREAMLIT.md", "analises/METODOLOGIA.md", "painel/USO_DO_PAINEL.md"):
+        assert project_path("documentacao", *documento.split("/")).is_file()
+    for documento in ("README.md", "documentacao/painel/DEPLOY_STREAMLIT.md", "documentacao/analises/ESCOPO_PROJETO.md"):
         assert URL_STREAMLIT in _ler(*documento.split("/")), documento
     assert "streamlit.app" not in _ler("dashboard", "data_publica", "LEIAME.md")  # dados mínimos não dependem da URL
     regras = [l.strip() for l in project_path(".gitignore").read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]

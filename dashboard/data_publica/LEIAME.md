@@ -44,7 +44,7 @@ dos dados) e **geração** da versão derivada. Nenhuma delas é usada para infe
 
 * Geração inicial reprodutível: `python -m scripts.gerar_dados_dashboard` (requer os XLSX oficiais auditados em `dados/brutos/sinesp/`).
 * Novas publicações oficiais: fluxo **verificar → preparar → aprovar** (`python -m scripts.atualizacao_dados`), manual e controlado,
-  com versão anterior preservada e reversão. Ver [`documentacao/ATUALIZACAO_DE_DADOS.md`](../../documentacao/ATUALIZACAO_DE_DADOS.md).
+  com versão anterior preservada e reversão. Ver [`documentacao/analises/ATUALIZACAO_DE_DADOS.md`](../../documentacao/analises/ATUALIZACAO_DE_DADOS.md).
   O painel exibe uma **versão histórica validada** e nunca baixa dados nem executa ETL.
 
 ## Condições de reutilização da fonte (consulta de 27/10/2026)

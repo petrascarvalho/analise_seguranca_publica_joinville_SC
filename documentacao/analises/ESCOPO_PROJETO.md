@@ -56,12 +56,12 @@ horário ou corporação; identificação de pessoas, microdados pessoais, previ
 | Etapa | Entrega | Situação |
 |---|---|---|
 | Planejamento | Pergunta, objetivo e delimitação | Registrados neste documento |
-| Coleta | XLSX oficiais do Sinesp (2020–2026) | Obtidos da fonte oficial; origem e hashes em `documentacao/fontes/ORIGEM_SINESP.md` e no manifesto |
+| Coleta | XLSX oficiais do Sinesp (2020–2026) | Obtidos da fonte oficial; origem e hashes em `documentacao/analises/fontes/ORIGEM_SINESP.md` e no manifesto |
 | ETL | Código Python e registro das decisões | Implementado (roteiro acadêmico e `scripts/atualizacao_dados.py`); regras no manifesto |
 | EDA e estatística | Exploração e comparações reproduzíveis | Implementadas (etapas 5–10 do roteiro e página *Indicadores Sinesp*) |
 | Visualização | Gráficos dos indicadores | Implementada (Matplotlib; quatro figuras da Etapa 10 e figuras filtráveis) |
 | BI | Aplicação Streamlit | Implementada: três páginas (Projeto, Indicadores Sinesp, Qualidade e metodologia) |
-| Documentação | README, roteiro `scripts/analise_sinesp.py`, dependências, execução, atualização | Concluída (Etapa 19: pós-deploy) |
+| Documentação | README, ETL `scripts/etl_sinesp.py`, notebook `notebooks/analise_sinesp.ipynb`, dependências, execução, atualização | Concluída (Etapa 19: pós-deploy) |
 | Deploy | Streamlit Community Cloud | **Realizado:** <https://seguranca-publica-joinville-sinesp.streamlit.app/> (revisão visual e aperfeiçoamento dos gráficos pendentes) |
 | Entrega | Vídeo, repositório da turma e AVA | **Pendentes** |
 

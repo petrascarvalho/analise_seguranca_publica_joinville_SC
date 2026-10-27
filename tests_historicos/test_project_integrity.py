@@ -67,9 +67,26 @@ def test_raw_sources_still_match_the_migration_integrity_map():
     }
     archive_root = project_path("backup_pre_migracao_20261016", "ajustes_academicos_finais_20261016", "readmes_arquivados")
     archived_matches = 0
+    # Documentos realocados na Etapa 21 (reorganização da documentação); a existência continua obrigatória no novo caminho.
+    realocados_etapa21 = {
+        "documentacao/ESCOPO_PROJETO.md": "documentacao/analises/ESCOPO_PROJETO.md",
+        "documentacao/fontes/ORIGEM_SINESP.md": "documentacao/analises/fontes/ORIGEM_SINESP.md",
+        "documentacao/fontes/SINESP_JOINVILLE.md": "documentacao/analises/fontes/SINESP_JOINVILLE.md",
+        "documentacao/fontes/SSP_SC.md": "historico/ssp_sc/documentacao/SSP_SC.md",
+        "documentacao/fontes/CSV_COMPLEMENTARES.md": "historico/ssp_sc/documentacao/CSV_COMPLEMENTARES.md",
+        "documentacao/auditoria/ssp_csv_extraction_etapa_1_1.md": "historico/ssp_sc/documentacao/ssp_csv_extraction_etapa_1_1.md",
+        "documentacao/analises/relatorio_pipeline_analitico.md": "historico/documentacao_anterior/relatorio_pipeline_analitico.md",
+        **{
+            f"documentacao/auditoria/{nome}": f"historico/documentacao_anterior/{nome}"
+            for nome in (
+                "inspecao_etapa1_leitura_bruta.md", "levantamento_2026.md", "MIGRACAO_E_AUDITORIA.md",
+                "mapa_migracao.csv", "sinesp_python_js_comparison.csv",
+            )
+        },
+    }
     for row in rows:
         destination = row["caminho_destino_planejado"]
-        source = project_path(*Path(destination).parts)
+        source = project_path(*Path(realocados_etapa21.get(destination, destination)).parts)
         if destination in archived_readmes:
             assert not source.exists()
             if archive_root.is_dir():

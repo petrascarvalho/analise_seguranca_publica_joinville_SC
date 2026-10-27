@@ -9,7 +9,7 @@ from dashboard import dados_publicos as dp
 from scripts.utils import project_path
 
 ANOS = list(range(2020, 2027))
-PROTOTIPO = project_path("prototipos", "complementares_joinville", "indicadores_complementares_joinville.csv")
+PROTOTIPO = project_path("documentacao", "analises", "fontes", "indicadores_complementares_joinville.csv")
 
 
 @pytest.fixture(scope="module")
@@ -41,15 +41,15 @@ def test_soma_no_periodo_exige_todos_os_meses_publicados(sinesp):
 def test_filtros_visiveis_categoria_indicador_abrangencia_anos_e_meses():
     app = _pagina()
     assert not app.exception and not app.error
-    assert [s.label for s in app.selectbox][:3] == ["Indicador", "Abrangência", "Categoria"]
+    assert [s.label for s in app.selectbox][:3] == ["Categoria", "Indicador", "Abrangência"]
     assert [s.label for s in app.select_slider][:2] == ["Período (anos)", "Meses"]
-    assert app.selectbox[2].options == ["Todas", "atividade policial", "complementar", "criminal"]
-    app.selectbox[2].select("atividade policial").run()
-    assert app.selectbox[0].options == ["Mandado de prisão cumprido"] and not app.exception
-    app.selectbox[2].select("criminal").run()
-    assert "Suicídio" not in app.selectbox[0].options and "Homicídio doloso" in app.selectbox[0].options
-    app.selectbox[2].select("Todas").run()
-    assert len(app.selectbox[0].options) == 11  # os 11 indicadores do Sinesp para Joinville
+    assert app.selectbox(key="categoria").options == ["Todas", "atividade policial", "complementar", "criminal"]
+    app.selectbox(key="categoria").select("atividade policial").run()
+    assert app.selectbox(key="indicador").options == ["Mandado de prisão cumprido"] and not app.exception
+    app.selectbox(key="categoria").select("criminal").run()
+    assert "Suicídio" not in app.selectbox(key="indicador").options and "Homicídio doloso" in app.selectbox(key="indicador").options
+    app.selectbox(key="categoria").select("Todas").run()
+    assert len(app.selectbox(key="indicador").options) == 11  # os 11 indicadores do Sinesp para Joinville
 
 
 def test_filtro_de_meses_chega_aos_kpis_e_aos_resultados_mensais():
@@ -70,8 +70,8 @@ def test_filtro_de_meses_chega_aos_kpis_e_aos_resultados_mensais():
 def test_filtro_de_meses_preserva_o_modo_compacto_e_funciona_na_prf():
     app = _pagina()
     app.toggle[0].set_value(True).run()
-    app.selectbox[0].select("Mortes no trânsito").run()
-    app.selectbox[1].select("Polícia Rodoviária Federal").run()
+    app.selectbox(key="indicador").select("Mortes no trânsito").run()
+    app.selectbox(key="abrangencia").select("Polícia Rodoviária Federal").run()
     app.select_slider[1].set_value((1, 9)).run()
     assert app.toggle[0].value is True and not app.exception and not app.error
     assert any(m.label.startswith("Jan–Set de 2025") for m in app.metric)  # PRF 2026 só vai até agosto: o último ano com jan–set é 2025
@@ -129,7 +129,7 @@ def test_prototipo_complementar_e_separado_explicita_fonte_e_nao_valida_divergen
 
 
 def test_documentacao_das_fontes_complementares_registra_matriz_e_divergencia():
-    texto = project_path("documentacao", "fontes", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
+    texto = project_path("documentacao", "analises", "fontes", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
     for esperado in ("11 eventos", "8.865", "1.351", "933", "361", "divergente", "Estupro", "Tráfico de drogas", "NL", "não foram convertidas variações percentuais",
                      "Nada deste documento foi incorporado ao dashboard", "https://dados.sc.gov.br/", "joinville-cidade-em-dados"):
         assert esperado.lower() in texto.lower(), esperado
@@ -149,7 +149,7 @@ def test_filtros_ativos_ficam_visiveis_e_analises_de_ano_completo_sao_identifica
     avisos = [c.value for c in app.caption if "Análise de ano completo (12 meses)" in c.value]
     assert len(avisos) >= 6 and all("não usa o filtro de meses" in a for a in avisos)  # anos completos, períodos, variações, anual, média móvel, acumulado, sazonalidade
     assert any(m.label.startswith("Abr–Jun de 2026") and m.value == "7" for m in app.metric)  # 4 + 0 + 3: soma só dos meses escolhidos, rotulada com o intervalo
-    app.selectbox[2].select("criminal").run()
+    app.selectbox(key="categoria").select("criminal").run()
     ativos = next(m.value for m in app.markdown if m.value.startswith("**Filtros ativos:**"))
     assert "categoria **criminal**" in ativos and not app.exception
 
@@ -183,7 +183,7 @@ def test_perfil_mensal_em_barras_usa_mediana_e_so_anos_completos(sinesp):
 
 
 def test_documentacao_registra_o_relatorio_da_ssp_e_a_minuta_de_solicitacao():
-    texto = project_path("documentacao", "fontes", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
+    texto = project_path("documentacao", "analises", "fontes", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
     for esperado in ("061/2024/GEAC/DINE/SSP/SC", "15/03/2024", "https://portalelegis.alesc.sc.gov.br/documentos/z1LZ8", "669", "Tabela 03", "Tabela 04",
                      "possível inconsistência editorial", "não usar 669 como total de furtos", "Minuta de solicitação", "SEPROT", "2020 a 2026"):
         assert esperado.lower() in texto.lower(), esperado

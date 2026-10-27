@@ -1,3 +1,17 @@
+"""Página "Indicadores Sinesp": filtros, resumo, gráficos e tabelas da série escolhida.
+
+Comandos do Streamlit usados nesta página (o arquivo é executado de novo a cada interação):
+    • st.toggle — chave liga/desliga (modo compacto); o valor fica em st.session_state["modo_compacto"].
+    • st.selectbox — lista suspensa (categoria, indicador, abrangência); devolve a opção escolhida.
+    • st.select_slider — controle deslizante de intervalo (anos e meses); devolve (início, fim).
+    • st.metric — cartão com um número e a diferença em relação ao período anterior (delta).
+    • st.tabs — abas; o conteúdo de cada uma fica dentro de "with abas[i]:".
+    • st.dataframe — tabela interativa; st.pyplot — mostra uma figura do Matplotlib; st.expander — seção recolhível.
+    • st.info, st.warning e st.caption — mensagens e notas metodológicas.
+
+Os números vêm de dashboard/calculos.py e as figuras de dashboard/graficos.py; esta página só organiza a apresentação.
+"""
+
 import sys
 from pathlib import Path
 
@@ -24,13 +38,16 @@ ui.mostrar_versao_dos_dados()
 
 # ------------------------------------------------------------------------------------------ filtros
 catalogo = catalogo.assign(categoria=catalogo["natureza"].str.split(":").str[0].str.strip())
-f1, f2, f3 = st.columns([2.4, 1.6, 1.4])  # linha 1: Indicador, Abrangência e Categoria (que filtra a lista de indicadores)
+# Linha 1 dos filtros: Categoria → Indicador → Abrangência. A categoria (natureza do indicador) filtra a lista de indicadores, e o indicador
+# define as abrangências disponíveis. Cada st.selectbox mostra uma lista suspensa e devolve a opção escolhida; a "key" identifica o
+# controle e mantém a escolha entre as interações.
+f1, f2, f3 = st.columns([1.4, 2.4, 1.6])
 categorias = ["Todas"] + sorted(catalogo["categoria"].unique())
-categoria = f3.selectbox("Categoria", categorias, help="Natureza do indicador no catálogo (criminal, atividade policial, complementar). Filtra a lista de indicadores.")
+categoria = f1.selectbox("Categoria", categorias, key="categoria", help="Natureza do indicador no catálogo (criminal, atividade policial, complementar). Filtra a lista de indicadores.")
 eventos = sorted(catalogo.loc[catalogo["categoria"].eq(categoria) | (categoria == "Todas"), "evento"].unique())
-evento = f1.selectbox("Indicador", eventos, index=eventos.index("Homicídio doloso") if "Homicídio doloso" in eventos else 0)
+evento = f2.selectbox("Indicador", eventos, key="indicador", index=eventos.index("Homicídio doloso") if "Homicídio doloso" in eventos else 0)
 abrangencias = catalogo.loc[catalogo["evento"].eq(evento), "abrangencia"].tolist()
-abrangencia = f2.selectbox("Abrangência", abrangencias, help="Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
+abrangencia = f3.selectbox("Abrangência", abrangencias, key="abrangencia", help="Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
 anos_disponiveis = sorted(int(a) for a in sinesp["ano"].unique())
 g1, g2 = st.columns(2)  # linha 2: anos e meses
 ano_ini, ano_fim = g1.select_slider("Período (anos)", options=anos_disponiveis, value=(anos_disponiveis[0], anos_disponiveis[-1]))
@@ -77,6 +94,17 @@ if filtro_meses:
     st.caption(f"Filtro de meses ativo: {ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]}. Valem para os resultados mensais; anos completos e acumulados continuam com os 12 meses.")
 
 # ------------------------------------------------------------------------------------- indicadores
+def direcao_da_seta(diferenca) -> str:
+    """Seta do st.metric de acordo com o sinal da diferença: "up" (aumento), "down" (queda) ou "off" (sem diferença).
+
+    O texto do delta usa o sinal tipográfico "−" (ex.: "−7 vs 2024"); como o Streamlit decide a seta pelo primeiro caractere, ela é
+    informada explicitamente para não mostrar seta para cima ao lado de um valor negativo.
+    """
+    if diferenca is None or pd.isna(diferenca) or int(diferenca) == 0:
+        return "off"
+    return "up" if int(diferenca) > 0 else "down"
+
+
 st.subheader("Resumo")
 k1, k2, k3 = st.columns(3)
 soma_meses = calculos.soma_no_periodo(serie, mes_ini, mes_fim)
@@ -85,18 +113,21 @@ if filtro_meses:  # com filtro de meses, o KPI principal é a soma desses meses 
     if len(soma_meses):
         ultimo_m = soma_meses.iloc[-1]
         anterior_m = soma_meses.loc[soma_meses["ano"].eq(int(ultimo_m["ano"]) - 1)]
-        delta_m = f"{fmt_dif(int(ultimo_m['soma']) - int(anterior_m.iloc[0]['soma']))} vs {int(ultimo_m['ano']) - 1}" if len(anterior_m) else None
-        k1.metric(f"{ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]} de {int(ultimo_m['ano'])} ({unidade_curta})", fmt_int(ultimo_m["soma"]), delta=delta_m, delta_color="off",
+        dif_m = int(ultimo_m["soma"]) - int(anterior_m.iloc[0]["soma"]) if len(anterior_m) else None
+        delta_m = f"{fmt_dif(dif_m)} vs {int(ultimo_m['ano']) - 1}" if dif_m is not None else None
+        k1.metric(f"{ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]} de {int(ultimo_m['ano'])} ({unidade_curta})", fmt_int(ultimo_m["soma"]), delta=delta_m, delta_color="off", delta_arrow=direcao_da_seta(dif_m),
                   help="Soma dos meses selecionados; só entra o ano com todos esses meses publicados. A diferença compara com o mesmo intervalo do ano anterior.")
     else:
         k1.metric("Soma dos meses selecionados", "—", help="Nenhum ano do período tem todos os meses selecionados publicados.")
 elif len(completos):
     ultimo = completos.iloc[-1]
-    delta = None
+    delta, dif_anual = None, None
     if len(completos) > 1:
         anterior = completos.iloc[-2]
-        delta = f"{fmt_dif(int(ultimo['soma']) - int(anterior['soma']))} vs {int(anterior['ano'])}" if int(anterior["ano"]) == int(ultimo["ano"]) - 1 else None
-    k1.metric(f"Último ano completo: {int(ultimo['ano'])} ({unidade_curta})", fmt_int(ultimo["soma"]), delta=delta, delta_color="off",
+        if int(anterior["ano"]) == int(ultimo["ano"]) - 1:
+            dif_anual = int(ultimo["soma"]) - int(anterior["soma"])
+            delta = f"{fmt_dif(dif_anual)} vs {int(anterior['ano'])}"
+    k1.metric(f"Último ano completo: {int(ultimo['ano'])} ({unidade_curta})", fmt_int(ultimo["soma"]), delta=delta, delta_color="off", delta_arrow=direcao_da_seta(dif_anual),
               help="Soma dos 12 meses publicados. A diferença compara apenas com o ano completo imediatamente anterior.")
 else:
     k1.metric("Último ano completo", "—", help="Nenhum ano completo no período selecionado.")
@@ -105,8 +136,9 @@ if filtro_meses:
 elif len(periodo_sel) and serie_parcial:
     ult_p = periodo_sel.iloc[-1]
     ant = periodo_sel.loc[periodo_sel["ano"].eq(int(ult_p["ano"]) - 1)]
-    delta_p = f"{fmt_dif(int(ult_p['soma']) - int(ant.iloc[0]['soma']))} vs {nome_periodo} de {int(ult_p['ano']) - 1}" if len(ant) else None
-    k2.metric(f"{nome_periodo.capitalize()} de {int(ult_p['ano'])} ({unidade_curta})", fmt_int(ult_p["soma"]), delta=delta_p, delta_color="off",
+    dif_p = int(ult_p["soma"]) - int(ant.iloc[0]["soma"]) if len(ant) else None
+    delta_p = f"{fmt_dif(dif_p)} vs {nome_periodo} de {int(ult_p['ano']) - 1}" if dif_p is not None else None
+    k2.metric(f"{nome_periodo.capitalize()} de {int(ult_p['ano'])} ({unidade_curta})", fmt_int(ult_p["soma"]), delta=delta_p, delta_color="off", delta_arrow=direcao_da_seta(dif_p),
               help=f"Períodos equivalentes: os dois anos têm os mesmos {mes_final_serie} meses.")
 else:
     k2.metric(nome_periodo.capitalize(), "—", help="A série tem o último ano completo: não há período parcial a comparar.")

@@ -199,14 +199,14 @@ def test_alternancia_do_modo_compacto_preserva_filtros_e_abas():
     app = _pagina()
     assert [t.label for t in app.toggle] == ["Visualização compacta (celular)"] and app.toggle[0].value is False  # padrão: completo (desktop)
     assert not app.exception and not app.error
-    app.selectbox[0].select("Mandado de prisão cumprido").run()
-    app.selectbox[1].select("Polícia Federal").run()
+    app.selectbox(key="indicador").select("Mandado de prisão cumprido").run()
+    app.selectbox(key="abrangencia").select("Polícia Federal").run()
     app.select_slider[0].set_value((2025, 2026)).run()
     app.toggle[0].set_value(True).run()
     assert app.toggle[0].value is True and not app.exception and not app.error
-    assert (app.selectbox[0].value, app.selectbox[1].value, app.select_slider[0].value) == ("Mandado de prisão cumprido", "Polícia Federal", (2025, 2026))  # filtros mantidos
-    app.selectbox[0].select("Suicídio").run()
-    app.selectbox[1].select("Estadual").run()
+    assert (app.selectbox(key="indicador").value, app.selectbox(key="abrangencia").value, app.select_slider[0].value) == ("Mandado de prisão cumprido", "Polícia Federal", (2025, 2026))  # filtros mantidos
+    app.selectbox(key="indicador").select("Suicídio").run()
+    app.selectbox(key="abrangencia").select("Estadual").run()
     assert app.toggle[0].value is True  # o modo permanece durante as interações
     app.toggle[0].set_value(False).run()
     assert app.toggle[0].value is False and not app.exception
@@ -231,8 +231,8 @@ def test_modo_compacto_na_pagina_move_o_texto_explicativo_para_componentes_nativ
 def test_prf_no_modo_compacto_oferece_selecao_de_anos_sem_ocultar_em_silencio():
     app = _pagina()
     app.toggle[0].set_value(True).run()
-    app.selectbox[0].select("Mortes no trânsito").run()
-    app.selectbox[1].select("Polícia Rodoviária Federal").run()
+    app.selectbox(key="indicador").select("Mortes no trânsito").run()
+    app.selectbox(key="abrangencia").select("Polícia Rodoviária Federal").run()
     assert not app.exception and not app.error
     assert [m.label for m in app.multiselect] == ["Anos exibidos na evolução mensal"] and app.multiselect[0].value == [2024, 2025, 2026]
     assert any("Exibindo 3 de 7 anos do período selecionado (2024, 2025, 2026)" in c.value for c in app.caption)  # filtro ativo identificado
@@ -250,8 +250,8 @@ def test_modo_compacto_roda_em_todas_as_series_sem_erro():
     app.toggle[0].set_value(True).run()
     for evento, abrangencia in [("Roubo seguido de morte (latrocínio)", "Estadual"), ("Mortes a esclarecer (sem indício de crime)", "Estadual"),
                                 ("Mandado de prisão cumprido", "Polícia Federal"), ("Feminicídio", "Estadual"), ("Homicídio doloso", "Estadual")]:
-        app.selectbox[0].select(evento).run()
-        app.selectbox[1].select(abrangencia).run()
+        app.selectbox(key="indicador").select(evento).run()
+        app.selectbox(key="abrangencia").select(abrangencia).run()
         assert not app.exception and not app.error, (evento, abrangencia)
 
 
@@ -340,7 +340,7 @@ def _pagina_compacta():
 def test_controles_da_pagina_em_ordem_clara_e_numeros_dos_filtros_inalterados():
     app = AppTest.from_file(str(project_path("dashboard", "pages", "sinesp.py")), default_timeout=180).run()
     assert [t.label for t in app.toggle] == ["Visualização compacta (celular)"]
-    assert [s.label for s in app.selectbox][:3] == ["Indicador", "Abrangência", "Categoria"]  # linha 1
+    assert [s.label for s in app.selectbox][:3] == ["Categoria", "Indicador", "Abrangência"]  # linha 1
     assert [s.label for s in app.select_slider][:2] == ["Período (anos)", "Meses"]  # linha 2
     assert [m.value for m in app.metric][:3] == ["29", "25", "81 de 81"]  # resultados aprovados
     app.select_slider[1].set_value((1, 3)).run()

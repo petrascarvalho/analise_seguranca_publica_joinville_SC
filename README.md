@@ -1,95 +1,119 @@
 # Segurança Pública de Joinville
 
-Projeto acadêmico individual de Visualização de Dados e BI — SENAI/LAB365, Módulo 2, Semana 13. Estado documentado em 27/10/2026. O produto usa **exclusivamente dados do Sinesp/MJSP para Joinville/SC** (fonte única): ETL em Python, análise exploratória e estatísticas descritivas, visualizações Matplotlib e um dashboard Streamlit de três páginas (Projeto, Indicadores Sinesp e Qualidade e metodologia), com dados mínimos agregados e versionados em `dashboard/data_publica/` e um fluxo manual e controlado de atualização (verificar → preparar → aprovar). Período realmente disponível: **janeiro/2020 a setembro/2026** (2026 parcial; a série da PRF termina em agosto/2026). A aplicação está **publicada no Streamlit Community Cloud**: <https://seguranca-publica-joinville-sinesp.streamlit.app/>. O roteiro acadêmico de referência é [scripts/analise_sinesp.py](scripts/analise_sinesp.py). O trabalho anterior com a SSP/SC e com a Prefeitura/SEPROT permanece registrado como histórico e **fora do escopo** da entrega. A revisão visual e o aperfeiçoamento dos gráficos, o vídeo, o repositório da turma e o AVA permanecem pendentes.
+**Curso:** SENAI/SC — LAB365 | Módulo 2 — Semana 13 (Visualização de Dados e Business Intelligence)
+**Aluno:** Petras Ruben Carvalho
+**Projeto:** Análise dos indicadores oficiais do Sinesp/MJSP em Joinville/SC, janeiro/2020 a setembro/2026
+
+Projeto acadêmico individual. O produto usa **exclusivamente dados do Sinesp/MJSP para Joinville/SC** (fonte única) e é formado por três peças que se complementam:
+
+| Peça | Arquivo | Para que serve |
+|---|---|---|
+| ETL acadêmico | [scripts/etl_sinesp.py](scripts/etl_sinesp.py) | Lê os XLSX oficiais, transforma, valida, confere com a base publicada e exporta resultados para `dados/processados/sinesp/` (18 etapas comentadas) |
+| Notebook de análise | [notebooks/analise_sinesp.ipynb](notebooks/analise_sinesp.ipynb) | Apresenta a análise passo a passo, com tabelas, estatísticas e gráficos |
+| Painel Streamlit | [scripts/painel_streamlit.py](scripts/painel_streamlit.py) | Dashboard de três páginas (Projeto, Indicadores Sinesp e Qualidade e metodologia), alimentado pela base publicada em `dashboard/data_publica/` |
+
+Período realmente disponível: **janeiro/2020 a setembro/2026** (2026 parcial; a série da PRF termina em agosto/2026). Aplicação publicada no Streamlit Community Cloud: <https://seguranca-publica-joinville-sinesp.streamlit.app/>. A versão publicada corresponde ao último commit enviado ao GitHub; alterações feitas depois disso só aparecem no aplicativo após push e reconstrução. O trabalho anterior com a SSP/SC e com a Prefeitura/SEPROT é histórico e está **fora do escopo** da entrega.
 
 ## 1. Título e resumo
 
-**Análise dos indicadores oficiais de segurança pública do Sinesp/MJSP em Joinville/SC, 2020–2026.** O projeto utiliza Python/Pandas, dados oficiais e visualizações Matplotlib para descrever séries mensais municipais, preservando fonte, unidade, abrangência institucional e período. O produto final inclui painel Streamlit, documentação, repositório e apresentação acadêmica.
+**Análise dos indicadores oficiais de segurança pública do Sinesp/MJSP em Joinville/SC, 2020–2026.** O projeto usa Python, Pandas e Matplotlib para descrever séries mensais municipais publicadas pelo Ministério da Justiça e Segurança Pública, preservando fonte, unidade, abrangência institucional e período de cada série.
 
-Fonte única: Sinesp VDE / MJSP, recorte exato Joinville/SC, 12 séries (indicador × abrangência: Estadual, Polícia Federal e Polícia Rodoviária Federal), 911 observações mensais, janeiro/2020 a setembro/2026. Cada série tem cobertura própria e não há um total geral de criminalidade obtido somando indicadores, abrangências ou unidades.
+Fonte única: Sinesp VDE / MJSP, recorte exato Joinville/SC, 12 séries (indicador × abrangência: Estadual, Polícia Federal e Polícia Rodoviária Federal), 911 observações mensais, janeiro/2020 a setembro/2026. Cada série tem cobertura própria e não existe um total geral de criminalidade obtido somando indicadores, abrangências ou unidades.
 
 ## 2. Problema, objetivo e importância
 
 **Pergunta analítica:** como evoluíram, desde janeiro/2020, os indicadores oficiais de segurança pública do Sinesp/MJSP para Joinville/SC, e o que a comparação entre períodos equivalentes permite — e não permite — afirmar sobre essa evolução?
 
-O objetivo é produzir uma análise municipal reproduzível, com origem auditável, estatísticas adequadas às unidades e comparação de períodos equivalentes. O público inclui estudantes, cidadãos, pesquisadores e gestores. Os dados descrevem registros administrativos publicados; não medem toda a criminalidade ocorrida nem demonstram efeitos causais de políticas públicas.
+O objetivo é produzir uma análise municipal reproduzível, com origem auditável, estatísticas adequadas às unidades e comparação de períodos equivalentes. O público inclui estudantes, cidadãos, pesquisadores e gestores. Os dados descrevem registros administrativos publicados: não medem toda a criminalidade ocorrida nem demonstram efeitos de políticas públicas.
 
 ## 3. Escopo e resultados esperados
 
 **Escopo (fonte única Sinesp/MJSP, Joinville/SC):** feminicídio e tentativa de feminicídio, homicídio doloso, tentativa de homicídio, lesão corporal seguida de morte, latrocínio (roubo seguido de morte), suicídio, mortes a esclarecer, mortes no trânsito (Estadual e PRF) e mandados de prisão cumpridos (Estadual e Polícia Federal). Vítimas e mandados são conceitos distintos; atividade policial não é contagem de crimes nem de vítimas únicas.
 
-**Fora do escopo:** furtos e roubos, atendimentos da Guarda Municipal, dados da SSP/SC e da Prefeitura/SEPROT, taxas populacionais, dados por bairro, rua, horário ou corporação, previsões e inferência causal. O trabalho já feito com a **SSP/SC e Prefeitura/SEPROT** (inspeção e auditoria de boletins, base de violência doméstica, transcrição de totais municipais) é **histórico e está fora do escopo**: não alimenta o painel nem os dados ativos e está indexado em [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md); o código e os dados dessas fontes permanecem recuperáveis no histórico Git (último commit com a versão anterior do dashboard, que incluía uma página da SSP/SC: `bad9723`).
+**Fora do escopo:** furtos e roubos em geral, estupro, tráfico de drogas, atendimentos da Guarda Municipal, taxas populacionais, dados por bairro, rua, horário ou corporação, previsões e inferência causal. O trabalho anterior com a **SSP/SC e Prefeitura/SEPROT** (inspeção de boletins, base de violência doméstica, transcrição de totais municipais) é **histórico e está fora do escopo**: não alimenta o painel nem a base publicada e está indexado em [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md). O código e os dados dessas fontes continuam recuperáveis pelo Git (último commit com a página da SSP/SC no dashboard: `bad9723`).
 
-Requisitos acadêmicos registrados: trabalho individual do SENAI/LAB365, Módulo 2, Semana 13; ETL em Python, EDA, estatísticas, gráficos com fontes, painel interativo Streamlit, README, repositório dedicado, publicação da aplicação, vídeo de até três minutos e envio dos links ao AVA/repositório da turma conforme enunciado. O prazo informado é **30/10/2026 às 22h, horário de Brasília**, sujeito a comunicados posteriores. O planejamento no Trello foi **dispensado por orientação do professor**. Regras finais de visibilidade do repositório, divulgação e marcações do vídeo devem ser conferidas no enunciado vigente antes da entrega.
+Requisitos acadêmicos: trabalho individual do SENAI/LAB365, Módulo 2, Semana 13; ETL em Python, análise exploratória, estatísticas, gráficos com fonte, painel interativo Streamlit, README, repositório dedicado, publicação da aplicação, vídeo de até três minutos e envio dos links ao AVA e ao repositório da turma. Prazo informado: **30/10/2026 às 22h, horário de Brasília**, sujeito a comunicados posteriores. O planejamento no Trello foi **dispensado por orientação do professor**.
 
-Situação: ETL, EDA, estatísticas, figuras e dashboard (três páginas) implementados e testados; atualização controlada dos dados implementada e executada com a competência de setembro/2026; dashboard **publicado** no Streamlit Community Cloud (seção 10), com a página inicial conferida em navegador. Pendentes: revisão visual e aperfeiçoamento dos gráficos (etapa posterior), validação em dispositivos móveis, vídeo, repositório da turma e AVA.
+Situação: ETL, notebook, estatísticas, gráficos e dashboard implementados e testados; atualização controlada executada com a competência de setembro/2026; dashboard publicado (seção 10). Pendentes: revisão visual final no navegador, validação em dispositivos móveis, vídeo, repositório da turma e AVA.
 
 ## 4. Fonte e autorização
 
 | Fonte oficial | Aquisição e evidência | Cobertura municipal | Unidade e ressalvas |
 |---|---|---|---|
-| [Sinesp VDE / MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023) | Sete XLSX anuais (`bancovde-2020.xlsx` a `bancovde-2026.xlsx`); [origem e verificações](documentacao/fontes/ORIGEM_SINESP.md), [evidência de 2020–2022](documentacao/auditoria/sinesp_origem_2020_2022.csv) e SHA-256 dos XLSX de cada versão no manifesto | 2020–2025 completos; 2026 de janeiro a setembro (PRF até agosto) | Vítimas em `total_vitima`; mandados em `total`; abrangências Estadual, PF e PRF preservadas |
+| [Sinesp VDE / MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023) | Sete XLSX anuais (`bancovde-2020.xlsx` a `bancovde-2026.xlsx`); [origem e verificações](documentacao/analises/fontes/ORIGEM_SINESP.md), [evidência de 2020–2022](documentacao/auditoria/sinesp_origem_2020_2022.csv) e SHA-256 dos XLSX no manifesto | 2020–2025 completos; 2026 de janeiro a setembro (PRF até agosto) | Vítimas em `total_vitima`; mandados em `total`; abrangências Estadual, PF e PRF preservadas |
 
-Os dados brutos ficam fora do Git. A disponibilidade pública de uma fonte não confirma autorização de redistribuição integral; por isso o repositório publica apenas arquivos **mínimos, agregados e derivados** (`dashboard/data_publica/`: contagens mensais municipais já auditadas e metadados de rastreabilidade). XLSX nacionais, CSVs brutos, dados pessoais e informações protegidas não são redistribuídos. Os resultados textuais próprios deste README são apresentados com atribuição ao MJSP/Sinesp.
+Os XLSX ficam em `dados/brutos/sinesp/`, fora do Git. A disponibilidade pública de uma fonte não confirma autorização de redistribuição integral; por isso o repositório publica apenas arquivos **mínimos, agregados e derivados** (`dashboard/data_publica/`: contagens mensais municipais e metadados de rastreabilidade). XLSX nacionais, dados pessoais e informações protegidas não são redistribuídos.
 
-**Condições de reutilização (consulta de 27/10/2026)**, distinguindo catálogo, licença geral do site e condições do recurso: o catálogo `dados.mj.gov.br` seria "Creative Commons Atribuição" segundo o responsável pelo projeto, mas **não pôde ser confirmado** (o domínio não resolveu; NXDOMAIN); o rodapé do portal gov.br declara "Creative Commons Atribuição-SemDerivações 3.0" (CC BY-ND 3.0, licença geral do site); a página da base VDE e o Termo de Uso do portal não trazem condições específicas. **Nenhuma proibição específica aplicável aos arquivos derivados foi encontrada, mas também não há autorização específica explícita**; trata-se de avaliação técnica, não de parecer jurídico. A atribuição da fonte é obrigatória e aparece no painel; recomenda-se confirmar o uso com o MJSP (estatistica@mj.gov.br). Detalhes em [dashboard/data_publica/LEIAME.md](dashboard/data_publica/LEIAME.md) e no manifesto.
+**Condições de reutilização (consulta de 27/10/2026):** o catálogo `dados.mj.gov.br` seria "Creative Commons Atribuição", segundo o responsável pelo projeto, mas isso **não pôde ser confirmado** (o domínio não resolveu; NXDOMAIN); o rodapé do portal gov.br declara "Creative Commons Atribuição-SemDerivações 3.0" (CC BY-ND 3.0, licença geral do site); a página da base VDE e o Termo de Uso do portal não trazem condições específicas. **Nenhuma proibição específica aplicável aos arquivos derivados foi encontrada, mas também não há autorização específica explícita.** É uma avaliação técnica, não parecer jurídico. A atribuição da fonte aparece no painel; recomenda-se confirmar o uso com o MJSP (estatistica@mj.gov.br). Detalhes em [dashboard/data_publica/LEIAME.md](dashboard/data_publica/LEIAME.md).
 
 ## 5. Pipeline e metodologia
 
-O roteiro acadêmico de referência é [scripts/analise_sinesp.py](scripts/analise_sinesp.py) (492 linhas, 36 células `# %%`), dedicado só ao Sinesp e executável no VS Code Interactive ou por `python -m scripts.analise_sinesp`. Ele lê os XLSX do acervo local, refaz o ETL passo a passo, valida o resultado e **confere que a base reconstruída é idêntica à publicada** (mesmo SHA-256 do manifesto). Não grava arquivos. Sem os XLSX, entra em **modo demonstração**: usa a base já publicada (dado derivado, não bruto) e avisa que isso não reproduz a extração. O roteiro anterior, [scripts/analise_seguranca_publica.py](scripts/analise_seguranca_publica.py), é **histórico**: contém as primeiras etapas Sinesp (1–10) e o trabalho da SSP/SC (11–14.2), preservado e fora do escopo.
+O fluxo segue quatro camadas, cada uma em um lugar próprio:
 
-| Seção do roteiro | Conteúdo |
+| Camada | Onde fica | Versionada no Git? |
+|---|---|---|
+| Arquivo bruto | `dados/brutos/sinesp/` — XLSX oficiais, sem alteração | Não |
+| Base transformada | `dados/processados/sinesp/etl_recorte_joinville_bruto.csv` — 911 linhas de Joinville, 14 colunas originais | Não (gerada pelo ETL) |
+| Base analítica validada | `dados/processados/sinesp/etl_sinesp_joinville_mensal.csv` — 911 × 6, igual à publicada | Não (gerada pelo ETL) |
+| Base publicada | `dashboard/data_publica/` — 2 CSVs + manifesto com SHA-256 | Sim (usada pelo Streamlit) |
+
+### ETL acadêmico: `scripts/etl_sinesp.py`
+
+Script em células `# %%` (VS Code: *Run Cell* / *Run All Cells*) ou executado de uma vez no terminal. Cada etapa começa com **Objetivo**, explica o que é feito, informa o **Resultado esperado** e termina com uma conferência (`assert`) que interrompe o processo se algo não bater.
+
+| Etapas | O que fazem |
 |---|---|
-| 1. Objetivo e bibliotecas | Pergunta analítica; Pandas e módulos validados do projeto |
-| 2. Leitura e inspeção | Localiza os 7 XLSX, confere SHA-256 com o manifesto e extrai apenas SC/JOINVILLE (911 linhas) |
-| 3. Identificação dos campos | Dicionário das 14 colunas; ausências por campo; eventos e abrangências |
-| 4. ETL | Conversão de datas (serial Excel), escolha da medida (vítimas × mandados), tratamento de ausências e linhas repetidas |
-| 5. Validação | Colunas, chaves, meses consecutivos, unidade única, valores; igualdade com a base aprovada |
-| 6. Base analítica | 911 observações × 6 colunas e catálogo de 12 séries |
-| 7. Análise exploratória | Cobertura, zeros, ausências, totais por ano completo, períodos equivalentes (janeiro–agosto e janeiro–setembro); 7.1 série de estudo, grade ano × mês e distribuição dos valores |
-| 8. Estatísticas descritivas | Soma, média, mediana, mínimo, máximo e desvio-padrão (`ddof=0`); diferença absoluta e percentual com base positiva; 8.1 quartis, IQR e diagnóstico de outliers; 8.2 sazonalidade exploratória, média móvel e acumulado |
-| 9. Visualizações | Funções de `dashboard/graficos.py`, em quatro grupos (visão geral, evolução temporal, estatística descritiva e outliers) e conferência de que o desenhado é o da tabela; troque `EVENTO_ESTUDO`/`ABRANGENCIA_ESTUDO` para estudar outra série |
-| 10. Conclusões e limitações | Textos calculados a partir dos dados |
+| 01–03 | Importam as bibliotecas, configuram os caminhos e localizam os sete XLSX, conferindo o SHA-256 de cada um com o manifesto |
+| 04–06 | Leem os XLSX guardando só as linhas de SC/JOINVILLE (911 linhas) e descrevem as 14 colunas, eventos e abrangências |
+| 07 | Verifica duplicidades **sem apagar linhas**: soma só as parcelas que a nota oficial manda somar (*Tentativa de homicídio* e *Estupro*) |
+| 08–12 | Convertem datas (serial do Excel), escolhem a medida (vítimas × mandados), mantêm ausências como `<NA>` (nunca zero), ajustam tipos e consolidam as observações mensais |
+| 13 | Valida a base e confere que ela é **idêntica à publicada** (mesmo SHA-256 do manifesto) |
+| 14–16 | Estatísticas descritivas, análise exploratória e gráficos (funções de `dashboard/graficos.py`) |
+| 17 | Exportação controlada: grava somente em `dados/processados/sinesp/`; **nunca altera `dashboard/data_publica/`** |
+| 18 | Conclusões e limitações calculadas a partir dos dados |
 
-A **atualização dos dados do painel não depende do roteiro**: usa `scripts/atualizacao_dados.py`, um ETL independente que aplica as mesmas regras e reproduz byte a byte os dados ativos. Os dois caminhos (roteiro e atualização) são verificados contra os mesmos dois CSVs publicados.
+Sem os XLSX, o ETL entra em **modo demonstração**: usa a base publicada (dado derivado, não bruto), avisa que isso não reproduz a extração e não exporta nada. A série estudada pode ser trocada pelas variáveis `SINESP_EVENTO_ESTUDO` e `SINESP_ABRANGENCIA_ESTUDO`.
 
-**Regras do ETL (Sinesp).** Filtro exato `SC`/`JOINVILLE`. A chave observacional mantém UF, município, evento, competência e abrangência; na versão auditada houve zero duplicidade exata e zero repetição nas chaves com abrangência, e 20 grupos/40 linhas de mandados estaduais e PF foram preservados separadamente. As dez colunas analíticas são `uf`, `municipio`, `evento`, `data_referencia`, `feminino`, `masculino`, `nao_informado`, `total_vitima`, `total` e `abrangencia`; agente, arma, faixa etária e peso estão 100% ausentes e continuam intactos no original.
+O roteiro anterior, [scripts/analise_seguranca_publica.py](scripts/analise_seguranca_publica.py), é **histórico**: reúne as primeiras etapas Sinesp (1–10) e o trabalho da SSP/SC (11–14.2). Continua em `scripts/` porque o gerador da versão inicial dos dados e os testes históricos dependem dele; não é necessário para reproduzir a entrega.
 
-Datas: sistema Excel 1900, origem `1899-12-30`, sem `errors="coerce"`; são validados seriais inteiros, ano do arquivo, primeiro dia do mês e cobertura. As cinco contagens passaram de `float64` para `Int64` anulável após verificar valores finitos, inteiros e não negativos; as posições de ausência foram preservadas e **nenhum valor ausente foi convertido em zero**. Vítimas (`total_vitima`) e mandados (`total`) são medidas distintas e nunca são somadas. Em *Tentativa de homicídio* e *Estupro*, meses com mais de uma linha são somados porque a nota metodológica oficial trata as linhas como parcelas; não há deduplicação genérica.
+### Notebook: `notebooks/analise_sinesp.ipynb`
 
-Estatísticas: a soma anual só é calculada quando todos os meses presentes têm valor; a variação percentual só existe com base positiva (diferença absoluta sempre informada); desvio-padrão descritivo com `ddof=0`; médias e medianas informam seus meses de observação. Anos parciais nunca são comparados com anos completos: compara-se janeiro até a última competência equivalente, **por série** (a PRF termina em agosto, as demais em setembro).
+Apresenta a mesma análise em formato de relatório, em 13 seções: fonte oficial, bibliotecas, diretórios, leitura dos arquivos, inspeção bruta, tratamento, duplicidades, ausências e zeros, recorte de Joinville e cobertura, estatísticas, gráficos e interpretações, conclusões e limitações. Usa as mesmas funções validadas do ETL e do painel; sem os XLSX, roda em modo demonstração. É versionado sem saídas gravadas.
 
-O catálogo auxiliar tem 12 combinações evento/abrangência, com medida, unidade, natureza, cobertura e limitações. Os módulos [extract.py](scripts/extract.py), [transform.py](scripts/transform.py) e [analysis.py](scripts/analysis.py) são de fase anterior e podem gravar resultados quando chamados como programas; não devem ser executados automaticamente.
+### Regras do ETL
+
+Filtro exato `SC`/`JOINVILLE`. Datas pelo sistema Excel 1900 (origem `1899-12-30`), sem `errors="coerce"`: o serial precisa ser inteiro, cair no dia 1 do mês e no ano do arquivo. As contagens passam para `Int64` anulável depois de verificar valores finitos, inteiros e não negativos; **nenhum valor ausente é convertido em zero**, e zeros publicados são mantidos. Vítimas (`total_vitima`) e mandados (`total`) são medidas distintas e nunca são somadas. Não há deduplicação genérica: em qualquer indicador fora da regra oficial, uma repetição interrompe o processo.
+
+Estatísticas: a soma anual só é calculada quando todos os meses têm valor; a variação percentual só existe com base positiva (a diferença absoluta é sempre informada); desvio-padrão descritivo com `ddof=0`. Anos parciais nunca são comparados com anos completos: compara-se janeiro até a última competência equivalente, **por série** (a PRF termina em agosto, as demais em setembro). Detalhes em [documentacao/analises/METODOLOGIA.md](documentacao/analises/METODOLOGIA.md).
+
+A **atualização dos dados do painel não depende do ETL acadêmico**: usa `scripts/atualizacao_dados.py`, que aplica as mesmas regras e reproduz byte a byte os dados ativos. Os dois caminhos são conferidos contra os mesmos CSVs publicados.
 
 ## 6. Bibliotecas e tecnologias
 
-Ambiente local conferido: Python **3.12.14**, Pandas **3.0.6**, Matplotlib **3.11.2**, Streamlit **1.66.0**, openpyxl **3.1.5**, lxml **6.1.3**, pytest **8.4.2** e ipykernel **7.4.0**.
-
-Os intervalos de instalação estão em [requirements.txt](requirements.txt); não constituem um arquivo de versões travadas. `ipykernel` é uma dependência adicional para uso interativo e não está declarado nesse arquivo. A validação em ambiente limpo e eventual fixação de versões continuam pendentes.
-
-Uso de cada biblioteca (levantamento por importações no código):
+Ambiente local conferido: Python **3.12.14**, Pandas **3.0.6**, Matplotlib **3.11.2**, Streamlit **1.66.0**, openpyxl **3.1.5**, lxml **6.1.3**, pytest **8.4.2** e ipykernel **7.4.0**. As faixas de instalação estão em [requirements.txt](requirements.txt) (não é um arquivo de versões travadas).
 
 | Biblioteca | Papel |
 |---|---|
-| `streamlit`, `pandas`, `matplotlib` | Execução do painel publicado (e do roteiro `analise_sinesp.py`) |
-| `lxml` | ETL Sinesp: leitura do XML das planilhas (`scripts/transform.py`) |
-| `openpyxl` | Testes (geração de XLSX sintéticos) e módulos de fase anterior |
-| `pytest` | Testes |
-| `ipykernel` | Execução das células no VS Code Interactive (não declarado) |
-| `pdfplumber`, `pypdf` | Somente código histórico da SSP/SC e teste histórico |
-| `pyarrow` | Nenhum código ativo (somente `scripts/analysis.py`, módulo histórico) |
+| `pandas` | Leitura, transformação, validação e tabelas |
+| `matplotlib` | Todos os gráficos (ETL, notebook e painel) |
+| `streamlit` | Painel interativo |
+| `lxml` | Leitura do XML interno das planilhas do Sinesp (`scripts/transform.py`) |
+| `openpyxl` | Testes (XLSX sintéticos) e módulos históricos |
+| `pytest` | Testes automatizados |
+| `ipykernel` | Execução do notebook e das células `# %%` no VS Code (instalar à parte) |
+| `pdfplumber`, `pypdf`, `pyarrow` | Somente código histórico da SSP/SC |
 
-**Proposta de simplificação (não aplicada):** separar um `requirements.txt` mínimo para o Streamlit Cloud (`streamlit`, `pandas`, `matplotlib`) e um arquivo de desenvolvimento com `lxml`, `openpyxl`, `pytest` e `ipykernel`, movendo `pdfplumber`, `pypdf` e `pyarrow` para um arquivo histórico. Nenhuma biblioteca foi removida porque a mudança ainda não foi testada em ambiente limpo e reconstruiria o aplicativo publicado.
+Separar um `requirements.txt` mínimo para o Streamlit Cloud de um arquivo de desenvolvimento é uma melhoria possível, ainda não aplicada para não reconstruir o aplicativo sem teste em ambiente limpo.
 
 ## 7. Resultados encontrados
 
-Os números abaixo vêm dos dados ativos (`dashboard/data_publica/`, versão `20261027T114400Z`) e são conferidos automaticamente contra as tabelas por testes (`tests/test_dashboard_dados.py`).
+Os números abaixo vêm da base publicada (`dashboard/data_publica/`, versão `20261027T114400Z`) e são conferidos automaticamente contra as tabelas por testes (`tests/test_dashboard_dados.py`).
 
 ### Cobertura, dimensões e ausências
 
-A versão auditada inicial preservou **900 registros Sinesp** (janeiro/2020 a agosto/2026) e 14 colunas no original; a cópia analítica tem 900 linhas e dez colunas. Em 27/10/2026, o Sinesp publicou setembro/2026: a base curada ativa passou a **911 observações** (11 novas, nenhuma revisão de valores históricos), em 12 séries, com 0 valores ausentes e 401 zeros publicados.
+A versão auditada inicial preservou **900 registros Sinesp** (janeiro/2020 a agosto/2026) e 14 colunas no original. Em 27/10/2026, o Sinesp publicou setembro/2026: a base ativa passou a **911 observações** (11 novas, nenhuma revisão de valores históricos), em 12 séries, com 0 valores ausentes e 401 zeros publicados.
 
-| Ano | Observações na base curada | Meses por série estável |
+| Ano | Observações na base | Meses por série estável |
 |---|---:|---|
 | 2020 | 132 | janeiro–dezembro |
 | 2021 | 132 | janeiro–dezembro |
@@ -99,30 +123,11 @@ A versão auditada inicial preservou **900 registros Sinesp** (janeiro/2020 a ag
 | 2025 | 144 | janeiro–dezembro; inclui mandados PF |
 | 2026 | 107 | janeiro–setembro (PRF até agosto); inclui mandados PF |
 
-Ausências na camada original da versão auditada (900 registros, etapas 5–9):
-
-| Campo original | Ausências | Percentual |
-|---|---:|---:|
-| uf | 0 | 0,00% |
-| municipio | 0 | 0,00% |
-| evento | 0 | 0,00% |
-| data_referencia | 0 | 0,00% |
-| agente | 900 | 100,00% |
-| arma | 900 | 100,00% |
-| faixa_etaria | 900 | 100,00% |
-| feminino | 117 | 13,00% |
-| masculino | 116 | 12,89% |
-| nao_informado | 119 | 13,22% |
-| total_vitima | 100 | 11,11% |
-| total | 800 | 88,89% |
-| total_peso | 900 | 100,00% |
-| abrangencia | 0 | 0,00% |
-
-As 4.852 células ausentes originais foram preservadas; na visão analítica, as dez colunas retidas mantêm as mesmas 1.252 ausências e suas posições. As ausências de `total_vitima` e `total` refletem a divisão entre vítimas e mandados (cada linha usa uma das duas medidas). Há 20 linhas com total de vítimas informado e detalhamento de sexo incompleto, sem autorizar preenchimento residual. Na base curada ativa (uma medida por série), nenhum mês de série cadastrada está sem valor.
+Na camada original, agente, arma, faixa etária e peso estão 100% vazios; `total_vitima` e `total` se alternam (cada linha usa uma das duas medidas). As ausências foram preservadas nas mesmas posições. Na base ativa, com uma medida por série, nenhum mês de série cadastrada está sem valor.
 
 ### Totais publicados por ano
 
-**2020–2025 são anos completos; a coluna 2026 contém apenas janeiro–setembro (PRF: janeiro–agosto). Não comparar diretamente essa coluna parcial com totais anuais.** Unidade: vítimas, exceto mandados, que usam contagem publicada. PF = Polícia Federal; PRF = Polícia Rodoviária Federal. Não se somam linhas desta tabela.
+**2020–2025 são anos completos; a coluna 2026 contém apenas janeiro–setembro (PRF: janeiro–agosto) e não deve ser comparada diretamente com totais anuais.** Unidade: vítimas, exceto mandados (contagem publicada). PF = Polícia Federal; PRF = Polícia Rodoviária Federal. As linhas não se somam.
 
 | Indicador / abrangência | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 (parcial) |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -143,7 +148,7 @@ As 4.852 células ausentes originais foram preservadas; na visão analítica, as
 
 ### Comparações equivalentes: janeiro–agosto
 
-Todos os valores desta tabela têm oito meses e são comparáveis entre todas as séries, inclusive a PRF. Homicídio doloso soma 18 em janeiro–agosto de 2025 e 22 em janeiro–agosto de 2026; tentativa de homicídio soma 37 e 68. Os indicadores não são somados entre si.
+Todos os valores têm oito meses e são comparáveis entre todas as séries, inclusive a PRF. Homicídio doloso soma 18 em janeiro–agosto de 2025 e 22 em janeiro–agosto de 2026; tentativa de homicídio soma 37 e 68.
 
 | Indicador / abrangência | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -162,7 +167,7 @@ Todos os valores desta tabela têm oito meses e são comparáveis entre todas as
 
 ### Comparações equivalentes: janeiro–setembro
 
-Todos os valores desta tabela têm nove meses. A série *Mortes no trânsito — PRF* ainda não tem setembro/2026 (`—` em 2026); seus anos anteriores aparecem apenas para referência. Homicídio doloso soma 21 em janeiro–setembro de 2025 e **25 em 2026**; tentativa de homicídio soma 43 e 77; feminicídio, 2 e 0; tentativa de feminicídio, 5 e 12.
+Todos os valores têm nove meses. A série *Mortes no trânsito — PRF* ainda não tem setembro/2026 (`—` em 2026); seus anos anteriores aparecem só como referência. Homicídio doloso soma 21 em janeiro–setembro de 2025 e **25 em 2026**; tentativa de homicídio soma 43 e 77; feminicídio, 2 e 0; tentativa de feminicídio, 5 e 12.
 
 | Indicador / abrangência | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -181,7 +186,7 @@ Todos os valores desta tabela têm nove meses. A série *Mortes no trânsito —
 
 ### Estatísticas mensais descritivas
 
-Período observado: janeiro/2020–setembro/2026, com 81 meses por série estável; PRF tem 80 meses (até agosto/2026) e mandados PF têm 21 meses desde janeiro/2025. As medidas utilizadas possuem valores publicados em todos esses meses. A soma abaixo refere-se a todo o período observado; o desvio-padrão descreve os meses disponíveis (`ddof=0`), sem inferência causal ou amostral.
+Período observado: janeiro/2020–setembro/2026, com 81 meses por série estável; a PRF tem 80 meses (até agosto/2026) e os mandados da PF, 21 meses desde janeiro/2025. A soma refere-se a todo o período observado; o desvio-padrão descreve os meses disponíveis (`ddof=0`), sem inferência.
 
 | Indicador / abrangência | Meses | Soma | Média mensal | Mediana | Mín. | Máx. | DP (ddof=0) |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -198,86 +203,66 @@ Período observado: janeiro/2020–setembro/2026, com 81 meses por série estáv
 | Tentativa de homicídio — Estadual | 81 | 610 | 7,53 | 8 | 0 | 16 | 3,00 |
 | Mandados — PF | 21 | 16 | 0,76 | 0 | 0 | 4 | 1,11 |
 
-### Distribuição, pontos fora dos limites (IQR) e sazonalidade (Etapa 20 — em revisão visual)
-
-Análises acrescentadas ao roteiro `scripts/analise_sinesp.py` e, **apenas na versão local ainda não publicada**, à página *Indicadores Sinesp*. Todas usam o indicador e a abrangência selecionados (uma série, uma unidade) e têm uma tabela numérica verificável por trás de cada gráfico.
+### Quartis, outliers, distribuição e perfil mensal
 
 - **Quartis e IQR:** quartis por interpolação linear; IQR = Q3 − Q1; limites de Tukey Q1 − 1,5·IQR e Q3 + 1,5·IQR. Pontos fora dos limites são **atípicos estatísticos, não anomalias comprovadas**.
-- **O método nem sempre é informativo.** Em contagens mensais ele é tratado explicitamente: com IQR = 0, maioria de zeros publicados (≥ 50% dos meses), contagens muito baixas (Q3 ≤ 1), distribuição degenerada ou menos de 12 meses, **nenhum ponto é apontado como atípico** e a figura informa o motivo. Resultado nos dados atuais: informativo em 5 das 12 séries (homicídio doloso, suicídio, tentativa de homicídio, mortalidade no trânsito e mandados estaduais); IQR = 0 em feminicídio, lesão seguida de morte e latrocínio; maioria de zeros em tentativa de feminicídio e mandados da PF; contagens muito baixas na PRF; distribuição degenerada em mortes a esclarecer. Em homicídio doloso (Estadual), Q1 = 2, Q3 = 5 e o limite superior é 9,5: ficam acima dele janeiro/2020 (10) e janeiro/2023 (19).
-- **Sazonalidade exploratória:** média de cada mês-calendário usando **somente anos completos** (2020–2025, no máximo 6 observações por mês). 2026 é parcial e não entra; a série da PF tem um único ano completo e não gera perfil. Com tão poucos anos, o perfil descreve esses anos e **não demonstra sazonalidade**.
-- **Média móvel de 12 meses** (só onde os 12 meses têm valor) e **acumulado no ano** (anos parciais terminam no último mês publicado).
+- **O método nem sempre é informativo.** Com IQR = 0, maioria de zeros (≥ 50% dos meses), contagens muito baixas (Q3 ≤ 1), distribuição degenerada ou menos de 12 meses, nenhum ponto é apontado como atípico e a figura informa o motivo. Nos dados atuais, o método é informativo em 5 das 12 séries. Em homicídio doloso (Estadual), Q1 = 2, Q3 = 5 e o limite superior é 9,5: ficam acima dele janeiro/2020 (10) e janeiro/2023 (19).
+- **Distribuição por faixas:** o zero publicado é faixa própria; os demais valores entram em faixas de largura igual (regra de Sturges).
+- **Perfil mensal:** mediana de cada mês usando **somente anos completos** (2020–2025). Com tão poucos anos, o perfil descreve esses anos e não demonstra sazonalidade.
+- **Média móvel de 12 meses** e **acumulado no ano** (anos parciais terminam no último mês publicado).
 
-- **Distribuição dos valores mensais:** barras categóricas por faixa de contagem. O zero publicado é faixa própria; os demais valores entram em faixas de largura inteira igual, com número de faixas pela regra de Sturges (⌈1 + log₂ n⌉); o valor extremo fica na última faixa e a soma das frequências é o número de meses com valor.
-
-**Filtros, barras e indicadores complementares — Etapa 20.4, local e ainda não publicada.** A página *Indicadores Sinesp* passou a ter os filtros visíveis **Categoria** (natureza do indicador), **Indicador**, **Abrangência**, **Período (anos)** e **Meses**. O filtro de meses vale para o resumo (soma dos meses escolhidos, só em anos com todos eles publicados), o mapa de calor, a evolução mensal, as estatísticas, o boxplot, a distribuição e os outliers; totais anuais, média móvel, acumulado e sazonalidade usam sempre os 12 meses. A evolução anual e a mensal agora são **barras** (anual: barras verticais; mensal: barras agrupadas por mês, uma cor por ano), e o perfil por mês do ano mostra a **mediana** de cada mês em barras, só com anos completos (anos usados indicados). Acumulado e média móvel continuam em linhas. A página mostra os **filtros ativos** e identifica como "análise de ano completo" o que usa os 12 meses independentemente do filtro de meses (a soma de alguns meses nunca é apresentada como total anual). As quatro figuras da Etapa 10 ficam em uma seção expansível ao fim da página, *Material histórico (Etapa 10) — independente dos filtros*. A investigação de furto, roubo, estupro, tráfico e outros indicadores municipais está em [documentacao/fontes/INDICADORES_COMPLEMENTARES_JOINVILLE.md](documentacao/fontes/INDICADORES_COMPLEMENTARES_JOINVILLE.md): nos XLSX do Sinesp existem apenas 11 eventos para Joinville; a Prefeitura publicou totais anuais (2023–2025) que **divergem entre notícias** (2023: furtos 8.865 × 1.351; roubos 933 × 361) e o Relatório de Estatística nº 061/2024/GEAC/DINE/SSP/SC (15/03/2024) informa 669 roubos em 2023, com uma Tabela 04 ("furto") que parece reproduzir a Tabela 03 — possível inconsistência editorial, a esclarecer com a SSP/SC (há minuta de solicitação na documentação), estupro e tráfico só têm variação percentual, e **nenhum desses dados foi incorporado** (protótipo separado, não publicado, com todos os valores "não validados" ou "divergentes").
-
-**Visualização compacta (celular) — Etapa 20.2, local e ainda não publicada.** No topo da página *Indicadores Sinesp* há a chave "Visualização compacta (celular)" (`st.toggle`, estado em `st.session_state`, sem JavaScript e sem componentes de terceiros). A aplicação **não detecta o tamanho da tela**: a pessoa escolhe o modo, e a escolha permanece durante as interações com filtros e abas. No modo compacto as figuras são criadas já estreitas (4,4 × 6,4 pol.), com fontes de 10–13 pt, títulos quebrados, legenda abaixo do gráfico, menos marcas nos eixos (meses em Jan, Mar, Jun, Set e Dez), mapa de calor com meses nas linhas, acumulado com o valor final de cada ano na legenda e avisos metodológicos acima do eixo; os textos longos (interpretação e fonte completa) saem da imagem e aparecem como texto nativo do Streamlit. Os números e as tabelas são os mesmos nos dois modos (os cálculos não são duplicados). Para a evolução mensal, o modo compacto oferece a escolha dos anos exibidos (três por vez, com aviso "Exibindo 3 de 7 anos"). A validação foi feita por testes e por imagens que simulam telas de 1366, 390 e 350 px de largura; **não substitui o teste em um navegador ou em um celular real**, ainda pendente.
-
-Tipos de visualização: linhas (anual, mensal, média móvel, acumulado), barras (períodos equivalentes, distribuição), barras horizontais (ranking), mapa de calor ano × mês, boxplot por ano, perfil sazonal e série com limites de outliers — além das quatro figuras da Etapa 10. A qualidade visual desses gráficos ainda será revisada.
-
-### Quatro gráficos da Etapa 10
-
-As figuras são renderizadas em memória (roteiro e página *Indicadores Sinesp*). Contêm título, período, eixo de vítimas iniciado em zero, rótulos, fonte MJSP/Sinesp VDE e abrangência Estadual. Nenhum arquivo de gráfico é exportado.
-
-| Gráfico | Anos, na ordem apresentada | Valores utilizados |
-|---|---|---|
-| Homicídio doloso anual | 2020, 2021, 2022, 2023, 2024, 2025 | Homicídio doloso: 62, 62, 49, 55, 36, 29 |
-| Feminicídio e tentativa anuais | 2020, 2021, 2022, 2023, 2024, 2025 | Feminicídio: 3, 6, 2, 2, 3, 2; Tentativa de feminicídio: 10, 4, 7, 7, 10, 9 |
-| Homicídio e tentativa, janeiro–agosto | 2020, 2021, 2022, 2023, 2024, 2025, 2026 | Homicídio doloso: 50, 40, 29, 40, 21, 18, 22; Tentativa de homicídio: 74, 53, 60, 62, 57, 37, 68 |
-| Feminicídio e tentativa, janeiro–agosto | 2025, 2026 | Feminicídio: 0, 0; Tentativa de feminicídio: 4, 10 |
-
-Além delas, a página *Indicadores Sinesp* gera figuras filtráveis: evolução anual (somente anos completos), evolução mensal com uma linha por ano, períodos equivalentes por ano e ranking de séries dentro de uma única unidade, todas com eixo iniciado em zero, fonte, unidade e cor consistente por ano.
+Furto, roubo em geral, estupro e tráfico de drogas **não existem** nos arquivos do Sinesp para Joinville. A investigação de fontes municipais e as divergências encontradas estão em [documentacao/analises/fontes/INDICADORES_COMPLEMENTARES_JOINVILLE.md](documentacao/analises/fontes/INDICADORES_COMPLEMENTARES_JOINVILLE.md); nenhum desses números entra na base.
 
 ### Atualização de 27/10/2026 (setembro/2026)
 
-A verificação da fonte apontou indícios de nova competência e de revisão (tamanhos de arquivos diferentes). A preparação com os sete XLSX oficiais baixados nesse dia comparou a candidata com a versão ativa: **11 competências novas (setembro/2026), nenhuma alteração, remoção ou mudança de unidade em valores históricos de Joinville**; os sete arquivos têm SHA-256 diferente dos usados antes (republicação pela fonte), mas os valores de Joinville coincidem. A candidata `20261027T114400Z` foi promovida sem `--aceitar-revisoes`, em 2026-10-27T11:45:19Z (UTC), por autorização condicionada do responsável; a versão anterior (`20261027T045449Z`, até agosto/2026) está preservada localmente e pode ser restaurada com o comando de reversão.
+A preparação com os sete XLSX oficiais baixados nesse dia encontrou **11 competências novas (setembro/2026) e nenhuma alteração, remoção ou mudança de unidade em valores históricos de Joinville**; os sete arquivos têm SHA-256 diferente dos anteriores (republicação pela fonte), mas os valores de Joinville coincidem. A candidata `20261027T114400Z` foi promovida sem `--aceitar-revisoes`, em 2026-10-27T11:45:19Z (UTC); a versão anterior (`20261027T045449Z`) está preservada localmente e pode ser restaurada.
 
 ## 8. Discussão e conclusão
 
-Em anos completos, homicídio doloso passou de 62 vítimas em 2020 para 29 em 2025, com oscilações intermediárias: 49 em 2022 e 55 em 2023. Na comparação janeiro–agosto, passou de 18 em 2025 para 22 em 2026; na comparação janeiro–setembro, de 21 para 25 em 2026. Tentativas de homicídio passaram de 43 para 77 em janeiro–setembro. São recortes temporais distintos, com interpretações próprias; em contagens pequenas, a diferença absoluta é mais informativa que o percentual.
+Em anos completos, homicídio doloso passou de 62 vítimas em 2020 para 29 em 2025, com oscilações intermediárias (49 em 2022 e 55 em 2023). Em períodos equivalentes, passou de 18 para 22 vítimas em janeiro–agosto e de 21 para 25 em janeiro–setembro (2025 → 2026). As tentativas de homicídio passaram de 43 para 77 em janeiro–setembro. Em contagens pequenas, a diferença absoluta é mais informativa que o percentual.
 
-Feminicídio apresentou três vítimas em 2020, seis em 2021 e duas em 2025; em janeiro–setembro de 2026 o total publicado é zero (contra dois em janeiro–setembro de 2025). Tentativas de feminicídio passaram de cinco para doze na comparação janeiro–setembro. Pequenas contagens tornam percentuais instáveis; por isso, os gráficos enfatizam valores absolutos.
+Feminicídio teve três vítimas em 2020, seis em 2021 e duas em 2025; em janeiro–setembro de 2026 o total publicado é zero (contra dois no mesmo período de 2025). Tentativas de feminicídio passaram de cinco para doze na comparação janeiro–setembro.
 
-Latrocínio e lesão seguida de morte têm, respectivamente, quatro e oito vítimas em 81 meses. Zero publicado não demonstra eliminação do fenômeno, ausência de subnotificação ou eficácia de uma política. Não há taxas populacionais, previsão, inferência causal ou ranking territorial neste trabalho.
+Latrocínio e lesão corporal seguida de morte somam, respectivamente, quatro e oito vítimas em 81 meses. Zero publicado não demonstra eliminação do fenômeno, ausência de subnotificação ou eficácia de uma política.
 
 ## 9. Aplicação profissional
 
-A aplicação potencial é a consulta transparente de indicadores municipais agregados, com fonte, período e unidade. Vítimas e mandados precisam de definições independentes. `abrangencia` distingue as séries Estadual/PF/PRF, mas não permite atribuir todo registro à Polícia Civil, Polícia Militar ou Guarda Municipal.
+A aplicação potencial é a consulta transparente de indicadores municipais agregados, com fonte, período e unidade explícitos, e um fluxo de atualização que detecta revisões da fonte antes de aceitá-las. `abrangencia` distingue as séries Estadual/PF/PRF, mas não permite atribuir cada registro à Polícia Civil, Polícia Militar ou Guarda Municipal.
 
-Para uso operacional, seriam necessários dicionários estáveis, atualização versionada, dados territoriais validados e revisão das sobreposições. Não há série municipal estruturada e comparável de atendimentos da Guarda Municipal, bairros, endereços, horários ou corporações individuais nesta base.
+Para uso operacional seriam necessários dicionários estáveis, dados territoriais validados e base demográfica para taxas. Não há, nesta base, série municipal comparável de atendimentos da Guarda Municipal, bairros, endereços, horários ou corporações individuais.
 
 ## 10. Aplicação Streamlit
 
-O painel é uma aplicação Streamlit com **três páginas** e navegação lateral (`st.navigation`/`st.Page`), layout amplo, filtros, indicadores com unidade e período explícitos, figuras Matplotlib com fonte e formatação numérica brasileira. **A aplicação está publicada no Streamlit Community Cloud: <https://seguranca-publica-joinville-sinesp.streamlit.app/>** (a página inicial foi conferida em navegador; as demais páginas, os gráficos e o uso em dispositivos móveis ainda não foram revisados visualmente). A aplicação funciona a partir de arquivos mínimos e **não executa o roteiro analítico, não lê `dados/` e não acessa a rede** durante a navegação.
+O painel tem **três páginas** com navegação lateral (`st.navigation` / `st.Page`), layout amplo, filtros, indicadores com unidade e período explícitos e figuras Matplotlib com fonte e formatação numérica brasileira. **Aplicação publicada no Streamlit Community Cloud: <https://seguranca-publica-joinville-sinesp.streamlit.app/>.** Durante a navegação, o painel **não executa o ETL, não lê `dados/` e não acessa a rede**: usa somente `dashboard/data_publica/`. Guia de uso: [documentacao/painel/USO_DO_PAINEL.md](documentacao/painel/USO_DO_PAINEL.md).
 
-### Arquitetura e páginas
-
-| Elemento | Função |
+| Página | Conteúdo |
 |---|---|
-| [scripts/painel_streamlit.py](scripts/painel_streamlit.py) | Ponto de entrada (`st.navigation` com três páginas: `projeto`, `sinesp`, `qualidade`) |
-| [dashboard/pages/home.py](dashboard/pages/home.py) | **Projeto**: pergunta analítica, objetivo, relevância, fonte única, período real lido do manifesto, unidades e limites, principais achados descritivos e situação (sem deploy) |
-| [dashboard/pages/sinesp.py](dashboard/pages/sinesp.py) | **Indicadores Sinesp**: filtros por indicador, abrangência e período; KPIs (último ano completo e período parcial equivalente da série); evolução anual e mensal; comparações entre anos completos e entre períodos equivalentes; estatísticas descritivas; ranking por unidade; as quatro figuras da Etapa 10; catálogo e interpretação (observado × hipótese). **Versão local da Etapa 20 (ainda não publicada):** análise em quatro grupos — Visão geral, Evolução temporal, Estatística descritiva e Outliers —, com mapa de calor, boxplot, distribuição, sazonalidade, média móvel, acumulado e uma tabela numérica sob cada gráfico |
-| [dashboard/pages/quality.py](dashboard/pages/quality.py) | **Qualidade e metodologia**: arquivos e SHA-256 contra o manifesto; versão, datas, validação e aprovação; fonte oficial e método de obtenção; cobertura por indicador, zeros e ausências; regras do ETL, das estatísticas e dos gráficos; limitações; procedimento de atualização; licenças e atribuição |
-| [dashboard/dados_publicos.py](dashboard/dados_publicos.py), [calculos.py](dashboard/calculos.py), [graficos.py](dashboard/graficos.py), [formatacao.py](dashboard/formatacao.py), [ui.py](dashboard/ui.py) | Carregamento/validação (sem Streamlit; `ErroDados` explícito), cálculos descritivos, figuras Matplotlib reutilizáveis, formatação pt-BR e interface |
-| [scripts/gerar_dados_dashboard.py](scripts/gerar_dados_dashboard.py) | Geração inicial reprodutível dos arquivos mínimos a partir das etapas Sinesp validadas do roteiro (sem importá-lo) |
-| [scripts/fontes_oficiais.py](scripts/fontes_oficiais.py) | Operação **A — verificar**: consulta metadados do Sinesp/MJSP e classifica indícios (somente leitura) |
-| [scripts/atualizacao_dados.py](scripts/atualizacao_dados.py), [scripts/versionamento_dados.py](scripts/versionamento_dados.py) | Operações **B — preparar**, **C — aprovar** e **reverter**; manifesto versionado |
+| **Projeto** ([home.py](dashboard/pages/home.py)) | Pergunta analítica, objetivo, fonte única, período real lido do manifesto, principais achados e limitações |
+| **Indicadores Sinesp** ([sinesp.py](dashboard/pages/sinesp.py)) | Filtros em duas linhas — **Categoria → Indicador → Abrangência** e **Período (anos) → Meses** —, resumo com setas que acompanham o sinal da diferença, e cinco abas: Visão geral, Evolução temporal, Estatística descritiva, Outliers e Indicadores e interpretação; cada gráfico tem a tabela com os valores usados |
+| **Qualidade e metodologia** ([quality.py](dashboard/pages/quality.py)) | SHA-256 dos arquivos contra o manifesto, versão e aprovação dos dados, cobertura por série, regras do ETL e das estatísticas, procedimento de atualização e licenças |
 
-Regras de apresentação: o último ano de cada série pode ser parcial e nunca é comparado com anos completos; a PRF pode terminar antes das demais e é exibida até a sua última competência, sem preenchimento; vítimas, mandados e abrangências não são misturados; não há total geral nem taxas populacionais; valores publicados não representam todos os crimes e não indicam causalidade.
+Há uma chave **Visualização compacta (celular)**: a aplicação não detecta o tamanho da tela; a pessoa escolhe o modo, que gera figuras estreitas com fontes maiores e os mesmos números.
+
+| Módulo | Função |
+|---|---|
+| [dashboard/dados_publicos.py](dashboard/dados_publicos.py) | Carrega e valida a base publicada (esquema, SHA-256, manifesto); erro explícito `ErroDados` |
+| [dashboard/calculos.py](dashboard/calculos.py) | Totais, períodos equivalentes, estatísticas, quartis, outliers, perfil mensal, média móvel, acumulado |
+| [dashboard/graficos.py](dashboard/graficos.py) | Figuras Matplotlib reutilizadas pelo painel, pelo ETL e pelo notebook |
+| [dashboard/formatacao.py](dashboard/formatacao.py), [dashboard/ui.py](dashboard/ui.py) | Formatação pt-BR e componentes de interface |
 
 ### Dados mínimos (`dashboard/data_publica/`)
 
 | Arquivo | Conteúdo | Dimensão |
 |---|---|---|
-| `sinesp_joinville_mensal.csv` | `ano, mes, evento, abrangencia, unidade, valor` (Sinesp, jan/2020–set/2026) | 911 × 6 |
+| `sinesp_joinville_mensal.csv` | `ano, mes, evento, abrangencia, unidade, valor` (jan/2020–set/2026) | 911 × 6 |
 | `sinesp_catalogo_indicadores.csv` | 12 séries: unidade, natureza, medida de origem, cobertura, meses com valor/zero/sem valor, limitações | 12 × 12 |
-| `manifesto_dados_publicos.json` | Versão e versão anterior; datas (geração, última consulta); situação da validação e da aprovação; cobertura por série e última competência; unidades; fonte oficial e licenças verificadas; método de obtenção e regras de ETL; SHA-256 e tamanhos dos arquivos derivados e dos XLSX oficiais | — |
+| `manifesto_dados_publicos.json` | Versão, datas, validação e aprovação, cobertura por série, fonte e licenças, regras de ETL, SHA-256 dos arquivos derivados e dos XLSX de origem | — |
 
-Os arquivos são **versionados no repositório** para que o painel funcione em um clone limpo. Preservam eventos e abrangências separados, unidades, o período efetivamente disponível, zeros publicados e ausências (campo vazio, nunca zero). O manifesto distingue **data de consulta, data de publicação (informada pela fonte), competência estatística e data de geração** e registra a última competência: **2026-09** (PRF **2026-08**; 2026 parcial). Nenhum valor é digitado.
+Os arquivos são versionados para que o painel funcione em um clone limpo. A base publicada **só muda pelo fluxo controlado** abaixo; o ETL acadêmico nunca a sobrescreve.
 
 ### Verificar, preparar e aprovar novas publicações oficiais
 
-Fluxo manual e reprodutível, documentado em [documentacao/ATUALIZACAO_DE_DADOS.md](documentacao/ATUALIZACAO_DE_DADOS.md):
+Fluxo manual documentado em [documentacao/analises/ATUALIZACAO_DE_DADOS.md](documentacao/analises/ATUALIZACAO_DE_DADOS.md). Com a `.venv` ativada (`.\.venv\Scripts\Activate.ps1`):
 
 ```powershell
 python -m scripts.atualizacao_dados verificar                       # A: consulta a fonte (não altera dados)
@@ -287,147 +272,127 @@ python -m scripts.atualizacao_dados aprovar <id> --confirmo <id>    # C: promove
 python -m scripts.atualizacao_dados reverter <versao> --confirmo <versao>
 ```
 
-**Automático:** consulta de metadados, classificação de indícios, ETL da candidata, validações, comparação com a versão ativa, backup, troca segura e reversão. **Manual:** fornecer os XLSX, ler o relatório, digitar a aprovação (`--confirmo`; `--aceitar-revisoes` somente após analisar revisões históricas — nunca para contornar alertas não resolvidos), commit/push e deploy. **Não há atualização automática operacional** (nada roda em agendamento). O painel nunca baixa dados.
-
-Limitações da fonte: o gov.br não tem API pública (a API REST responde 401) e bloqueia `HEAD` (403) — o tamanho dos arquivos vem de `GET` com `Range`, sem data de modificação por arquivo, e a data "Atualizado em" é da página (indício, não prova); o catálogo do MJSP não resolveu (NXDOMAIN). Bloqueios de acesso não são contornados.
-
-### Executar o painel
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m streamlit run scripts/painel_streamlit.py
-```
-
-O painel usa Streamlit, Pandas e Matplotlib e funciona **sem `dados/`**; se os arquivos de `dashboard/data_publica/` faltarem ou forem inválidos, as páginas mostram erro explícito (sem preencher números) e não encerram a aplicação.
+**Automático:** consulta de metadados, ETL da candidata, validações, comparação com a versão ativa, backup, troca segura e reversão. **Manual:** fornecer os XLSX, ler o relatório, aprovar (`--confirmo`; `--aceitar-revisoes` só depois de analisar revisões históricas), commit, push e deploy. **Não há atualização automática operacional** (nada roda em agendamento) e o painel nunca baixa dados. O gov.br não tem API pública e bloqueia `HEAD`; a verificação é indício, não prova.
 
 ### Testes e verificações
 
-Suíte **ativa**: **230 testes aprovados** (`python -m pytest tests -q`): `test_dashboard_dados.py` (30), `test_dashboard_graficos.py` (6), `test_dashboard_app.py` (18, `AppTest`), `test_atualizacao_fontes.py` (16, cliente HTTP falso), `test_atualizacao_fluxo.py` (38, XLSX sintéticos gerados a partir dos dados ativos), `test_acervo_sinesp.py` (3; reconstroem os dados a partir dos XLSX auditados e são pulados se o acervo local não existir), `test_estatistica_visual.py` (58; quartis, IQR, limites de Tukey, diagnóstico de séries degeneradas, anos parciais, sazonalidade só com anos completos, zeros e ausências, filtros, correspondência entre figura e tabela, gráfico de distribuição por faixas que contabiliza todos os meses, rótulos do acumulado sem colisão e nenhum texto fora da figura), `test_modo_compacto.py` (31; modo compacto: mesmos números nos dois modos, figura estreita sem texto longo nem cortes, filtros e estado preservados na alternância, séries com muitos zeros, PRF até agosto/2026, acumulados e outliers), `test_filtros_barras_complementares.py` (13; filtros de categoria, indicador, ano e mês, evolução em barras e protótipo dos indicadores complementares), `test_roteiro_sinesp.py` (5; estrutura do roteiro acadêmico, execução em modo demonstração e reconstrução da base aprovada, esta pulada sem o acervo) e `test_readme_sections.py` (7). Cobrem: integridade e manifesto; totais conferidos com as tabelas deste README; nova dimensão (911 observações, 12 séries) e cobertura por série (2026-09; PRF 2026-08); valores históricos preservados; unidades; zeros e ausências; períodos equivalentes; navegação de três páginas; gráficos e filtros; página de qualidade; detecção de nova competência, de revisão histórica, de alteração de esquema e de falha de consulta (sem alterar dados); download com repetição só de quedas de conexão e sem contornar bloqueios; promoção apenas com aprovação explícita; versão anterior preservada e reversão automática em falha da troca; painel em clone limpo, sem os dados mínimos, com esquema inválido, com hash divergente e com uma competência futura sintética.
+Suíte **ativa**: **234 testes aprovados** (`.\.venv\Scripts\python.exe -m pytest tests -q`), cobrindo integridade e manifesto, totais conferidos com as tabelas deste README, cobertura por série, zeros e ausências, períodos equivalentes, navegação de três páginas, filtros e sua ordem, setas do resumo, gráficos e modo compacto, quartis e outliers, atualização controlada (com cliente HTTP falso e XLSX sintéticos), ETL acadêmico (estrutura, modo demonstração, reconstrução da base e exportação só para `dados/processados/sinesp/`) e notebook (estrutura, ausência de saídas e execução). Os testes que dependem dos XLSX são pulados quando o acervo local não existe.
 
-Suíte **histórica** (fora da entrega): **12 testes** em `tests_historicos/` (`python -m pytest tests_historicos -q`): `test_project_integrity.py` (9; dependem do acervo bruto e de saídas históricas locais, incluindo SSP/SC e Prefeitura) e `test_roteiro_historico_ssp.py` (3; etapas SSP/SC e Sinesp 1–10 do roteiro antigo e índice histórico). Não são necessárias para o painel.
+Suíte **histórica** (fora da entrega): **12 testes** em `tests_historicos/` (`.\.venv\Scripts\python.exe -m pytest tests_historicos -q`), que dependem do acervo bruto local e do roteiro antigo.
 
-Verificações adicionais: verificação de sintaxe (`ast`) dos módulos, `git diff --check` e execução local do servidor com `python -m streamlit run scripts/painel_streamlit.py`. **O painel completo não foi validado visualmente em dispositivos móveis nem teve todas as páginas e gráficos revisados em navegador**: a revisão visual é a próxima etapa; layout e responsividade dependem de verificação manual. Testes que dependem de acesso externo não são executados: a verificação real da fonte e o download dos XLSX foram executados manualmente (resultado na seção 7).
+O painel foi conferido por testes `AppTest` e por imagens que simulam telas de desktop e celular ([documentacao/painel/imagens/](documentacao/painel/imagens/)); isso **não substitui a revisão visual em navegador e em dispositivos móveis reais**, ainda pendente.
 
 ### Publicação no Streamlit Community Cloud
 
-Ponto de entrada `scripts/painel_streamlit.py`; dependências em `requirements.txt` (versões testadas: Python 3.12, Streamlit 1.66.0, Pandas 3.0.6, Matplotlib 3.11.2; faixas mais antigas não testadas); caminhos relativos; sem segredos; dados mínimos no clone público. Passo a passo e conferência pós-deploy em [documentacao/DEPLOY_STREAMLIT.md](documentacao/DEPLOY_STREAMLIT.md). **Deploy realizado:** <https://seguranca-publica-joinville-sinesp.streamlit.app/>. O Cloud reconstrói o aplicativo a partir da branch `main` do GitHub a cada push.
-
-### Pendências
-
-- Revisão visual completa no navegador (todas as páginas, desktop e celular) e aperfeiçoamento dos gráficos (etapa posterior; nada foi alterado nesta etapa).
-- Vídeo, envio ao repositório da turma e AVA.
-- Confirmar o uso dos dados com o MJSP (licença do catálogo não confirmada).
+Ponto de entrada `scripts/painel_streamlit.py`; dependências em `requirements.txt`; caminhos relativos; sem segredos. Passo a passo em [documentacao/painel/DEPLOY_STREAMLIT.md](documentacao/painel/DEPLOY_STREAMLIT.md). **Deploy realizado:** <https://seguranca-publica-joinville-sinesp.streamlit.app/>. O Cloud reconstrói o aplicativo a partir da branch `main` do GitHub a cada push.
 
 ## 11. Como executar
 
-Abra **a raiz do projeto** no VS Code. Exemplo PowerShell:
+Abra **a raiz do projeto** no VS Code e use o PowerShell. Os comandos abaixo chamam diretamente o Python da `.venv`, sem precisar ativá-la.
 
 ```powershell
+# 1. Criar o ambiente e instalar as dependências
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-# Opcional para Python Interactive, se ainda não estiver instalado:
-python -m pip install ipykernel
-python -m scripts.analise_sinesp                      # roteiro acadêmico completo (ou célula a célula no VS Code)
-python -m streamlit run scripts/painel_streamlit.py   # painel (usa apenas dashboard/data_publica/)
-python -m pytest tests -q                              # suíte ativa
-python -m pytest tests_historicos -q                   # suíte histórica (exige o acervo local)
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install ipykernel    # para o notebook e as células # %%
+
+# 2. ETL acadêmico (lê dados/brutos/sinesp e grava só em dados/processados/sinesp)
+.\.venv\Scripts\python.exe -m scripts.etl_sinesp
+
+# 3. Painel Streamlit (usa apenas dashboard/data_publica/)
+.\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py
+
+# 4. Testes
+.\.venv\Scripts\python.exe -m pytest tests -q              # suíte ativa
+.\.venv\Scripts\python.exe -m pytest tests_historicos -q   # suíte histórica (exige o acervo local)
 ```
 
-O workspace [configura a .venv e o diretório do Jupyter](.vscode/settings.json) com referências relativas a `${workspaceFolder}`. Se uma janela interativa antiga estiver em outra pasta, reinicie seu kernel e confirme `Path.cwd()`.
+**Notebook:** abra [notebooks/analise_sinesp.ipynb](notebooks/analise_sinesp.ipynb) no VS Code, selecione o kernel da `.venv` e use *Run All*. O notebook procura a raiz do projeto sozinho; sem os XLSX, roda em modo demonstração.
 
-### Restaurar as entradas que não ficam no Git (só para refazer o ETL)
+**ETL célula a célula:** abra [scripts/etl_sinesp.py](scripts/etl_sinesp.py) e use *Run Cell* em cada célula `# %%` (ou *Run All Cells*). No terminal, a execução completa leva cerca de um minuto por causa da leitura de ~170 MB de planilhas. Para ler os XLSX de outra pasta, defina `SINESP_PASTA_XLSX`; para exportar em outro lugar, `SINESP_PASTA_PROCESSADOS`.
 
-O painel e a suíte ativa funcionam sem elas (os testes que dependem do acervo são pulados). Para refazer o ETL pelo roteiro ou pela atualização controlada:
+### Obter os arquivos que não ficam no Git
 
-1. Obtenha os XLSX 2020–2026 no [catálogo oficial](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados), usando `bancovde-ANO.xlsx` (padrão de download: `https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/bancovde-ANO.xlsx/@@download/file`).
-2. **Atualização controlada (recomendada):** salve todos os anos em uma pasta e siga `verificar → preparar → aprovar` (seção 10). Ela não depende do roteiro nem do acervo SSP/SC.
-3. **Roteiro acadêmico [scripts/analise_sinesp.py](scripts/analise_sinesp.py):** salve os sete arquivos (`bancovde-2020.xlsx` a `bancovde-2026.xlsx`) em qualquer subpasta de `dados/brutos/sinesp/` (ou aponte outra pasta com a variável de ambiente `SINESP_PASTA_XLSX`). O roteiro compara o SHA-256 de cada arquivo com o do manifesto; se o arquivo for de outra edição, avisa e a comparação final com a base publicada indica se os valores diferem. Sem os arquivos, roda em modo demonstração.
+O painel e a suíte ativa funcionam sem eles. Para refazer o ETL:
 
-### Executar o roteiro e as células
-
-No VS Code, abra a pasta do projeto, selecione a `.venv` como interpretador e abra `scripts/analise_sinesp.py`: use *Run Cell* em cada célula `# %%` ou *Run All Cells* (Python Interactive; requer `ipykernel`). No terminal: `python -m scripts.analise_sinesp` (cerca de um minuto com os XLSX, por causa da leitura de ~170 MB). O roteiro não grava arquivos. O roteiro histórico `scripts/analise_seguranca_publica.py` não é necessário e, por incluir as etapas da SSP/SC, exige o acervo dessa fonte; não o execute para reproduzir a entrega.
+1. Baixe os XLSX 2020–2026 no [catálogo oficial](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados) (`bancovde-ANO.xlsx`; padrão de download: `.../dnsp-base-de-dados/bancovde-ANO.xlsx/@@download/file`).
+2. Salve os sete arquivos em qualquer subpasta de `dados/brutos/sinesp/`. O ETL compara o SHA-256 de cada arquivo com o do manifesto; se for outra edição, avisa, e a conferência da etapa 13 mostra se os valores mudaram.
+3. Para atualizar a base do painel, use o fluxo `verificar → preparar → aprovar` (seção 10), não o ETL acadêmico.
 
 ## 12. Estrutura de pastas
 
 ```text
-README.md                         documentação acadêmica central: 16 seções
-requirements.txt                  intervalos de dependências
-.gitignore                        dados, segredos, caches e backups fora do Git
-.env.example                      exemplo sem credenciais
-.vscode/settings.json             .venv e raiz do Python Interactive
+README.md                          documentação central (16 seções)
+requirements.txt                   dependências
+.gitignore                         dados, segredos, caches, logs e backups fora do Git
+.env.example                       exemplo sem credenciais
+.vscode/settings.json              .venv e raiz do Python Interactive
+dados/                             acervo local, fora do Git
+  brutos/sinesp/                   XLSX oficiais (oficial_20261027/ = edição da base aprovada;
+                                   raiz + pendente_validacao_origem/ = edição auditada em agosto/2026)
+  processados/sinesp/              saídas do ETL acadêmico (etl_*.csv, etl_relatorio.json)
 scripts/
-  analise_sinesp.py               roteiro acadêmico principal (Sinesp): células # %% para o VS Code Interactive
-  analise_seguranca_publica.py     roteiro histórico: Sinesp 1–10 (primeira versão) e SSP/SC 11–14.2; fora do escopo
-  painel_streamlit.py             entrada do painel (st.navigation com 3 páginas)
-  gerar_dados_dashboard.py        geração inicial reprodutível de dashboard/data_publica/ (Sinesp)
-  fontes_oficiais.py              verificar: consulta metadados do Sinesp/MJSP (somente leitura)
-  atualizacao_dados.py            preparar / aprovar / reverter (atualização controlada)
-  versionamento_dados.py          manifesto versionado e licenças da fonte
-  extract.py, transform.py        módulos anteriores; podem gerar arquivos
-  analysis.py, utils.py           análises históricas e resolução de caminhos
-  legacy/                        código histórico, fora da execução corrente
+  etl_sinesp.py                    ETL acadêmico principal: 18 etapas em células # %%
+  painel_streamlit.py              entrada do painel (st.navigation com 3 páginas)
+  transform.py                     leitura das planilhas do Sinesp (XML) e transformações
+  utils.py                         resolução de caminhos a partir da raiz do projeto
+  atualizacao_dados.py             preparar / aprovar / reverter (atualização controlada)
+  fontes_oficiais.py               verificar: consulta metadados da fonte (somente leitura)
+  versionamento_dados.py           manifesto versionado e licenças
+  gerar_dados_dashboard.py         geração inicial reprodutível de dashboard/data_publica/
+  gerar_revisao_visual.py          imagens de revisão (simulação de telas)
+  analise_seguranca_publica.py     roteiro antigo: Sinesp 1–10 e SSP/SC (histórico)
+notebooks/
+  analise_sinesp.ipynb             notebook de análise, sem saídas gravadas
 dashboard/
-  pages/                         home.py, sinesp.py e quality.py (3 páginas)
+  pages/                           home.py, sinesp.py e quality.py (3 páginas)
   dados_publicos.py, calculos.py,
-  graficos.py, formatacao.py, ui.py  módulos do painel (sem Streamlit, exceto ui.py)
-  data_publica/                  2 CSVs Sinesp + manifesto versionado + LEIAME (ver seção 10)
-tests/                           suíte ativa (230 testes)
-tests_historicos/                suíte histórica (acervo local e roteiro SSP/SC)
-historico/ssp_sc/LEIAME.md       índice do trabalho histórico SSP/SC e Prefeitura (fora do escopo)
-notebooks/                       notebook SSP de inspeção (histórico), sem saídas gravadas
+  graficos.py, formatacao.py, ui.py   módulos do painel
+  data_publica/                    base publicada: 2 CSVs + manifesto + LEIAME
 documentacao/
-  ESCOPO_PROJETO.md               escopo vigente: fonte única Sinesp/MJSP
-  ATUALIZACAO_DE_DADOS.md         procedimento verificar → preparar → aprovar
-  DEPLOY_STREAMLIT.md             preparação do Streamlit Community Cloud
-  fontes/                        proveniência e métodos por fonte
-  auditoria/                     relatórios e metadados/hashes
-  analises/                      relato histórico; tabelas/imagens locais ignoradas
-dados/                           acervo local; não versionado
-atualizacao/                     entradas, candidatas, versões anteriores e verificações; local e não versionado
-video/                           reservado; sem arquivo de entrega
-backup_pre_migracao_20261016/     cópia local preservada e ignorada
+  analises/                        ESCOPO_PROJETO.md, METODOLOGIA.md, ATUALIZACAO_DE_DADOS.md
+    fontes/                        origem do Sinesp, recorte de Joinville e indicadores complementares
+  painel/                          USO_DO_PAINEL.md, DEPLOY_STREAMLIT.md e imagens/
+  auditoria/                       inventários e evidência de origem 2020–2022
+tests/                             suíte ativa
+tests_historicos/                  suíte histórica (acervo local e roteiro antigo)
+historico/                         material preservado fora do produto (ver historico/LEIAME.md)
+  ssp_sc/                          trabalho com SSP/SC e Prefeitura/SEPROT
+  scripts/                         módulos de fase anterior (extract.py, analysis.py, legacy/)
+  documentacao_anterior/           relatórios de migração, reorganização e pipeline antigo
 ```
 
-Pastas vazias não são preservadas pelo Git. O README de continuidade e seus backups permanecem **fora do repositório**. O [inventário de migração](documentacao/auditoria/mapa_migracao.csv) documenta os caminhos históricos.
+Ficam fora do Git, além de `dados/`: `atualizacao/` (entradas, candidatas e versões anteriores da atualização controlada), `revisao_visual/` (capturas de revisão), backups, logs, ambientes e o README de continuidade. Pastas vazias não são preservadas pelo Git. Versões anteriores de qualquer arquivo movido podem ser recuperadas com `git log --follow <caminho>`.
 
 ## 13. Limitações e melhorias futuras
 
-- 2026 é parcial: setembro é a última competência publicada (PRF: agosto). Comparações usam períodos equivalentes por série; um ano parcial nunca é comparado com um ano completo.
-- Os valores são registros administrativos agregados do Sinesp: não medem toda a criminalidade, não estimam subnotificação e não sustentam causalidade. Contagens pequenas (feminicídio, latrocínio, lesão seguida de morte) geram percentuais instáveis.
-- Não há taxas populacionais (falta base demográfica oficial compatível), dados por bairro, rua, horário ou corporação, nem total geral entre indicadores, abrangências ou unidades.
-- A fonte pode **revisar** valores históricos; a atualização controlada detecta revisões, e elas só entram com aprovação específica. Os XLSX oficiais foram republicados em 27/10/2026 com hashes diferentes, sem mudança nos valores de Joinville; uma nova auditoria é necessária se isso mudar.
-- Condições de reutilização com ressalvas: licença do catálogo do MJSP não confirmada; CC BY-ND 3.0 no rodapé do portal. Nenhuma proibição específica foi encontrada, mas não há autorização específica explícita.
-- O gov.br não oferece API pública nem data por arquivo; a verificação é indício, não prova, e o download integral (~24 MB por arquivo) pode ser interrompido e exigir repetição ou obtenção manual.
-- O deploy foi feito, mas a revisão visual do painel (todas as páginas, desktop e celular) e o aperfeiçoamento dos gráficos estão pendentes.
-- Melhorias possíveis: inspeção responsiva em celular, fixação de versões de dependências com validação em ambiente limpo, definição de licença do código, relatórios exportáveis e, se houver base demográfica oficial compatível, taxas por habitante.
-- A SSP/SC e a Prefeitura/SEPROT ficam fora do escopo; reintegrá-las exigiria nova decisão metodológica e um fluxo auditado próprio (ver [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md)).
-- A regra `fillna(0)` no módulo histórico `scripts/analysis.py` não faz parte do fluxo atual e precisa de revisão antes de reutilização. O notebook histórico ainda contém um caminho antigo `pdfs/csv_extraidos`.
-- Arquivos em `documentacao/analises/` são registros históricos; em caso de divergência, prevalecem o código atual, as evidências registradas e este estado acadêmico atualizado.
+- 2026 é parcial: setembro é a última competência publicada (PRF: agosto). Comparações usam períodos equivalentes por série.
+- Os valores são registros administrativos agregados: não medem toda a criminalidade, não estimam subnotificação e não sustentam causalidade. Contagens pequenas geram percentuais instáveis.
+- Não há taxas populacionais, dados por bairro, rua, horário ou corporação, nem total geral entre indicadores, abrangências ou unidades.
+- A fonte pode **revisar** valores históricos; a atualização controlada detecta revisões, e elas só entram com aprovação específica.
+- Condições de reutilização com ressalvas: licença do catálogo do MJSP não confirmada; CC BY-ND 3.0 no rodapé do portal.
+- O gov.br não oferece API pública nem data por arquivo; o download integral (~24 MB por arquivo) pode exigir repetição ou obtenção manual.
+- O painel ainda precisa de revisão visual final em navegador e em dispositivos móveis reais.
+- Melhorias possíveis: fixar versões de dependências com validação em ambiente limpo, definir a licença do código, relatórios exportáveis e, com base demográfica oficial compatível, taxas por habitante.
+- Reintegrar a SSP/SC ou a Prefeitura/SEPROT exigiria nova decisão metodológica e um fluxo auditado próprio (ver [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md)).
 
 ## 14. Créditos e referências
 
-Fonte primária: MJSP/Sinesp VDE, citada na seção 4. [Documentação de fontes](documentacao/fontes/) e [auditoria de origem](documentacao/auditoria/sinesp_origem_2020_2022.csv) preservam a procedência. As fontes históricas (SSP/SC e Prefeitura/SEPROT) estão documentadas em [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md) e em `documentacao/fontes/`.
+Fonte primária: MJSP/Sinesp VDE, citada na seção 4. A procedência está em [documentacao/analises/fontes/](documentacao/analises/fontes/) e na [auditoria de origem](documentacao/auditoria/sinesp_origem_2020_2022.csv). As fontes históricas (SSP/SC e Prefeitura/SEPROT) estão documentadas em [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md).
 
-Licença do código e permissões de redistribuição dos dados ainda devem ser definidas/documentadas; a ausência de um arquivo de licença não deve ser interpretada como autorização irrestrita.
+A licença do código ainda deve ser definida; a ausência de um arquivo de licença não deve ser interpretada como autorização irrestrita.
 
 ## 15. Links de entrega
 
-- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC): público; contém o roteiro, o dashboard de três páginas, os dados mínimos agregados (`dashboard/data_publica/`), o fluxo de atualização controlada, os testes e a documentação (branch `main`).
-- URL Git exata: `https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC.git`.
-- Pasta local: repositório Git na branch `main`, com `origin` configurado.
-- Aplicação Streamlit publicada: <https://seguranca-publica-joinville-sinesp.streamlit.app/> (deploy realizado; revisão visual e aperfeiçoamento dos gráficos pendentes).
+- [Repositório GitHub](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC) (branch `main`); URL Git: `https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC.git`.
+- Aplicação Streamlit publicada: <https://seguranca-publica-joinville-sinesp.streamlit.app/> (deploy realizado; revisão visual final em navegador e celular pendente).
 - Repositório oficial da turma: pendente.
 - Vídeo e link de leitura no Drive: pendentes.
 - AVA e demais itens administrativos: pendentes.
 - Trello: dispensado por orientação do professor.
 
-Antes de preparar arquivos para versionar, conferir o [gitignore](.gitignore): `dados/`, `atualizacao/`, tabelas/imagens derivadas locais, ambientes, segredos, logs, backups e o README de continuidade não devem entrar. Novos envios ao remoto dependem de autorização; usar `git push` normal, sem sobrescrever ou forçar atualização.
-
 ## 16. Conclusões sustentadas pelas análises
 
-O fluxo Sinesp preservou 900 linhas originais na versão auditada, produziu uma cópia analítica 900 × 10, manteve ausências e abrangências, gerou tabelas descritivas por série e exibiu figuras sem exportação. A atualização controlada incorporou setembro/2026 (911 observações em 12 séries) sem alterar nenhum valor histórico de Joinville. Homicídio doloso e suas tentativas, feminicídio e suas tentativas permaneceram distintos.
+O ETL reconstrói, a partir dos XLSX oficiais, exatamente a base publicada: 911 observações em 12 séries, com o mesmo SHA-256 registrado no manifesto, sem apagar linhas, sem converter ausências em zero e sem misturar vítimas, mandados ou abrangências. A atualização controlada incorporou setembro/2026 sem alterar nenhum valor histórico de Joinville.
 
-A análise sustenta descrições dos valores publicados e comparações temporais equivalentes, com atenção a pequenas contagens. Não sustenta total geral de criminalidade, causalidade, estimativa de subnotificação, taxa populacional ou distribuição por bairros. O dashboard de três páginas apresenta a pergunta, a fonte única, o período real, os indicadores, as estatísticas, as figuras e a qualidade dos dados; o aplicativo está publicado, e a revisão visual dos gráficos, o vídeo, o repositório da turma e o AVA permanecem pendentes.
+A análise sustenta descrições dos valores publicados e comparações temporais equivalentes, com atenção a pequenas contagens. Não sustenta total geral de criminalidade, causalidade, estimativa de subnotificação, taxa populacional ou distribuição por bairros. O dashboard de três páginas apresenta a pergunta, a fonte única, o período real, os indicadores, as estatísticas, os gráficos e a qualidade dos dados; a revisão visual final, o vídeo, o repositório da turma e o AVA permanecem pendentes.

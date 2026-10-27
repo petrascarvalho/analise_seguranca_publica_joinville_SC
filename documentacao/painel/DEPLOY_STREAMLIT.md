@@ -57,5 +57,5 @@ gráficos estão pendentes.
 
 ## Atualização dos dados depois do deploy
 
-Ver [ATUALIZACAO_DE_DADOS.md](ATUALIZACAO_DE_DADOS.md): promover a nova versão localmente, commitar os arquivos de
+Ver [ATUALIZACAO_DE_DADOS.md](../analises/ATUALIZACAO_DE_DADOS.md): promover a nova versão localmente, commitar os arquivos de
 `dashboard/data_publica/` e fazer push; o Cloud reimplanta automaticamente.

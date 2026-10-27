@@ -121,7 +121,7 @@ st.subheader("Procedimento de atualização dos dados")
 st.markdown(
     "Manual e controlado — o painel **não** baixa dados, não executa ETL e não se atualiza sozinho: **verificar** (consulta metadados da fonte e classifica indícios) → "
     "**preparar** (candidata isolada a partir dos XLSX oficiais, com validação e comparação) → **aprovar** (promoção com versão anterior preservada e reversão). "
-    "Uma atualização inválida não substitui a versão ativa. Procedimento completo em `documentacao/ATUALIZACAO_DE_DADOS.md`."
+    "Uma atualização inválida não substitui a versão ativa. Procedimento completo em `documentacao/analises/ATUALIZACAO_DE_DADOS.md`."
 )
 st.subheader("Condições de reutilização e atribuição")
 for fonte in manifesto.get("fontes", []):

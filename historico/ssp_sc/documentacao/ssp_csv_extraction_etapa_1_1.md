@@ -86,7 +86,7 @@ Não houve falha técnica de leitura nem página sem tabela detectada nos 45 doc
 
 ## Visualização das primeiras 20 linhas
 
-O notebook [`ssp_csv_data_viewer.ipynb`](../../notebooks/ssp_csv_data_viewer.ipynb) contém uma célula por CSV. Cada célula lê o arquivo com `sep=";"`, `encoding="utf-8-sig"`, `keep_default_na=False`, guarda somente `head(20)` em uma variável `amostra_01`–`amostra_45` e exibe a tabela. No VS Code, abra o notebook, selecione o kernel Python e execute as células desejadas; as variáveis de amostra podem ser abertas no Visualizador de Dados. Os CSVs completos permanecem em `dados/brutos/ssp_sc/csv_extraidos/`.
+O notebook [`ssp_csv_data_viewer.ipynb`](../ssp_csv_data_viewer.ipynb) contém uma célula por CSV. Cada célula lê o arquivo com `sep=";"`, `encoding="utf-8-sig"`, `keep_default_na=False`, guarda somente `head(20)` em uma variável `amostra_01`–`amostra_45` e exibe a tabela. No VS Code, abra o notebook, selecione o kernel Python e execute as células desejadas; as variáveis de amostra podem ser abertas no Visualizador de Dados. Os CSVs completos permanecem em `dados/brutos/ssp_sc/csv_extraidos/`.
 
 ## Limites e operações não realizadas
 

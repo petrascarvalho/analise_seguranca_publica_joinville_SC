@@ -70,7 +70,7 @@ def test_projeto_apresenta_fonte_unica_periodo_real_e_nao_afirma_deploy():
 def test_sinesp_valores_padrao_e_filtros():
     app = _pagina("sinesp")
     _sem_erros(app)
-    assert app.selectbox[0].value == "Homicídio doloso" and app.selectbox[1].value == "Estadual"
+    assert app.selectbox(key="indicador").value == "Homicídio doloso" and app.selectbox(key="abrangencia").value == "Estadual"
     assert [m.value for m in app.metric][:2] == ["29", "25"]  # último ano completo (2025) e janeiro–setembro de 2026
     assert "+4 vs janeiro–setembro de 2025" in app.metric[1].delta and "−7 vs 2024" in app.metric[0].delta
     assert "Janeiro–setembro de 2026" in app.metric[1].label
@@ -82,9 +82,9 @@ def test_sinesp_valores_padrao_e_filtros():
     assert not any("2026 contém apenas" in i.value for i in app.info)
     assert [m.value for m in app.metric][:2] == ["29", "21"]  # janeiro–setembro passa a ser 2025
 
-    app.selectbox[0].select("Mandado de prisão cumprido").run()
-    assert "Polícia Federal" in app.selectbox[1].options and "Estadual" in app.selectbox[1].options
-    app.selectbox[1].select("Polícia Federal").run()
+    app.selectbox(key="indicador").select("Mandado de prisão cumprido").run()
+    assert "Polícia Federal" in app.selectbox(key="abrangencia").options and "Estadual" in app.selectbox(key="abrangencia").options
+    app.selectbox(key="abrangencia").select("Polícia Federal").run()
     _sem_erros(app)
     assert any("a partir de janeiro/2025" in w.value for w in app.warning)  # ausência de cobertura explícita, não zero
     assert "mandados cumpridos" in " ".join(m.value for m in app.markdown)  # unidade distinta de vítimas
@@ -92,8 +92,8 @@ def test_sinesp_valores_padrao_e_filtros():
 
 def test_sinesp_serie_prf_vai_ate_agosto_sem_preenchimento():
     app = _pagina("sinesp")
-    app.selectbox[0].select("Mortes no trânsito").run()
-    app.selectbox[1].select("Polícia Rodoviária Federal").run()
+    app.selectbox(key="indicador").select("Mortes no trânsito").run()
+    app.selectbox(key="abrangencia").select("Polícia Rodoviária Federal").run()
     _sem_erros(app)
     assert any("2026 contém apenas janeiro a agosto" in i.value for i in app.info)
     assert "Janeiro–agosto de 2026" in app.metric[1].label and "vs janeiro–agosto de 2025" in app.metric[1].delta
@@ -104,8 +104,8 @@ def test_sinesp_todos_os_indicadores_e_abrangencias_executam():
     catalogo = dp.carregar_catalogo_sinesp()
     app = _pagina("sinesp")
     for linha in catalogo.itertuples():
-        app.selectbox[0].select(linha.evento).run()
-        app.selectbox[1].select(linha.abrangencia).run()
+        app.selectbox(key="indicador").select(linha.evento).run()
+        app.selectbox(key="abrangencia").select(linha.abrangencia).run()
         _sem_erros(app)
 
 
@@ -121,12 +121,12 @@ def test_sinesp_organiza_a_analise_em_quatro_grupos_com_tabela_por_grafico():
 
 def test_sinesp_outliers_nao_conclui_anomalia_quando_o_metodo_nao_e_informativo():
     app = _pagina("sinesp")
-    app.selectbox[0].select("Roubo seguido de morte (latrocínio)").run()
+    app.selectbox(key="indicador").select("Roubo seguido de morte (latrocínio)").run()
     _sem_erros(app)
     assert any("Método IQR não informativo" in w.value and "IQR igual a zero" in w.value for w in app.warning)
     assert not any("Método informativo" in i.value for i in app.info)
-    app.selectbox[0].select("Mandado de prisão cumprido").run()
-    app.selectbox[1].select("Polícia Federal").run()
+    app.selectbox(key="indicador").select("Mandado de prisão cumprido").run()
+    app.selectbox(key="abrangencia").select("Polícia Federal").run()
     _sem_erros(app)
     assert any("maioria de zeros publicados" in w.value for w in app.warning)
     assert any("Sazonalidade não avaliada" in i.value for i in app.info)  # PF: um único ano completo
@@ -287,12 +287,12 @@ def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(t
             app = AppTest.from_file(f"dashboard/pages/{pagina}.py", default_timeout=120).run()
             assert not app.exception and not app.error, (pagina, [e.value for e in app.exception], [e.value for e in app.error])
         sinesp = AppTest.from_file("dashboard/pages/sinesp.py", default_timeout=120).run()
-        sinesp.selectbox[0].select("Suicídio").run()
+        sinesp.selectbox(key="indicador").select("Suicídio").run()
         assert any("2026 contém apenas janeiro a outubro" in i.value for i in sinesp.info), [i.value for i in sinesp.info]
         assert "Janeiro–outubro de 2026" in sinesp.metric[1].label, sinesp.metric[1].label
         assert "vs janeiro–outubro de 2025" in sinesp.metric[1].delta
-        sinesp.selectbox[0].select("Mortes no trânsito").run()
-        sinesp.selectbox[1].select("Polícia Rodoviária Federal").run()  # série PRF: ainda até setembro
+        sinesp.selectbox(key="indicador").select("Mortes no trânsito").run()
+        sinesp.selectbox(key="abrangencia").select("Polícia Rodoviária Federal").run()  # série PRF: ainda até setembro
         assert any("2026 contém apenas janeiro a setembro" in i.value for i in sinesp.info), [i.value for i in sinesp.info]
         assert "Janeiro–setembro de 2026" in sinesp.metric[1].label, sinesp.metric[1].label
         home = AppTest.from_file("dashboard/pages/home.py", default_timeout=120).run()
@@ -302,3 +302,24 @@ def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(t
         print("OK")
     """)
     assert resultado.returncode == 0 and "OK" in resultado.stdout, resultado.stdout[-800:] + resultado.stderr[-1500:]
+
+
+# ------------------------------------------------------------------ Etapa 21: seta do delta e ordem dos filtros
+def test_seta_do_delta_acompanha_o_sinal_da_diferenca():
+    from streamlit.proto.Metric_pb2 import Metric
+
+    app = _pagina("sinesp")
+    _sem_erros(app)
+    anual, periodo = app.metric[0], app.metric[1]
+    assert anual.value == "29" and anual.delta == "−7 vs 2024"  # 2025 (29) − 2024 (36) = −7, valor preservado
+    assert Metric.MetricDirection.Name(anual.proto.direction) == "DOWN"  # antes aparecia seta para cima ao lado do −7
+    assert periodo.delta.startswith("+4") and Metric.MetricDirection.Name(periodo.proto.direction) == "UP"
+    app.selectbox(key="indicador").select("Mortes a esclarecer (sem indício de crime)").run()
+    assert app.metric[0].delta == "0 vs 2024" and Metric.MetricDirection.Name(app.metric[0].proto.direction) == "NONE"  # sem diferença: sem seta
+
+
+def test_filtros_na_ordem_categoria_indicador_abrangencia_e_depois_anos_e_meses():
+    app = _pagina("sinesp")
+    assert [s.label for s in app.selectbox][:3] == ["Categoria", "Indicador", "Abrangência"]
+    assert [s.label for s in app.select_slider][:2] == ["Período (anos)", "Meses"]
+    assert app.selectbox(key="categoria").value == "Todas" and app.selectbox(key="indicador").value == "Homicídio doloso"
