@@ -301,7 +301,7 @@ O README de continuidade e seus backups permanecem **fora do repositório**. Nen
 
 Fontes primárias: MJSP/Sinesp VDE, SSP/SC e Prefeitura/SEPROT, citadas na seção 4. [Documentação de fontes](documentacao/fontes/) e [auditoria de origem](documentacao/auditoria/sinesp_origem_2020_2022.csv) preservam a procedência.
 
-Mini_Projeto_SUS é referência didática de sequência e organização. O projeto Anderson Roza foi usado como referência crítica de apresentação e boas práticas, sem copiar código. O [escopo de 16/10/2026](documentacao/ESCOPO_PROJETO.md) é um registro inicial, não uma descrição atual das etapas concluídas nem substituto do regulamento final.
+
 
 Licença do código e permissões de redistribuição dos dados ainda devem ser definidas/documentadas; a ausência de um arquivo de licença não deve ser interpretada como autorização irrestrita.
 
