@@ -1,6 +1,7 @@
 """Testes da operação A (verificar fontes oficiais) com cliente HTTP falso: nenhuma rede, nenhum dado real alterado."""
 
 import hashlib
+import http.client
 import json
 from datetime import datetime, timezone
 
@@ -54,7 +55,7 @@ def _tamanhos_sinesp(manifesto, **mudancas):
     return base
 
 
-def _cliente(manifesto, *, tamanhos=None, pagina=None, ckan_mj=None, ckan_sc=None, midia=None, proximo_ano=404):
+def _cliente(manifesto, *, tamanhos=None, pagina=None, ckan_mj=None, proximo_ano=404):
     tamanhos = tamanhos or _tamanhos_sinesp(manifesto)
     respostas = {fo.URL_SINESP_PAGINA: pagina or _pagina()}
     for ano, total in tamanhos.items():
@@ -63,14 +64,7 @@ def _cliente(manifesto, *, tamanhos=None, pagina=None, ckan_mj=None, ckan_sc=Non
     respostas[fo.URL_SINESP_ARQUIVO.format(ano=proximo)] = fo.Resposta(proximo_ano, {"content-range": "bytes 0-0/10"} if proximo_ano == 206 else {})
     respostas[fo.URL_CKAN_MJ] = ckan_mj or fo.Resposta(200, {}, json.dumps({"result": {"license_id": "cc-by", "license_title": "Creative Commons Atribuição",
                                                                                       "metadata_modified": "2026-01-01", "resources": []}}).encode())
-    respostas[fo.URL_CKAN_SC] = ckan_sc or fo.Resposta(200, {}, json.dumps({"result": {"license_id": "other-open", "license_title": "Outra (Aberta)",
-                                                                                      "metadata_modified": "2026-03-20", "resources": [{"id": "r", "format": "HTML"}]}}).encode())
-    pdfs = {n.split("_", 2)[2]: b for n, b in manifesto["origem_dos_dados"]["ssp_pdf_bytes"].items()}
-    itens = [{"source_url": f"https://ssp.sc.gov.br/wp-content/uploads/2025/06/{nome}", "mime_type": "application/pdf", "date": "2025-06-13T17:59:04", "modified": "2025-06-13T17:59:04"} for nome in pdfs]
-    respostas[fo.URL_SSP_MIDIA] = midia or fo.Resposta(200, {}, json.dumps(itens).encode())
-    for nome, total in pdfs.items():
-        respostas[f"https://ssp.sc.gov.br/wp-content/uploads/2025/06/{nome}"] = _faixa(total)
-    return ClienteFalso(respostas), pdfs
+    return ClienteFalso(respostas), None
 
 
 def _por_recurso(relatorio):
@@ -174,53 +168,36 @@ def test_cliente_padrao_se_identifica_honestamente():
     assert "analise-seguranca-publica-joinville" in fo.USER_AGENT and "Mozilla" not in fo.USER_AGENT
 
 
+def test_cliente_padrao_converte_conexao_interrompida_em_erro_de_consulta(monkeypatch):
+    def interrompido(pedido, timeout=None):
+        raise http.client.IncompleteRead(b"parcial", 100)
+
+    monkeypatch.setattr(fo.urllib.request, "urlopen", interrompido)
+    with pytest.raises(fo.ErroConsulta, match="IncompleteRead"):
+        fo.ClienteHTTP().obter("https://www.gov.br/mj/exemplo")
+
+
 def test_licenca_do_catalogo_alterada_exige_revisao_das_condicoes():
-    manifesto = _manifesto()
     mudou = fo.Resposta(200, {}, json.dumps({"result": {"license_id": "cc-by-nd", "license_title": "x", "metadata_modified": "2026-10-01", "resources": []}}).encode())
-    cliente, _ = _cliente(manifesto, ckan_sc=mudou)
-    achado = _por_recurso(fo.verificar_fontes(manifesto, cliente, AGORA))["catalogo_sc"][0]
-    assert achado.classificacao == fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE and "Licença do catálogo mudou" in achado.detalhe
+    cliente = ClienteFalso({fo.URL_CKAN_MJ: mudou})
+    achado = fo.verificar_catalogo_ckan(cliente, fo.URL_CKAN_MJ, fo.ID_SINESP, "catalogo_mj", "cc-by", "2026-10-27T12:00:00Z")[0]
+    assert achado.classificacao == fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE and "Licença do catálogo mudou" in achado.detalhe and achado.requer_verificacao_manual
 
 
 def test_catalogo_com_formato_inesperado():
     manifesto = _manifesto()
-    cliente, _ = _cliente(manifesto, ckan_sc=fo.Resposta(200, {}, b"<html>nao e json</html>"))
-    assert _classificacoes(fo.verificar_fontes(manifesto, cliente, AGORA), "catalogo_sc") == {fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE}
+    cliente, _ = _cliente(manifesto, ckan_mj=fo.Resposta(200, {}, b"<html>nao e json</html>"))
+    assert _classificacoes(fo.verificar_fontes(manifesto, cliente, AGORA), "catalogo_mj") == {fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE}
 
 
-def _midia(pdfs, extras=(), omitir=()):
-    itens = [{"source_url": f"https://ssp.sc.gov.br/wp-content/uploads/2025/06/{n}", "mime_type": "application/pdf", "date": "2025-06-13T17:59:04", "modified": "2025-06-13T17:59:04"}
-             for n in pdfs if n not in omitir]
-    itens += list(extras)
-    return fo.Resposta(200, {}, json.dumps(itens).encode())
-
-
-def test_ssp_novo_relatorio_pdf_xlsx_revisao_e_remocao():
+def test_verificacao_consulta_somente_fontes_sinesp_mjsp():
     manifesto = _manifesto()
-    _, pdfs = _cliente(manifesto)
-    extras = [
-        {"source_url": "https://ssp.sc.gov.br/wp-content/uploads/2026/10/VIOLENCIA-DOMESTICA-SC-1o-SEMESTRE-2025.xlsx",
-         "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "date": "2026-10-19T19:02:34", "modified": "2026-10-19T19:02:34"},
-        {"source_url": "https://ssp.sc.gov.br/wp-content/uploads/2026/10/VIOLENCIA-DOMESTICA-2025-SC.pdf", "mime_type": "application/pdf", "date": "2026-10-19", "modified": "2026-10-19"},
-    ]
-    nome_removido, nome_revisado = sorted(pdfs)[0], sorted(pdfs)[1]
-    cliente, _ = _cliente(manifesto, midia=_midia(pdfs, extras, omitir=[nome_removido]))
-    cliente.respostas[f"https://ssp.sc.gov.br/wp-content/uploads/2025/06/{nome_revisado}"] = _faixa(pdfs[nome_revisado] + 100)
-    cliente.respostas["https://ssp.sc.gov.br/wp-content/uploads/2026/10/VIOLENCIA-DOMESTICA-2025-SC.pdf"] = _faixa(1234)
+    cliente, _ = _cliente(manifesto)
     relatorio = fo.verificar_fontes(manifesto, cliente, AGORA)
-    por_id = {a.identificador: a for a in relatorio.achados if a.fonte == fo.ID_SSP}
-    assert por_id["VIOLENCIA-DOMESTICA-SC-1o-SEMESTRE-2025.xlsx"].classificacao == fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE
-    assert "NÃO incorporado automaticamente" in por_id["VIOLENCIA-DOMESTICA-SC-1o-SEMESTRE-2025.xlsx"].detalhe
-    assert por_id["VIOLENCIA-DOMESTICA-2025-SC.pdf"].classificacao == fo.Classificacao.NOVA_COMPETENCIA
-    assert por_id[nome_revisado].classificacao == fo.Classificacao.POSSIVEL_REVISAO
-    assert por_id[nome_removido].classificacao == fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE
-    assert "auditoria" in por_id["VIOLENCIA-DOMESTICA-2025-SC.pdf"].detalhe
-
-
-def test_ssp_resposta_de_midia_malformada():
-    manifesto = _manifesto()
-    cliente, _ = _cliente(manifesto, midia=fo.Resposta(200, {}, b'{"nao": "e lista"}'))
-    assert _classificacoes(fo.verificar_fontes(manifesto, cliente, AGORA), "midia_ssp_violencia_domestica") == {fo.Classificacao.ALTERACAO_ESQUEMA_OU_FONTE}
+    assert {a.fonte for a in relatorio.achados} == {fo.ID_SINESP}
+    for url, _ in cliente.chamadas:
+        assert url.startswith(("https://www.gov.br/mj/", "https://dados.mj.gov.br/")), url
+    assert not [m for m in dir(fo) if "ssp" in m.lower() or "prefeitura" in m.lower()]
 
 
 def test_referencia_ausente_no_manifesto_e_erro_explicito():

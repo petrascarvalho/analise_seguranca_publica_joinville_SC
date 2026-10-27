@@ -1,4 +1,4 @@
-"""Ponto de entrada do dashboard Segurança Pública de Joinville.
+"""Ponto de entrada do dashboard Segurança Pública de Joinville (fonte única: Sinesp/MJSP).
 
 Execução local (a partir da raiz do projeto)::
 
@@ -26,8 +26,7 @@ st.set_page_config(page_title="Segurança Pública de Joinville", page_icon="�
 pages = [
     st.Page(str(project_path("dashboard", "pages", "home.py")), title="Projeto", icon="🛡️", url_path="projeto", default=True),
     st.Page(str(project_path("dashboard", "pages", "sinesp.py")), title="Indicadores Sinesp", icon="📊", url_path="sinesp"),
-    st.Page(str(project_path("dashboard", "pages", "violencia_domestica.py")), title="Violência doméstica SSP/SC", icon="🏠", url_path="violencia-domestica"),
-    st.Page(str(project_path("dashboard", "pages", "quality.py")), title="Qualidade dos dados", icon="🔎", url_path="qualidade"),
+    st.Page(str(project_path("dashboard", "pages", "quality.py")), title="Qualidade e metodologia", icon="🔎", url_path="qualidade"),
 ]
 navigation = st.navigation(pages, position="sidebar")
 navigation.run()

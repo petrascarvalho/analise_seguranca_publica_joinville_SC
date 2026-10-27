@@ -79,6 +79,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Feminicídio,Estadual,vítimas,0
 2026,7,Feminicídio,Estadual,vítimas,0
 2026,8,Feminicídio,Estadual,vítimas,0
+2026,9,Feminicídio,Estadual,vítimas,0
 2020,1,Homicídio doloso,Estadual,vítimas,10
 2020,2,Homicídio doloso,Estadual,vítimas,5
 2020,3,Homicídio doloso,Estadual,vítimas,8
@@ -159,6 +160,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Homicídio doloso,Estadual,vítimas,3
 2026,7,Homicídio doloso,Estadual,vítimas,2
 2026,8,Homicídio doloso,Estadual,vítimas,2
+2026,9,Homicídio doloso,Estadual,vítimas,3
 2020,1,Lesão corporal seguida de morte,Estadual,vítimas,0
 2020,2,Lesão corporal seguida de morte,Estadual,vítimas,0
 2020,3,Lesão corporal seguida de morte,Estadual,vítimas,0
@@ -239,6 +241,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Lesão corporal seguida de morte,Estadual,vítimas,0
 2026,7,Lesão corporal seguida de morte,Estadual,vítimas,0
 2026,8,Lesão corporal seguida de morte,Estadual,vítimas,0
+2026,9,Lesão corporal seguida de morte,Estadual,vítimas,0
 2020,1,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),56
 2020,2,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),38
 2020,3,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),44
@@ -319,6 +322,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),138
 2026,7,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),111
 2026,8,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),85
+2026,9,Mandado de prisão cumprido,Estadual,mandados cumpridos (contagem publicada),115
 2025,1,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
 2025,2,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
 2025,3,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
@@ -339,6 +343,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),1
 2026,7,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),0
 2026,8,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),2
+2026,9,Mandado de prisão cumprido,Polícia Federal,mandados cumpridos (contagem publicada),2
 2020,1,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
 2020,2,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
 2020,3,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,1
@@ -419,6 +424,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,0
 2026,7,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,3
 2026,8,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
+2026,9,Morte no trânsito ou em decorrência dele (exceto homicídio doloso),Estadual,vítimas,2
 2020,1,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
 2020,2,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
 2020,3,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
@@ -499,6 +505,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
 2026,7,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
 2026,8,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
+2026,9,Mortes a esclarecer (sem indício de crime),Estadual,vítimas,0
 2020,1,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,1
 2020,2,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,0
 2020,3,Mortes no trânsito,Polícia Rodoviária Federal,vítimas,2
@@ -659,6 +666,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
 2026,7,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
 2026,8,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
+2026,9,Roubo seguido de morte (latrocínio),Estadual,vítimas,0
 2020,1,Suicídio,Estadual,vítimas,5
 2020,2,Suicídio,Estadual,vítimas,5
 2020,3,Suicídio,Estadual,vítimas,1
@@ -739,6 +747,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Suicídio,Estadual,vítimas,2
 2026,7,Suicídio,Estadual,vítimas,6
 2026,8,Suicídio,Estadual,vítimas,2
+2026,9,Suicídio,Estadual,vítimas,4
 2020,1,Tentativa de feminicídio,Estadual,vítimas,2
 2020,2,Tentativa de feminicídio,Estadual,vítimas,0
 2020,3,Tentativa de feminicídio,Estadual,vítimas,3
@@ -819,6 +828,7 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Tentativa de feminicídio,Estadual,vítimas,0
 2026,7,Tentativa de feminicídio,Estadual,vítimas,1
 2026,8,Tentativa de feminicídio,Estadual,vítimas,3
+2026,9,Tentativa de feminicídio,Estadual,vítimas,2
 2020,1,Tentativa de homicídio,Estadual,vítimas,9
 2020,2,Tentativa de homicídio,Estadual,vítimas,11
 2020,3,Tentativa de homicídio,Estadual,vítimas,6
@@ -899,3 +909,4 @@ ano,mes,evento,abrangencia,unidade,valor
 2026,6,Tentativa de homicídio,Estadual,vítimas,4
 2026,7,Tentativa de homicídio,Estadual,vítimas,12
 2026,8,Tentativa de homicídio,Estadual,vítimas,8
+2026,9,Tentativa de homicídio,Estadual,vítimas,9

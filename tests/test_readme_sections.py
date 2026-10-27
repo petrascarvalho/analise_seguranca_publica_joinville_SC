@@ -1,61 +1,40 @@
+import re
+
 from scripts.utils import project_path
+
+DOCUMENTOS_ATIVOS = {
+    "README.md": ("README.md",),
+    "ESCOPO_PROJETO.md": ("documentacao", "ESCOPO_PROJETO.md"),
+    "ATUALIZACAO_DE_DADOS.md": ("documentacao", "ATUALIZACAO_DE_DADOS.md"),
+    "DEPLOY_STREAMLIT.md": ("documentacao", "DEPLOY_STREAMLIT.md"),
+    "LEIAME.md": ("dashboard", "data_publica", "LEIAME.md"),
+}
+
+
+def _ler(*partes) -> str:
+    return project_path(*partes).read_text(encoding="utf-8")
 
 
 def test_readme_has_all_16_academic_items_and_real_results():
-    readme = project_path("README.md").read_text(encoding="utf-8")
+    readme = _ler("README.md")
     for number in range(1, 17):
         assert f"## {number}. " in readme
-    assert "900 registros Sinesp" in readme
-    assert "22 em 2026" in readme
+    assert "900 registros Sinesp" in readme and "911 observações" in readme
+    assert "25 em 2026" in readme and "22 em janeiro–agosto de 2026" in readme
+    assert "janeiro/2020 a setembro/2026" in readme
     assert "atendimentos da Guarda Municipal" in readme
-    for directory in ("scripts", "dashboard", "notebooks", "documentacao", "dados", "tests", "video"):
+    for directory in ("scripts", "dashboard", "notebooks", "documentacao", "dados", "tests", "tests_historicos", "video"):
         assert not list(project_path(directory).rglob("README.md"))
 
 
-def test_main_script_exposes_authorized_stages_and_keeps_exports_inactive():
-    pipeline = project_path("scripts", "analise_seguranca_publica.py").read_text(encoding="utf-8")
+def test_roteiro_expoe_etapas_sinesp_e_nao_exporta_arquivos():
+    pipeline = _ler("scripts", "analise_seguranca_publica.py")
     assert "# %%" in pipeline
     for stage in range(1, 11):
         assert f"ETAPA {stage} " in pipeline
-    # Etapas SSP/SC: 11 e 12 deixaram de ser planejamento de exportação; 13.x e 14.1 foram implementadas.
-    assert "ETAPA 11 — Inspeção dos dados brutos SSP/SC" in pipeline
-    assert "ETAPA 12 — Auditoria das inconsistências SSP/SC" in pipeline
-    for stage in (
-        "ETAPA 13.1 — Inspeção e exibição dos dados brutos de violência doméstica",
-        "ETAPA 13.2 — Construção da base analítica de violência doméstica",
-        "ETAPA 13.3 — Validação integral da base analítica de violência doméstica",
-        "ETAPA 14.1 — Análise exploratória e estatísticas descritivas da violência doméstica",
-    ):
-        assert f"# # {stage}" in pipeline
-    # Etapa 14.2 (visualizações da violência doméstica): seis figuras em memória, nomeadas no roteiro.
-    assert "# # ETAPA 14.2 — Visualizações da violência doméstica de Joinville" in pipeline
-    for figure in (
-        "fig_anual_maiores_ssp142", "fig_anual_intermediarias_ssp142", "fig_anual_menores_ssp142",
-        "fig_mensal_ameaca_ssp142", "fig_mensal_lesao_leve_ssp142", "fig_mensal_injuria_ssp142",
-        "conferencia_visualizacoes_viz142",
-    ):
-        assert figure in pipeline
-    # Etapas futuras não podem aparecer como implementadas.
-    assert "ETAPA 14.3" not in pipeline
     assert "from scripts import transform" in pipeline
-    assert "read_excel(" in pipeline and "read_csv(" in pipeline
-    assert "data_referencia_joinville_20" in pipeline
-    assert "ssp_contexto_pagina_8" in pipeline
     assert "df_sinesp_joinville_analitico" in pipeline
-    assert "fig_homicidio_anual_sinesp" in pipeline
-    assert "fig_mulher_jan_ago_sinesp" in pipeline
-    # Bases analíticas da violência doméstica SSP/SC e rotinas da EDA da Etapa 14.1.
-    for name in (
-        "df_violencia_domestica_joinville_ssp132",
-        "rastreabilidade_violencia_domestica_ssp132",
-        "conferencia_valores_ssp133",
-        "resumo_validacoes_ssp133",
-        "estatisticas_24_meses_eda141",
-        "comparacao_anual_eda141",
-        "extremos_eda141",
-        "verificacoes_quadro_eda141",
-    ):
-        assert name in pipeline
+    assert "fig_homicidio_anual_sinesp" in pipeline and "fig_mulher_jan_ago_sinesp" in pipeline
     # O roteiro continua sem exportar arquivos: nenhuma linha ativa (não comentada) grava dados ou figuras.
     for line in pipeline.splitlines():
         code = line.split("#", 1)[0]
@@ -63,40 +42,73 @@ def test_main_script_exposes_authorized_stages_and_keeps_exports_inactive():
             assert call not in code
 
 
-def test_readme_documents_ssp_stages_and_keeps_pending_items_pending():
-    readme = project_path("README.md").read_text(encoding="utf-8")
-    for expected in (
-        "45 PDFs", "25.753", "58 grupos", "41 com valores divergentes",
-        "216 linhas × 5 colunas", "216 × 23", "67 verificações aprovadas", "Fato Comunicado",
-        "27 zeros publicados",
+def test_readme_declara_fonte_unica_sinesp_e_trata_ssp_e_prefeitura_como_historico():
+    readme = _ler("README.md")
+    for esperado in (
+        "fonte única", "Sinesp/MJSP", "Joinville/SC", "SSP/SC e Prefeitura/SEPROT", "fora do escopo", "historico/ssp_sc/LEIAME.md", "bad9723",
+        "Indicadores Sinesp", "Qualidade e metodologia", "três páginas",
     ):
-        assert expected in readme
-    # Etapa 14.2 e o deploy permanecem pendentes; não pode haver link de aplicação publicada.
-    assert "14.2" in readme
-    assert "Aplicação Streamlit publicada: pendente." in readme
-    assert "streamlit.app" not in readme
+        assert esperado in readme, esperado
+    for proibido in ("quatro páginas", "4 páginas", "Violência doméstica SSP/SC**:", "várias fontes", "múltiplas fontes"):
+        assert proibido not in readme, proibido
+    # Pendências de entrega continuam pendentes; nenhum link inventado; Trello dispensado.
+    assert "Aplicação Streamlit publicada: pendente." in readme and "streamlit.app" not in readme
+    assert "Trello" in readme and "dispensad" in readme
+    for pendente in ("Repositório oficial da turma: pendente", "Vídeo", "AVA"):
+        assert pendente in readme, pendente
 
 
-def test_app_has_project_and_data_quality_navigation():
-    app = project_path("scripts", "painel_streamlit.py").read_text(encoding="utf-8")
-    # Quatro páginas: Projeto, Indicadores Sinesp, Violência doméstica SSP/SC e Qualidade dos dados.
-    for page in ("home.py", "sinesp.py", "violencia_domestica.py", "quality.py"):
+def test_navegacao_documentada_tem_tres_paginas_e_sem_pagina_ssp():
+    app = _ler("scripts", "painel_streamlit.py")
+    for page in ("home.py", "sinesp.py", "quality.py"):
         assert f'project_path("dashboard", "pages", "{page}")' in app
         assert project_path("dashboard", "pages", page).is_file()
-    assert app.count("st.Page(") == 4 and "st.navigation(" in app
+    assert app.count("st.Page(") == 3 and "st.navigation(" in app
+    assert not project_path("dashboard", "pages", "violencia_domestica.py").exists()
 
 
-def test_readme_documenta_atualizacao_controlada_licencas_e_deploy_sem_inventar_url():
-    readme = project_path("README.md").read_text(encoding="utf-8")
+def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_inventar_url():
+    readme = _ler("README.md")
     for expected in (
         "python -m scripts.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
         "documentacao/ATUALIZACAO_DE_DADOS.md", "documentacao/DEPLOY_STREAMLIT.md", "não pôde ser confirmado", "CC BY-ND",
-        "Nenhum deploy foi feito e não existe URL pública", "116 testes",
+        "Nenhum deploy foi feito e não existe URL pública", "python -m pytest tests -q", "python -m pytest tests_historicos -q",
+        "20261027T114400Z",
     ):
         assert expected in readme, expected
+    assert re.search(r"\*\*\d+ testes aprovados\*\*", readme), "o README deve informar a contagem de testes da suíte ativa"
     for documento in ("ATUALIZACAO_DE_DADOS.md", "DEPLOY_STREAMLIT.md"):
         assert project_path("documentacao", documento).is_file()
-    assert "streamlit.app" not in readme and "streamlit.app" not in project_path("documentacao", "DEPLOY_STREAMLIT.md").read_text(encoding="utf-8").replace("share.streamlit.io", "")
+    assert "streamlit.app" not in _ler("documentacao", "DEPLOY_STREAMLIT.md").replace("share.streamlit.io", "")
     regras = [l.strip() for l in project_path(".gitignore").read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]
     assert "/atualizacao/" in regras and "/dados/" in regras  # entradas/candidatas locais e acervo bruto ficam fora do Git
+    assert "README_IA*.md" in regras
     assert not any(r.rstrip("/") in ("dashboard/data_publica", "/dashboard/data_publica", "data_publica") for r in regras)  # os dados mínimos são versionáveis
+
+
+def test_documentos_ativos_nao_apresentam_outras_fontes_como_parte_do_produto():
+    for nome, partes in DOCUMENTOS_ATIVOS.items():
+        texto = _ler(*partes)
+        assert "Sinesp" in texto, nome
+        for proibido in ("quatro páginas", "4 páginas", "ssp_violencia_domestica", "violencia_domestica.py", "Fato Comunicado\" é"):
+            if nome == "README.md" and proibido in ("violencia_domestica.py",):
+                continue  # o README cita o arquivo removido somente na seção de histórico
+            assert proibido not in texto, (nome, proibido)
+    for nome in ("ATUALIZACAO_DE_DADOS.md", "DEPLOY_STREAMLIT.md"):  # procedimentos operacionais: só Sinesp
+        assert "SSP" not in _ler(*DOCUMENTOS_ATIVOS[nome]) and "Prefeitura" not in _ler(*DOCUMENTOS_ATIVOS[nome]), nome
+    leiame = _ler(*DOCUMENTOS_ATIVOS["LEIAME.md"])  # dados mínimos: SSP/SC e Prefeitura só como histórico fora do escopo
+    assert leiame.count("SSP/SC") == 1 and "fora do escopo" in leiame
+
+
+def test_dados_publicos_e_documentacao_citam_o_mesmo_estado_dos_dados():
+    from dashboard import dados_publicos as dp
+
+    manifesto = dp.carregar_manifesto()
+    leiame = _ler("dashboard", "data_publica", "LEIAME.md")
+    readme = _ler("README.md")
+    for texto in (leiame, readme):
+        assert manifesto["versao"] in texto
+    assert manifesto["aprovacao"]["aprovado_em_utc"] in leiame
+    assert "911 × 6" in leiame and "12 × 12" in leiame
+    assert "2020-01 a 2026-09" in leiame and "2026-08" in leiame
+    assert project_path("historico", "ssp_sc", "LEIAME.md").is_file()

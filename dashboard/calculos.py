@@ -1,23 +1,27 @@
-"""Cálculos descritivos do dashboard, sobre os dados curados (sem Streamlit).
+"""Cálculos descritivos do dashboard sobre os dados Sinesp/MJSP curados (sem Streamlit).
 
-Regras herdadas do roteiro acadêmico:
-- soma com ``min_count=1``: sem valor publicado, o resultado é ``<NA>`` (nunca zero);
+Regras herdadas do roteiro acadêmico (Etapa 9) e do fluxo de atualização:
+- soma só existe quando TODOS os meses presentes têm valor publicado (soma incompleta nunca é apresentada como total);
 - desvio-padrão descritivo com ``ddof=0``;
 - variação percentual só com base positiva; caso contrário ``<NA>`` (não aplicável);
-- o último ano do Sinesp pode ser parcial (hoje 2026, até agosto): períodos só são comparados quando equivalentes;
-- nenhum total geral é produzido pela soma de indicadores ou de categorias diferentes.
+- o último ano de cada série pode ser parcial (hoje 2026, até setembro; a PRF pode terminar antes): períodos só são
+  comparados quando equivalentes (mesmos meses nos dois anos);
+- nenhum total geral é produzido pela soma de indicadores, abrangências ou unidades diferentes (vítimas × mandados).
 """
 
 from __future__ import annotations
 
 import pandas as pd
 
-from dashboard.dados_publicos import CATEGORIAS_VD
+from dashboard.formatacao import NOMES_MESES, fmt_int, fmt_pct
 
 CHAVE_SERIE = ["evento", "abrangencia", "unidade"]
 
 
-# --------------------------------------------------------------------------------------- Sinesp
+def _nome_mes(mes: int) -> str:
+    return NOMES_MESES[mes - 1]
+
+
 def _cobertura(meses: tuple[int, ...], ano: int, ultimo_ano: int) -> str:
     """Cobertura de um ano de uma série: só o último ano da série pode ser parcial (janeiro até o último mês publicado)."""
     if meses == tuple(range(1, 13)):
@@ -28,7 +32,7 @@ def _cobertura(meses: tuple[int, ...], ano: int, ultimo_ano: int) -> str:
 
 
 def tabela_anual_sinesp(sinesp: pd.DataFrame) -> pd.DataFrame:
-    """Soma anual por série, com cobertura explícita (2026 = parcial)."""
+    """Soma anual por série, com cobertura explícita (o último ano, se incompleto, é parcial)."""
     linhas = []
     ultimo_ano_serie = sinesp.groupby(CHAVE_SERIE)["ano"].max()
     for chave, grupo in sinesp.groupby(CHAVE_SERIE + ["ano"], sort=False):
@@ -58,14 +62,9 @@ def comparacao_periodo_sinesp(sinesp: pd.DataFrame, mes_final: int = 8) -> pd.Da
             "meses_com_valor": int(recorte["valor"].notna().sum()),
             "soma": recorte["valor"].sum(min_count=1) if recorte["valor"].notna().all() else pd.NA,
         })
-    quadro = pd.DataFrame(linhas)
+    quadro = pd.DataFrame(linhas, columns=CHAVE_SERIE + ["ano", "periodo", "meses_com_valor", "soma"])
     quadro["soma"] = quadro["soma"].astype("Int64")
     return quadro
-
-
-def _nome_mes(mes: int) -> str:
-    from dashboard.formatacao import NOMES_MESES
-    return NOMES_MESES[mes - 1]
 
 
 def variacao(anterior, atual) -> tuple[object, object]:
@@ -76,24 +75,6 @@ def variacao(anterior, atual) -> tuple[object, object]:
     if int(anterior) <= 0:
         return diferenca, pd.NA
     return diferenca, round(diferenca / int(anterior) * 100, 2)
-
-
-def comparacao_2026_2025_sinesp(sinesp: pd.DataFrame) -> pd.DataFrame:
-    """Janeiro–agosto de 2025 × 2026 (períodos equivalentes) por série."""
-    periodo = comparacao_periodo_sinesp(sinesp, 8)
-    linhas = []
-    for chave, grupo in periodo.groupby(CHAVE_SERIE, sort=False):
-        a, b = grupo.loc[grupo["ano"].eq(2025), "soma"], grupo.loc[grupo["ano"].eq(2026), "soma"]
-        if a.empty or b.empty:
-            continue
-        dif, pct = variacao(a.iloc[0], b.iloc[0])
-        linhas.append({**dict(zip(CHAVE_SERIE, chave)), "periodo": "janeiro–agosto", "valor_2025": a.iloc[0], "valor_2026": b.iloc[0],
-                       "diferenca_absoluta": dif, "variacao_percentual": pct})
-    quadro = pd.DataFrame(linhas)
-    for coluna in ("valor_2025", "valor_2026", "diferenca_absoluta"):
-        quadro[coluna] = quadro[coluna].astype("Int64")
-    quadro["variacao_percentual"] = quadro["variacao_percentual"].astype("Float64")
-    return quadro
 
 
 def serie_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str) -> pd.DataFrame:
@@ -107,8 +88,7 @@ def mes_final_da_serie(serie: pd.DataFrame) -> int:
 
 
 def ultima_competencia_da_serie(serie: pd.DataFrame) -> tuple[int, int]:
-    ultimo_ano = int(serie["ano"].max())
-    return ultimo_ano, mes_final_da_serie(serie)
+    return int(serie["ano"].max()), mes_final_da_serie(serie)
 
 
 def comparacao_ultimo_periodo_sinesp(serie: pd.DataFrame) -> dict | None:
@@ -121,12 +101,22 @@ def comparacao_ultimo_periodo_sinesp(serie: pd.DataFrame) -> dict | None:
     if atual.empty or anterior.empty:
         return None
     dif, pct = variacao(anterior.iloc[0], atual.iloc[0])
-    return {"periodo": f"janeiro–{_nome_mes(mes_final)}", "ano_atual": ano, "ano_anterior": ano - 1, "valor_atual": atual.iloc[0],
-            "valor_anterior": anterior.iloc[0], "diferenca_absoluta": dif, "variacao_percentual": pct}
+    return {"periodo": f"janeiro–{_nome_mes(mes_final)}", "mes_final": mes_final, "ano_atual": ano, "ano_anterior": ano - 1,
+            "valor_atual": atual.iloc[0], "valor_anterior": anterior.iloc[0], "diferenca_absoluta": dif, "variacao_percentual": pct}
+
+
+def comparacao_ultimo_periodo_todas_as_series(sinesp: pd.DataFrame) -> pd.DataFrame:
+    """Comparação do último período parcial × mesmo período do ano anterior para cada série (cada uma com seu mês final)."""
+    linhas = []
+    for (evento, abrangencia, unidade), serie in sinesp.groupby(CHAVE_SERIE, sort=True):
+        resultado = comparacao_ultimo_periodo_sinesp(serie.sort_values(["ano", "mes"]))
+        if resultado is not None:
+            linhas.append({"evento": evento, "abrangencia": abrangencia, "unidade": unidade, **resultado})
+    return pd.DataFrame(linhas)
 
 
 def resumo_serie_sinesp(serie: pd.DataFrame) -> dict:
-    """Descrição da série mensal observada (todo o período), por série única."""
+    """Descrição da série mensal observada (todo o período informado)."""
     valores = serie["valor"]
     n = int(valores.count())
     return {
@@ -139,72 +129,95 @@ def resumo_serie_sinesp(serie: pd.DataFrame) -> dict:
     }
 
 
-# ------------------------------------------------------------------- Violência doméstica SSP/SC
-def filtrar_vd(vd: pd.DataFrame, categorias=None, anos=None, mes_inicial: int = 1, mes_final: int = 12) -> pd.DataFrame:
-    mascara = vd["mes"].between(mes_inicial, mes_final)
-    if categorias is not None:
-        mascara &= vd["categoria"].isin(list(categorias))
-    if anos is not None:
-        mascara &= vd["ano"].isin(list(anos))
-    return vd.loc[mascara]
-
-
-def acumulado_por_categoria_ano(vd: pd.DataFrame, mes_inicial: int = 1, mes_final: int = 12) -> pd.DataFrame:
-    """Soma por categoria e ano no mesmo intervalo de meses (cada categoria isolada; sem total geral)."""
-    recorte = filtrar_vd(vd, mes_inicial=mes_inicial, mes_final=mes_final)
-    agrupado = recorte.groupby(["categoria", "ano"])["fatos_comunicados"].agg(soma="sum", meses="count").reset_index()
-    return agrupado
-
-
-def comparacao_anual_vd(vd: pd.DataFrame, categorias=None, mes_inicial: int = 1, mes_final: int = 12) -> pd.DataFrame:
-    """2023 × 2024 por categoria, sobre os mesmos meses nos dois anos."""
-    base = acumulado_por_categoria_ano(vd, mes_inicial, mes_final)
-    ordem = [c for c in CATEGORIAS_VD if categorias is None or c in set(categorias)]
+def estatisticas_por_ano(serie: pd.DataFrame) -> pd.DataFrame:
+    """Estatísticas descritivas MENSAIS por ano de uma série (média, mediana, mínimo, máximo, desvio-padrão com ddof=0)."""
     linhas = []
-    for categoria in ordem:
-        a = base.loc[base["categoria"].eq(categoria) & base["ano"].eq(2023)].iloc[0]
-        b = base.loc[base["categoria"].eq(categoria) & base["ano"].eq(2024)].iloc[0]
-        dif, pct = variacao(a["soma"], b["soma"])
-        linhas.append({
-            "categoria": categoria, "meses_2023": int(a["meses"]), "acumulado_2023": int(a["soma"]),
-            "meses_2024": int(b["meses"]), "acumulado_2024": int(b["soma"]), "diferenca_absoluta": dif, "variacao_percentual": pct,
-            "observacao_variacao": "não aplicável (2023 = 0)" if int(a["soma"]) == 0 else "calculada sobre 2023",
-        })
-    quadro = pd.DataFrame(linhas)
-    quadro["diferenca_absoluta"] = quadro["diferenca_absoluta"].astype("Int64")
+    ultimo_ano = int(serie["ano"].max())
+    for ano, grupo in serie.groupby("ano", sort=True):
+        resumo = resumo_serie_sinesp(grupo)
+        meses = tuple(sorted(int(m) for m in grupo["mes"].unique()))
+        linhas.append({"ano": int(ano), "cobertura": _cobertura(meses, int(ano), ultimo_ano), **resumo})
+    return pd.DataFrame(linhas)
+
+
+def variacoes_anuais(serie: pd.DataFrame) -> pd.DataFrame:
+    """Variação entre anos COMPLETOS consecutivos (soma de 12 meses); anos parciais ou sem soma ficam de fora."""
+    anual = tabela_anual_sinesp(serie)
+    completos = anual.loc[anual["cobertura"].eq("ano completo") & anual["soma"].notna()].sort_values("ano")
+    linhas = []
+    anteriores = {int(a): s for a, s in zip(completos["ano"], completos["soma"])}
+    for ano, soma in anteriores.items():
+        if ano - 1 in anteriores:
+            dif, pct = variacao(anteriores[ano - 1], soma)
+            linhas.append({"ano_anterior": ano - 1, "ano": ano, "valor_anterior": anteriores[ano - 1], "valor": soma,
+                           "diferenca_absoluta": dif, "variacao_percentual": pct})
+    quadro = pd.DataFrame(linhas, columns=["ano_anterior", "ano", "valor_anterior", "valor", "diferenca_absoluta", "variacao_percentual"])
+    for coluna in ("valor_anterior", "valor", "diferenca_absoluta"):
+        quadro[coluna] = quadro[coluna].astype("Int64")
     quadro["variacao_percentual"] = quadro["variacao_percentual"].astype("Float64")
     return quadro
 
 
-def comparativo_mensal_vd(vd: pd.DataFrame, categoria: str) -> pd.DataFrame:
-    parte = vd.loc[vd["categoria"].eq(categoria)]
-    largo = parte.pivot(index="mes", columns="ano", values="fatos_comunicados").sort_index()
-    saida = pd.DataFrame({"mes": largo.index.astype(int), "fatos_2023": largo[2023].astype(int).to_numpy(), "fatos_2024": largo[2024].astype(int).to_numpy()})
-    saida["diferenca_2024_menos_2023"] = saida["fatos_2024"] - saida["fatos_2023"]
-    return saida
+def comparar_anos_completos(serie: pd.DataFrame, ano_a: int, ano_b: int) -> dict | None:
+    """Comparação entre dois anos COMPLETOS quaisquer da série (``None`` se algum não for completo ou não tiver soma)."""
+    anual = tabela_anual_sinesp(serie).set_index("ano")
+    for ano in (ano_a, ano_b):
+        if ano not in anual.index or anual.loc[ano, "cobertura"] != "ano completo" or pd.isna(anual.loc[ano, "soma"]):
+            return None
+    dif, pct = variacao(anual.loc[ano_a, "soma"], anual.loc[ano_b, "soma"])
+    return {"ano_a": ano_a, "ano_b": ano_b, "valor_a": anual.loc[ano_a, "soma"], "valor_b": anual.loc[ano_b, "soma"],
+            "diferenca_absoluta": dif, "variacao_percentual": pct}
 
 
-def estatisticas_vd(vd: pd.DataFrame, categorias=None, anos=None, mes_inicial: int = 1, mes_final: int = 12) -> pd.DataFrame:
-    """Estatísticas descritivas por categoria (desvio-padrão com ddof=0)."""
-    recorte = filtrar_vd(vd, categorias, anos, mes_inicial, mes_final).copy()
-    recorte["v"] = recorte["fatos_comunicados"].astype("float64")
-    linhas = []
-    for categoria in [c for c in CATEGORIAS_VD if categorias is None or c in set(categorias)]:
-        v = recorte.loc[recorte["categoria"].eq(categoria), "v"]
-        if v.empty:
-            continue
-        linhas.append({
-            "categoria": categoria, "soma_publicada": int(v.sum()), "media_mensal": round(float(v.mean()), 4),
-            "mediana_mensal": round(float(v.median()), 4), "minimo": int(v.min()), "maximo": int(v.max()),
-            "desvio_padrao_ddof0": round(float(v.std(ddof=0)), 4), "meses_observados": int(v.count()), "meses_com_zero": int((v == 0).sum()),
-        })
-    return pd.DataFrame(linhas)
+def ranking_por_unidade(sinesp: pd.DataFrame, ano: int, unidade: str) -> pd.DataFrame:
+    """Séries (indicador × abrangência) ordenadas pela soma do ANO COMPLETO ``ano``, SOMENTE dentro de uma mesma unidade.
+
+    É uma ordenação, não um total: nada é somado entre séries. Séries sem o ano completo ficam fora.
+    """
+    anual = tabela_anual_sinesp(sinesp)
+    parte = anual.loc[anual["ano"].eq(ano) & anual["unidade"].eq(unidade) & anual["cobertura"].eq("ano completo") & anual["soma"].notna()]
+    return parte.sort_values(["soma", "evento"], ascending=[False, True])[["evento", "abrangencia", "unidade", "soma"]].reset_index(drop=True)
 
 
-def extremos_vd(vd: pd.DataFrame, categoria: str, anos=None) -> dict:
-    """Maior e menor valor mensal da categoria, preservando todos os meses empatados."""
-    parte = filtrar_vd(vd, [categoria], anos)
-    maximo, minimo = int(parte["fatos_comunicados"].max()), int(parte["fatos_comunicados"].min())
-    rotulo = lambda linhas: [f"{int(l.ano)}-{int(l.mes):02d}" for l in linhas.itertuples()]  # noqa: E731
-    return {"maximo": maximo, "competencias_maximo": rotulo(parte.loc[parte["fatos_comunicados"].eq(maximo)]),
-            "minimo": minimo, "competencias_minimo": rotulo(parte.loc[parte["fatos_comunicados"].eq(minimo)])}
+def anos_completos_comuns(sinesp: pd.DataFrame) -> list[int]:
+    """Anos em que TODAS as séries presentes nesse ano estão completas (12 meses)."""
+    anual = tabela_anual_sinesp(sinesp)
+    return sorted(int(a) for a, g in anual.groupby("ano") if g["cobertura"].eq("ano completo").all())
+
+
+def achados_principais(sinesp: pd.DataFrame) -> list[dict]:
+    """Achados DESCRITIVOS calculados dos dados (observações, não causas). Cada item: titulo e texto."""
+    achados = []
+    serie = serie_sinesp(sinesp, "Homicídio doloso", "Estadual")
+    if not serie.empty:
+        variacoes = variacoes_anuais(serie)
+        anual = tabela_anual_sinesp(serie)
+        completos = anual.loc[anual["cobertura"].eq("ano completo") & anual["soma"].notna()].sort_values("ano")
+        if len(completos) >= 2:
+            primeiro, ultimo = completos.iloc[0], completos.iloc[-1]
+            _, pct = variacao(primeiro["soma"], ultimo["soma"])
+            achados.append({"titulo": "Homicídio doloso — anos completos", "texto":
+                            f"O total publicado passou de {fmt_int(primeiro['soma'])} vítimas em {int(primeiro['ano'])} para {fmt_int(ultimo['soma'])} em "
+                            f"{int(ultimo['ano'])} ({fmt_pct(pct)}), com oscilações intermediárias. Série descritiva, sem causas identificadas."})
+        comparacao = comparacao_ultimo_periodo_sinesp(serie)
+        if comparacao is not None:
+            achados.append({"titulo": f"Homicídio doloso — {comparacao['periodo']}", "texto":
+                            f"{fmt_int(comparacao['valor_anterior'])} vítimas em {comparacao['ano_anterior']} e {fmt_int(comparacao['valor_atual'])} em "
+                            f"{comparacao['ano_atual']} no mesmo período ({comparacao['periodo']}; {fmt_pct(comparacao['variacao_percentual'])})."})
+    tentativa = serie_sinesp(sinesp, "Tentativa de homicídio", "Estadual")
+    if not tentativa.empty:
+        comparacao = comparacao_ultimo_periodo_sinesp(tentativa)
+        if comparacao is not None:
+            achados.append({"titulo": f"Tentativa de homicídio — {comparacao['periodo']}", "texto":
+                            f"{fmt_int(comparacao['valor_anterior'])} vítimas em {comparacao['ano_anterior']} e {fmt_int(comparacao['valor_atual'])} em "
+                            f"{comparacao['ano_atual']} no mesmo período ({fmt_pct(comparacao['variacao_percentual'])}). Tentativas e homicídios são séries distintas e não se somam."})
+    comuns = anos_completos_comuns(sinesp)
+    if comuns:
+        ano = comuns[-1]
+        ranking = ranking_por_unidade(sinesp, ano, "vítimas")
+        topo = ranking.head(3)
+        if len(topo):
+            itens = "; ".join(f"{r.evento} ({r.abrangencia}): {fmt_int(r.soma)}" for r in topo.itertuples())
+            achados.append({"titulo": f"Maiores contagens de vítimas em {ano} (ano completo)", "texto":
+                            f"{itens}. Ordenação dentro da mesma unidade (vítimas), sem total entre indicadores; mandados cumpridos têm outra unidade e são apresentados à parte."})
+    return achados

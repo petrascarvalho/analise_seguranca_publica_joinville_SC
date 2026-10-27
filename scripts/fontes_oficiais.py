@@ -1,4 +1,4 @@
-"""Operação A — VERIFICAR: identifica possíveis novas publicações oficiais (somente leitura).
+"""Operação A — VERIFICAR: identifica possíveis novas publicações oficiais do Sinesp/MJSP (somente leitura).
 
 Este módulo NÃO baixa arquivos de dados, NÃO executa ETL e NÃO altera nenhum arquivo usado pelo dashboard.
 Ele só consulta metadados e registra evidências, com classificação prudente:
@@ -14,8 +14,7 @@ Princípios:
 * Mudança na página (data "Atualizado em") ou no tamanho de um arquivo é **indício**, nunca prova de que
   valores mudaram. Só a operação B (preparar), com o conteúdo do arquivo, confirma nova competência ou revisão.
 * Nenhuma competência é inventada a partir de datas do site.
-* Preferem-se APIs documentadas (CKAN dos catálogos; API REST de mídia do WordPress da SSP/SC; ``Range``
-  HTTP para obter o tamanho). Onde não há consulta automática confiável (datas dos arquivos do Sinesp no
+* Preferem-se APIs documentadas (CKAN do catálogo; ``Range`` HTTP para obter o tamanho). Onde não há consulta automática confiável (datas dos arquivos do Sinesp no
   gov.br), a limitação é registrada e a verificação manual assistida é recomendada.
 * Bloqueios de acesso (HTTP 403 etc.) NÃO são contornados: viram ``falha_de_consulta``. O cliente se
   identifica honestamente (User-Agent do projeto).
@@ -23,6 +22,7 @@ Princípios:
 
 from __future__ import annotations
 
+import http.client
 import json
 import re
 import urllib.error
@@ -40,12 +40,7 @@ URL_SINESP_PAGINA = vv.FONTES_BASE[0]["url"]
 URL_SINESP_ARQUIVO = ("https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados/"
                       "bancovde-{ano}.xlsx/@@download/file")
 URL_CKAN_MJ = "https://dados.mj.gov.br/api/3/action/package_show?id=sistema-nacional-de-estatisticas-de-seguranca-publica"
-URL_CKAN_SC = "https://www.dados.sc.gov.br/api/3/action/package_show?id=https-ssp-sc-gov-br-segurancaemnumeros"
-URL_SSP_MIDIA = ("https://ssp.sc.gov.br/wp-json/wp/v2/media?search=DOMESTICA&per_page=100"
-                 "&_fields=id,date,modified,slug,source_url,mime_type")
-LICENCA_CKAN_SC_ESPERADA = "other-open"
 ID_SINESP = "sinesp_vde"
-ID_SSP = "ssp_sc_violencia_domestica"
 
 
 class Classificacao(str, Enum):
@@ -88,7 +83,7 @@ class ClienteHTTP:
                 return Resposta(resposta.status, {k.lower(): v for k, v in resposta.headers.items()}, resposta.read())
         except urllib.error.HTTPError as erro:
             return Resposta(erro.code, {k.lower(): v for k, v in (erro.headers or {}).items()}, erro.read() if hasattr(erro, "read") else b"")
-        except (urllib.error.URLError, TimeoutError, OSError) as erro:
+        except (urllib.error.URLError, TimeoutError, OSError, http.client.HTTPException) as erro:  # inclui IncompleteRead (conexão interrompida)
             raise ErroConsulta(f"{type(erro).__name__}: {erro}") from erro
 
 
@@ -154,8 +149,6 @@ LIMITACOES = [
     "por GET com 'Range: bytes=0-0'; não há data de modificação dos arquivos. A data 'Atualizado em' é da página, não de cada arquivo.",
     "Tamanho igual não prova conteúdo idêntico, e tamanho diferente não prova mudança de valores: apenas a operação PREPARAR, com o conteúdo, confirma.",
     "dados.mj.gov.br (CKAN do MJSP) não resolvia (NXDOMAIN) nas consultas de 27/10/2026; sem catálogo, a licença do MJSP não é monitorada.",
-    "SSP/SC: o catálogo CKAN só aponta para a página; novos relatórios são identificados pela API REST de mídia do WordPress (documentada), com busca por 'DOMESTICA'.",
-    "Relatórios novos de violência doméstica podem ter outro formato (p.ex. XLSX): exigem auditoria manual e não são incorporados automaticamente.",
 ]
 
 
@@ -292,63 +285,6 @@ def verificar_catalogo_ckan(cliente: Cliente, url: str, fonte: str, recurso: str
                    evidencia)]
 
 
-# -------------------------------------------------------------------------------------------- SSP/SC
-def _nome_local_sem_prefixo(nome: str) -> str:
-    return re.sub(r"^\d{4}_\d{2}_", "", nome)
-
-
-def verificar_ssp_midia(cliente: Cliente, manifesto: dict, instante: str) -> list[Achado]:
-    """Relatórios de violência doméstica: lista de mídia do WordPress comparada com os três PDFs auditados."""
-    recurso, url = "midia_ssp_violencia_domestica", URL_SSP_MIDIA
-    bytes_locais = {_nome_local_sem_prefixo(n): int(b) for n, b in _referencia(manifesto, "ssp_pdf_bytes").items()}
-    try:
-        resposta = cliente.obter(url, {"Accept": "application/json"}, 60.0)
-    except ErroConsulta as erro:
-        return [_falha(ID_SSP, recurso, url, "midia", instante, erro)]
-    if resposta.status != 200:
-        return [_falha(ID_SSP, recurso, url, "midia", instante, f"HTTP {resposta.status}")]
-    try:
-        itens = json.loads(resposta.texto())
-        if not isinstance(itens, list):
-            raise TypeError("a resposta não é uma lista")
-        itens = [{"nome": i["source_url"].rsplit("/", 1)[-1], "url": i["source_url"], "mime": i.get("mime_type"), "data": i.get("date"), "modificado": i.get("modified")} for i in itens]
-    except (ValueError, KeyError, TypeError) as erro:
-        return [Achado(ID_SSP, recurso, url, "midia", instante, Classificacao.ALTERACAO_ESQUEMA_OU_FONTE,
-                       f"Resposta da API de mídia fora do formato esperado ({erro}).", {}, True)]
-    achados = []
-    conhecidos_encontrados = set()
-    for item in sorted(itens, key=lambda i: i["nome"]):
-        evidencia = {"nome": item["nome"], "mime_type": item["mime"], "publicado_em": item["data"], "modificado_em": item["modificado"]}
-        if item["nome"] in bytes_locais and item["mime"] == "application/pdf":
-            conhecidos_encontrados.add(item["nome"])
-            try:
-                remoto, r = _tamanho_remoto(cliente, item["url"])
-            except ErroConsulta as erro:
-                achados.append(_falha(ID_SSP, "relatorio_pdf", item["url"], item["nome"], instante, erro))
-                continue
-            evidencia.update({"bytes_remoto": remoto, "bytes_local_auditado": bytes_locais[item["nome"]], "http_status": r.status})
-            if remoto is None:
-                achados.append(_falha(ID_SSP, "relatorio_pdf", item["url"], item["nome"], instante, f"HTTP {r.status}; tamanho indisponível"))
-            elif remoto == bytes_locais[item["nome"]]:
-                achados.append(Achado(ID_SSP, "relatorio_pdf", item["url"], item["nome"], instante, Classificacao.NENHUMA_NOVIDADE,
-                                      "Relatório auditado com tamanho igual ao original local (não prova conteúdo idêntico).", evidencia))
-            else:
-                achados.append(Achado(ID_SSP, "relatorio_pdf", item["url"], item["nome"], instante, Classificacao.POSSIVEL_REVISAO,
-                                      f"Relatório já auditado com tamanho diferente ({remoto} ≠ {bytes_locais[item['nome']]} bytes): possível revisão; reauditar.", evidencia, True))
-        elif item["mime"] != "application/pdf":
-            achados.append(Achado(ID_SSP, "relatorio_novo", item["url"], item["nome"], instante, Classificacao.ALTERACAO_ESQUEMA_OU_FONTE,
-                                  f"Recurso de violência doméstica em formato diferente dos PDFs auditados ({item['mime']}): exige auditoria manual de categorias, "
-                                  "unidade, cabeçalhos e competências; NÃO incorporado automaticamente.", evidencia, True))
-        else:
-            achados.append(Achado(ID_SSP, "relatorio_novo", item["url"], item["nome"], instante, Classificacao.NOVA_COMPETENCIA,
-                                  "PDF de violência doméstica ainda não auditado: possível nova competência; exige auditoria manual antes de qualquer incorporação.", evidencia, True))
-    ausentes = sorted(set(bytes_locais) - conhecidos_encontrados)
-    for nome in ausentes:
-        achados.append(Achado(ID_SSP, "relatorio_pdf", url, nome, instante, Classificacao.ALTERACAO_ESQUEMA_OU_FONTE,
-                              "Relatório auditado não aparece mais na busca de mídia da SSP/SC (removido ou renomeado?).", {"nome": nome}, True))
-    return achados
-
-
 # ---------------------------------------------------------------------------------------- orquestração
 def verificar_fontes(manifesto: dict, cliente: Cliente | None = None, agora: datetime | None = None) -> Relatorio:
     """Executa todas as verificações. Nunca lança por falha de rede e nunca altera dados."""
@@ -358,8 +294,6 @@ def verificar_fontes(manifesto: dict, cliente: Cliente | None = None, agora: dat
     achados += verificar_sinesp_pagina(cliente, manifesto, instante)
     achados += verificar_sinesp_arquivos(cliente, manifesto, instante)
     achados += verificar_catalogo_ckan(cliente, URL_CKAN_MJ, ID_SINESP, "catalogo_mj", None, instante)
-    achados += verificar_catalogo_ckan(cliente, URL_CKAN_SC, ID_SSP, "catalogo_sc", LICENCA_CKAN_SC_ESPERADA, instante)
-    achados += verificar_ssp_midia(cliente, manifesto, instante)
     return Relatorio(instante, achados, manifesto.get("versao"))
 
 

@@ -8,8 +8,7 @@ C — APROVAR     promove a candidata à versão ativa somente com aprovação e
     REVERTER    restaura uma versão anterior preservada, também com confirmação explícita.
 
 Nada aqui desativa validações. Uma atualização inválida (erros de validação) jamais pode ser promovida; revisões de
-valores históricos exigem ``--aceitar-revisoes``. Os dados do SSP/SC (violência doméstica) não são recalculados: novos
-relatórios têm formato/definições não auditados e exigem auditoria manual antes de qualquer incorporação.
+valores históricos exigem ``--aceitar-revisoes``. A fonte única é o Sinesp/MJSP: o fluxo não depende de nenhum outro acervo.
 
 Uso (a partir da raiz do projeto)::
 
@@ -34,6 +33,7 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+import zipfile
 from zipfile import ZipFile
 
 import pandas as pd
@@ -234,8 +234,8 @@ def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, at
         if indices != list(range(indices[0], indices[0] + len(indices))):
             validacao.erros.append(f"Lacuna de competências em {evento}/{abrangencia}.")
     ultimas = candidata.groupby(["evento", "abrangencia"]).apply(lambda s: (s["ano"].astype(int) * 100 + s["mes"].astype(int)).max(), include_groups=False)
-    if ultimas.nunique() > 1:
-        validacao.avisos.append("Séries com última competência diferente entre si: " + ", ".join(f"{k[0]}/{k[1]}={v}" for k, v in ultimas.items()))
+    if ultimas.nunique() > 1:  # esperado (p.ex. a PRF pode terminar antes das demais): informação, não alerta
+        validacao.informacoes["series_com_ultima_competencia_diferente"] = {f"{k[0]}/{k[1]}": int(v) for k, v in ultimas.items() if v != ultimas.max()}
     ini, fim = vv.primeira_e_ultima_competencia(candidata)
     validacao.informacoes.update({"observacoes": int(len(candidata)), "series": int(len(series_cand)), "primeira_competencia": ini, "ultima_competencia": fim,
                                   "valores_ausentes": int(candidata["valor"].isna().sum()), "zeros_publicados": int(candidata["valor"].eq(0).sum())})
@@ -293,14 +293,14 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
     agora = agora or vv.agora_utc()
     id_candidata = vv.id_versao(agora)
     manifesto_ativo = dp.carregar_manifesto(ativa)
-    ativa_sinesp, ativa_vd = dp.carregar_sinesp(ativa), dp.carregar_violencia_domestica(ativa)
+    ativa_sinesp = dp.carregar_sinesp(ativa)
     raiz_candidata = staging_root / id_candidata
     if raiz_candidata.exists():
         raise ErroAtualizacao(f"Candidata {id_candidata} já existe.")
     destino = raiz_candidata / "dados"
     destino.mkdir(parents=True)
 
-    origem = json.loads(json.dumps(manifesto_ativo.get("origem_dos_dados", {})))
+    origem = {k: json.loads(json.dumps(v)) for k, v in manifesto_ativo.get("origem_dos_dados", {}).items() if k in ("sinesp_xlsx_sha256", "sinesp_xlsx_bytes")}
     comparacao = pd.DataFrame(columns=["evento", "abrangencia", "ano", "mes", "situacao", "valor_ativo", "valor_candidato"])
     if entradas_sinesp is not None:
         anos = sorted({int(a) for a in origem.get("sinesp_xlsx_bytes", {})} | set(anos_adicionais or []))
@@ -325,14 +325,8 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
 
     (destino / dp.ARQ_SINESP).write_bytes(sinesp_bytes)
     (destino / dp.ARQ_SINESP_CATALOGO).write_bytes(catalogo_bytes)
-    for nome in (dp.ARQ_VD, dp.ARQ_VD_RASTREIO):  # SSP/SC: inalterados (novos relatórios exigem auditoria manual)
-        shutil.copy2(ativa / nome, destino / nome)
     if (ativa / ARQ_LEIAME).is_file():
         shutil.copy2(ativa / ARQ_LEIAME, destino / ARQ_LEIAME)
-    pendencias_ssp = [a for a in (relatorio_verificacao or {}).get("achados", []) if a.get("fonte") == fo.ID_SSP and a.get("classificacao") != fo.Classificacao.NENHUMA_NOVIDADE.value]
-    if pendencias_ssp:
-        validacao.avisos.append(f"SSP/SC: {len(pendencias_ssp)} indício(s) de novo/alterado relatório de violência doméstica; NÃO incorporados (exigem auditoria manual).")
-    validacao.informacoes["ssp_violencia_domestica"] = "inalterada (216 observações auditadas; novos relatórios não incorporados automaticamente)"
 
     fichas = []
     for nome in dp.ARQUIVOS_DE_DADOS:
@@ -340,26 +334,33 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
         quadro = _ler_csv_bytes(conteudo)
         fichas.append({"arquivo": nome, "linhas": int(len(quadro)), "colunas": int(quadro.shape[1]), "esquema": list(quadro.columns), "bytes": len(conteudo),
                        "sha256": dp.sha256_normalizado(conteudo)})
-    cobertura = vv.cobertura_padrao(mensal, ativa_vd)
-    revisoes = {
-        "sinesp": (f"Comparação com a versão {manifesto_ativo.get('versao')}: " + json.dumps(validacao.informacoes.get("comparacao", {}), ensure_ascii=False)
-                   if entradas_sinesp is not None else "Sem novos originais: sem alterações."),
-        "ssp_violencia_domestica": "Inalterada; relatórios novos ou diferentes não foram incorporados.",
-    }
-    manifesto = vv.montar_manifesto(
-        versao=id_candidata, versao_anterior=manifesto_ativo.get("versao"), gerado_em=agora, gerador="scripts/atualizacao_dados.py (preparar)",
-        roteiro_sha256=manifesto_ativo.get("roteiro_sha256"), validacao={"status": validacao.status, "erros": validacao.erros, "avisos": validacao.avisos,
-                                                                         "descricao": "Candidata preparada; pendente de aprovação explícita."},
-        cobertura=cobertura, revisoes_historicas=revisoes, origem=origem, arquivos=fichas, criterios=manifesto_ativo.get("criterios", []), consulta=relatorio_verificacao)
-    (destino / dp.ARQ_MANIFESTO).write_text(json.dumps(manifesto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    # Validação estrutural final do que foi gravado (mesmos validadores do dashboard).
+    cobertura = vv.cobertura_padrao(mensal)
+    if entradas_sinesp is not None:
+        texto_revisoes = f"Comparação com a versão {manifesto_ativo.get('versao')}: " + json.dumps(validacao.informacoes.get("comparacao", {}), ensure_ascii=False) + "."
+        diferentes = validacao.informacoes.get("arquivos_de_origem_com_hash_diferente_do_auditado", [])
+        if diferentes and not validacao.informacoes.get("comparacao", {}).get("alterado") and not validacao.informacoes.get("comparacao", {}).get("removido"):
+            texto_revisoes += (f" {len(diferentes)} arquivo(s) oficial(is) têm hash diferente dos usados na versão anterior (republicação pela fonte), mas nenhum valor "
+                               "histórico de Joinville foi alterado ou removido.")
+    else:
+        texto_revisoes = "Sem novos originais: sem alterações."
+    revisoes = {"sinesp": texto_revisoes}
+    # Validação estrutural do que será gravado (mesmos validadores do dashboard), ANTES do manifesto: o status nele registrado é o final.
     try:
-        dp.carregar_sinesp(destino), dp.carregar_catalogo_sinesp(destino), dp.carregar_violencia_domestica(destino), dp.carregar_rastreio_vd(destino)
-        integridade = dp.verificar_integridade(destino)
-        if not integridade["integro"].all():
-            validacao.erros.append("Integridade (SHA-256) da candidata não confere com o seu manifesto.")
+        quadro_sinesp = dp.validar_sinesp(_ler_csv_bytes((destino / dp.ARQ_SINESP).read_bytes()))
+        quadro_catalogo = dp.validar_catalogo(_ler_csv_bytes((destino / dp.ARQ_SINESP_CATALOGO).read_bytes()))
+        dp.validar_consistencia(quadro_sinesp, quadro_catalogo)
     except dp.ErroDados as erro:
         validacao.erros.append(f"Validação estrutural reprovada: {erro}")
+    manifesto = vv.montar_manifesto(
+        versao=id_candidata, versao_anterior=manifesto_ativo.get("versao"), gerado_em=agora, gerador="scripts/atualizacao_dados.py (preparar)",
+        roteiro_sha256=manifesto_ativo.get("roteiro_sha256"),
+        validacao={"status": validacao.status, "erros": validacao.erros, "avisos": validacao.avisos, "informacoes": validacao.informacoes,
+                   "descricao": "Candidata preparada e validada; pendente de aprovação."},
+        cobertura=cobertura, revisoes_historicas=revisoes, origem=origem, arquivos=fichas, criterios=vv.CRITERIOS, consulta=relatorio_verificacao)
+    (destino / dp.ARQ_MANIFESTO).write_text(json.dumps(manifesto, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
+    integridade = dp.verificar_integridade(destino)
+    if not integridade["integro"].all():
+        validacao.erros.append("Integridade (SHA-256) da candidata não confere com o seu manifesto.")
     comparacao.to_csv(raiz_candidata / "comparacao_sinesp.csv", index=False, lineterminator="\n")
     (raiz_candidata / "relatorio_validacao.json").write_text(json.dumps({"id": id_candidata, "versao_ativa_comparada": manifesto_ativo.get("versao"),
                                                                        **validacao.para_dict()}, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
@@ -387,7 +388,7 @@ def _trocar_diretorio(novo: Path, ativa: Path) -> Path:
 
 
 def _validar_diretorio(diretorio: Path) -> None:
-    dp.carregar_sinesp(diretorio), dp.carregar_catalogo_sinesp(diretorio), dp.carregar_violencia_domestica(diretorio), dp.carregar_rastreio_vd(diretorio)
+    dp.validar_consistencia(dp.carregar_sinesp(diretorio), dp.carregar_catalogo_sinesp(diretorio))
     integridade = dp.verificar_integridade(diretorio)
     if not integridade["integro"].all():
         raise dp.ErroDados("integridade (SHA-256) divergente: " + ", ".join(integridade.loc[~integridade["integro"], "arquivo"]))
@@ -492,15 +493,28 @@ def reverter(versao: str, *, confirmacao: str | None, ativa: Path = ATIVA_PADRAO
 
 
 # ---------------------------------------------------------------------------------------------- CLI
-def baixar_sinesp(anos: list[int], destino: Path, cliente: fo.Cliente | None = None) -> dict[int, Path]:
-    """Baixa os XLSX oficiais (GET integral) para ``destino``. Bloqueios (403 etc.) NÃO são contornados."""
+def baixar_sinesp(anos: list[int], destino: Path, cliente: fo.Cliente | None = None, tentativas: int = 3) -> dict[int, Path]:
+    """Baixa os XLSX oficiais (GET integral) para ``destino``.
+
+    Bloqueios (HTTP 403 etc.) NÃO são contornados nem repetidos. Só quedas de conexão (``ErroConsulta``) são repetidas, até ``tentativas`` vezes.
+    O arquivo baixado precisa ser um XLSX (ZIP) íntegro; caso contrário o download é recusado.
+    """
     cliente = cliente or fo.ClienteHTTP()
     destino.mkdir(parents=True, exist_ok=True)
     caminhos = {}
     for ano in anos:
-        resposta = cliente.obter(fo.URL_SINESP_ARQUIVO.format(ano=ano), None, 600.0)
+        resposta = None
+        for tentativa in range(1, tentativas + 1):
+            try:
+                resposta = cliente.obter(fo.URL_SINESP_ARQUIVO.format(ano=ano), None, 600.0)
+                break
+            except fo.ErroConsulta as erro:
+                if tentativa == tentativas:
+                    raise ErroAtualizacao(f"Download de bancovde-{ano}.xlsx interrompido após {tentativas} tentativas ({erro}). Baixe manualmente do site oficial.") from erro
         if resposta.status != 200 or not resposta.corpo:
             raise ErroAtualizacao(f"Download de bancovde-{ano}.xlsx não concluído (HTTP {resposta.status}); acesso não contornado. Baixe manualmente do site oficial.")
+        if not zipfile.is_zipfile(io.BytesIO(resposta.corpo)):
+            raise ErroAtualizacao(f"O arquivo baixado para {ano} não é um XLSX íntegro; descartado.")
         caminho = destino / f"bancovde-{ano}.xlsx"
         caminho.write_bytes(resposta.corpo)
         caminhos[ano] = caminho
@@ -524,6 +538,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("id")
     p.add_argument("--confirmo", default=None)
     p.add_argument("--aceitar-revisoes", action="store_true")
+    p.add_argument("--aprovado-por", default="responsável (confirmação explícita)", help="texto registrado no manifesto sobre a base da aprovação")
     sub.add_parser("versoes", help="lista versões preservadas")
     p = sub.add_parser("reverter", help="restaura uma versão preservada (exige --confirmo <versao>)")
     p.add_argument("versao")
@@ -554,7 +569,7 @@ def main(argv: list[str] | None = None) -> int:
             print((raiz / "relatorio_validacao.json").read_text(encoding="utf-8"))
             print((raiz / "comparacao_sinesp.csv").read_text(encoding="utf-8"))
         elif argumentos.comando == "aprovar":
-            anterior = aprovar(argumentos.id, confirmacao=argumentos.confirmo, aceitar_revisoes=argumentos.aceitar_revisoes)
+            anterior = aprovar(argumentos.id, confirmacao=argumentos.confirmo, aceitar_revisoes=argumentos.aceitar_revisoes, aprovado_por=argumentos.aprovado_por)
             print(f"Candidata {argumentos.id} promovida. Versão anterior preservada em atualizacao/versoes/{anterior}.")
         elif argumentos.comando == "versoes":
             for ficha in listar_versoes():

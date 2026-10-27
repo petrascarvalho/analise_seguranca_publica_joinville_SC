@@ -62,10 +62,14 @@ def _entradas(pasta, mensal, anos=range(2020, 2027)):
     return pasta
 
 
-def _com_setembro(mensal, valor=1, ignorar=()):
-    novas = mensal.groupby(["evento", "abrangencia", "unidade"], as_index=False).size().drop(columns="size")
-    novas = novas[~novas["evento"].isin(ignorar)].assign(ano=2026, mes=9, valor=valor)
-    return pd.concat([mensal, novas[mensal.columns]], ignore_index=True)
+def _com_proxima_competencia(mensal, valor=1, ignorar=()):
+    """Acrescenta, a cada série, a competência seguinte à sua última (a PRF, que termina em 2026-08, ganha 2026-09; as demais, 2026-10)."""
+    mensal = mensal.assign(indice=mensal["ano"] * 12 + mensal["mes"] - 1)
+    ultimas = mensal.groupby(["evento", "abrangencia", "unidade"], as_index=False)["indice"].max()
+    ultimas = ultimas[~ultimas["evento"].isin(ignorar)]
+    proximo = ultimas["indice"] + 1
+    novas = ultimas.assign(ano=proximo // 12, mes=proximo % 12 + 1, valor=valor)
+    return pd.concat([mensal.drop(columns="indice"), novas[mensal.drop(columns="indice").columns]], ignore_index=True)
 
 
 def _preparar(amb, mensal=None, **extra):
@@ -171,28 +175,31 @@ def test_preparar_com_originais_identicos_reproduz_os_dados_ativos_sem_alterar_a
 
 
 def test_nova_competencia_e_detectada_sem_ser_promovida(ambiente):
-    mensal = _com_setembro(dp.carregar_sinesp(ambiente["ativa"]))
+    mensal = _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"]))
     antes = _hash_pasta(ambiente["ativa"])
     candidato = _preparar(ambiente, mensal)
     assert candidato.validacao.status == "validado" and candidato.validacao.informacoes["novas_competencias"] == 12
-    assert set(candidato.comparacao["situacao"]) == {"novo"} and set(zip(candidato.comparacao["ano"], candidato.comparacao["mes"])) == {(2026, 9)}
-    assert candidato.validacao.informacoes["ultima_competencia"] == "2026-09"
+    assert set(candidato.comparacao["situacao"]) == {"novo"} and set(zip(candidato.comparacao["ano"], candidato.comparacao["mes"])) == {(2026, 9), (2026, 10)}
+    prf = candidato.comparacao[candidato.comparacao["abrangencia"] == "Polícia Rodoviária Federal"]
+    assert set(zip(prf["ano"], prf["mes"])) == {(2026, 9)}  # a PRF avança de agosto para setembro; as demais, de setembro para outubro
+    assert candidato.validacao.informacoes["ultima_competencia"] == "2026-10"
     manifesto = json.loads((candidato.diretorio / "dados" / dp.ARQ_MANIFESTO).read_text(encoding="utf-8"))
-    assert manifesto["cobertura"]["sinesp"]["ultima_competencia"] == "2026-09" and manifesto["cobertura"]["sinesp"]["ano_parcial"] == 2026
+    assert manifesto["cobertura"]["sinesp"]["ultima_competencia"] == "2026-10" and manifesto["cobertura"]["sinesp"]["ano_parcial"] == 2026
     assert _hash_pasta(ambiente["ativa"]) == antes  # nada foi substituído durante a preparação
-    assert dp.carregar_manifesto(ambiente["ativa"])["cobertura"]["sinesp"]["ultima_competencia"] == "2026-08"
+    assert dp.carregar_manifesto(ambiente["ativa"])["cobertura"]["sinesp"]["ultima_competencia"] == "2026-09"
 
 
-def test_series_com_competencias_desalinhadas_geram_aviso(ambiente):
-    mensal = _com_setembro(dp.carregar_sinesp(ambiente["ativa"]), ignorar=["Mortes no trânsito"])
+def test_series_com_competencias_desalinhadas_sao_informadas_sem_bloquear(ambiente):
+    mensal = _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"]), ignorar=["Mortes no trânsito"])
     candidato = _preparar(ambiente, mensal)
-    assert candidato.validacao.status == "requer_revisao"
-    assert any("última competência diferente" in a for a in candidato.validacao.avisos)
+    assert candidato.validacao.status == "validado" and candidato.validacao.erros == []
+    atrasadas = candidato.validacao.informacoes["series_com_ultima_competencia_diferente"]
+    assert atrasadas["Mortes no trânsito/Polícia Rodoviária Federal"] == 202608 and all(v < 202610 for v in atrasadas.values())
 
 
 def test_nova_competencia_fora_de_sequencia_e_erro(ambiente):
     mensal = dp.carregar_sinesp(ambiente["ativa"])
-    nova = mensal[(mensal["evento"] == "Suicídio")].iloc[[0]].assign(ano=2026, mes=11, valor=1)  # pula setembro e outubro
+    nova = mensal[(mensal["evento"] == "Suicídio")].iloc[[0]].assign(ano=2026, mes=11, valor=1)  # pula outubro (última publicada: setembro)
     candidato = _preparar(ambiente, pd.concat([mensal, nova], ignore_index=True))
     assert candidato.validacao.status == "bloqueado" and any("lacuna" in e.lower() for e in candidato.validacao.erros)
 
@@ -215,7 +222,7 @@ def test_revisao_de_competencia_historica_e_detectada_e_exige_aceite(ambiente):
 
 def test_competencia_historica_removida_bloqueia_a_promocao(ambiente):
     mensal = dp.carregar_sinesp(ambiente["ativa"])
-    removida = mensal[~((mensal["evento"] == "Suicídio") & (mensal["ano"] == 2026) & (mensal["mes"] == 8))]  # some a última competência da série
+    removida = mensal[~((mensal["evento"] == "Suicídio") & (mensal["ano"] == 2026) & (mensal["mes"] == 9))]  # some a última competência da série
     candidato = _preparar(ambiente, removida)
     assert candidato.validacao.status == "bloqueado" and any("removida" in e for e in candidato.validacao.erros)
     with pytest.raises(au.ErroAtualizacao, match="erros de validação"):
@@ -248,12 +255,63 @@ def test_falha_de_preparacao_nao_deixa_candidata_parcial_nem_altera_a_ativa(ambi
     assert not ambiente["staging"].exists() or not any(ambiente["staging"].iterdir())
 
 
-def test_ssp_nao_e_incorporado_automaticamente_e_pendencias_viram_aviso(ambiente):
-    relatorio = {"achados": [{"fonte": "ssp_sc_violencia_domestica", "classificacao": "alteracao_de_esquema_ou_fonte", "detalhe": "xlsx novo"}]}
+def test_relatorio_de_verificacao_e_registrado_como_consulta_sem_alterar_os_dados(ambiente):
+    relatorio = {"consultado_em_utc": "2026-10-27T12:00:00Z", "por_fonte": {"sinesp_vde": {"achados": [], "publicacao": {"pagina_atualizada_em": "26/10/2026 17h07"}}}}
     candidato = _preparar(ambiente, relatorio_verificacao=relatorio)
-    assert any("SSP/SC" in a and "NÃO incorporados" in a for a in candidato.validacao.avisos) and candidato.validacao.status == "requer_revisao"
-    for nome in (dp.ARQ_VD, dp.ARQ_VD_RASTREIO):
+    manifesto = json.loads((candidato.diretorio / "dados" / dp.ARQ_MANIFESTO).read_text(encoding="utf-8"))
+    assert manifesto["datas"]["ultima_consulta_as_fontes_utc"] == "2026-10-27T12:00:00Z"
+    assert [f["id"] for f in manifesto["fontes"]] == ["sinesp_vde"] and manifesto["fontes"][0]["publicacao"]["pagina_atualizada_em"] == "26/10/2026 17h07"
+    for nome in dp.ARQUIVOS_DE_DADOS:
         assert (candidato.diretorio / "dados" / nome).read_bytes() == (ambiente["ativa"] / nome).read_bytes()
+
+
+def test_candidata_so_contem_arquivos_sinesp(ambiente):
+    candidato = _preparar(ambiente)
+    assert sorted(p.name for p in (candidato.diretorio / "dados").iterdir()) == sorted([dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO, "LEIAME.md"])
+
+
+# ------------------------------------------------------------------------------------ download oficial
+class _ClienteDownload:
+    def __init__(self, respostas):
+        self.respostas = list(respostas)
+        self.chamadas = []
+
+    def obter(self, url, cabecalhos=None, timeout=30.0):
+        self.chamadas.append(url)
+        item = self.respostas.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+
+def _xlsx_bytes(tmp_path):
+    caminho = tmp_path / "modelo.xlsx"
+    _escrever_xlsx(caminho, [_linha()])
+    return caminho.read_bytes()
+
+
+def test_download_repete_apenas_queda_de_conexao(tmp_path):
+    cliente = _ClienteDownload([au.fo.ErroConsulta("IncompleteRead"), au.fo.ErroConsulta("IncompleteRead"), au.fo.Resposta(200, {}, _xlsx_bytes(tmp_path))])
+    caminhos = au.baixar_sinesp([2026], tmp_path / "baixados", cliente)
+    assert len(cliente.chamadas) == 3 and caminhos[2026].read_bytes()[:2] == b"PK"
+    cliente = _ClienteDownload([au.fo.ErroConsulta("queda")] * 3)
+    with pytest.raises(au.ErroAtualizacao, match="3 tentativas"):
+        au.baixar_sinesp([2026], tmp_path / "outros", cliente)
+    assert len(cliente.chamadas) == 3 and not list((tmp_path / "outros").glob("*.xlsx"))
+
+
+def test_download_bloqueado_403_nao_e_repetido_nem_contornado(tmp_path):
+    cliente = _ClienteDownload([au.fo.Resposta(403, {}, b"Forbidden"), au.fo.Resposta(200, {}, _xlsx_bytes(tmp_path))])
+    with pytest.raises(au.ErroAtualizacao, match="não contornado|não contornado"):
+        au.baixar_sinesp([2026], tmp_path / "baixados", cliente)
+    assert len(cliente.chamadas) == 1 and not list((tmp_path / "baixados").glob("*.xlsx"))
+
+
+def test_download_que_nao_e_xlsx_e_recusado(tmp_path):
+    cliente = _ClienteDownload([au.fo.Resposta(200, {}, b"<html>pagina de erro</html>")])
+    with pytest.raises(au.ErroAtualizacao, match="não é um XLSX"):
+        au.baixar_sinesp([2026], tmp_path / "baixados", cliente)
+    assert not list((tmp_path / "baixados").glob("*.xlsx"))
 
 
 # ----------------------------------------------------------------------- aprovar, versões e reverter
@@ -262,7 +320,7 @@ def _promover(amb, candidato, **extra):
 
 
 def test_promocao_exige_confirmacao_explicita(ambiente):
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     antes = _hash_pasta(ambiente["ativa"])
     for confirmacao in (None, "", "outro-id"):
         with pytest.raises(au.ErroAtualizacao, match="não confirmada"):
@@ -275,15 +333,15 @@ def test_promocao_exige_confirmacao_explicita(ambiente):
 def test_promocao_preserva_a_versao_anterior_e_registra_a_aprovacao(ambiente):
     manifesto_antes = dp.carregar_manifesto(ambiente["ativa"])
     hashes_antes = _hash_pasta(ambiente["ativa"])
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     anterior = _promover(ambiente, candidato, aprovado_por="teste")
     assert anterior == manifesto_antes["versao"]
     assert _hash_pasta(ambiente["versoes"] / anterior) == hashes_antes  # versão anterior preservada, intacta
     ativo = dp.carregar_manifesto(ambiente["ativa"])
     assert ativo["versao"] == candidato.id and ativo["versao_anterior"] == anterior and ativo["situacao_validacao"]["status"] == "aprovado"
     assert ativo["aprovacao"]["aprovado_por"] == "teste" and ativo["aprovacao"]["candidata"] == candidato.id
-    assert ativo["cobertura"]["sinesp"]["ultima_competencia"] == "2026-09"
-    assert dp.verificar_integridade(ambiente["ativa"])["integro"].all() and len(dp.carregar_sinesp(ambiente["ativa"])) == 912
+    assert ativo["cobertura"]["sinesp"]["ultima_competencia"] == "2026-10"
+    assert dp.verificar_integridade(ambiente["ativa"])["integro"].all() and len(dp.carregar_sinesp(ambiente["ativa"])) == 923
     assert (ambiente["ativa"] / "LEIAME.md").is_file()
     assert not ambiente["ativa"].with_name("data_publica.antigo").exists() and not ambiente["ativa"].with_name("data_publica.novo").exists()
     assert (candidato.diretorio / "promovida.json").is_file()
@@ -294,7 +352,7 @@ def test_promocao_preserva_a_versao_anterior_e_registra_a_aprovacao(ambiente):
 
 def test_reversao_restaura_a_versao_anterior_e_preserva_a_substituida(ambiente):
     hashes_originais = _hash_pasta(ambiente["ativa"])
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     anterior = _promover(ambiente, candidato)
     with pytest.raises(au.ErroAtualizacao, match="não confirmada"):
         au.reverter(anterior, confirmacao=None, ativa=ambiente["ativa"], versoes_root=ambiente["versoes"])
@@ -307,7 +365,7 @@ def test_reversao_restaura_a_versao_anterior_e_preserva_a_substituida(ambiente):
 
 
 def test_falha_na_troca_mantem_a_versao_ativa_integra(ambiente, monkeypatch):
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     antes = _hash_pasta(ambiente["ativa"])
     chamadas = []
     original = au._renomear
@@ -323,7 +381,7 @@ def test_falha_na_troca_mantem_a_versao_ativa_integra(ambiente, monkeypatch):
         _promover(ambiente, candidato)
     monkeypatch.setattr(au, "_renomear", original)
     assert _hash_pasta(ambiente["ativa"]) == antes and dp.verificar_integridade(ambiente["ativa"])["integro"].all()  # sem arquivos parciais
-    assert dp.carregar_manifesto(ambiente["ativa"])["cobertura"]["sinesp"]["ultima_competencia"] == "2026-08"
+    assert dp.carregar_manifesto(ambiente["ativa"])["cobertura"]["sinesp"]["ultima_competencia"] == "2026-09"
     assert not ambiente["ativa"].with_name("data_publica.antigo").exists() and not ambiente["ativa"].with_name("data_publica.novo").exists()
     assert not (candidato.diretorio / "promovida.json").exists()
     _promover(ambiente, candidato)  # sem a falha, a mesma candidata ainda pode ser promovida
@@ -331,9 +389,9 @@ def test_falha_na_troca_mantem_a_versao_ativa_integra(ambiente, monkeypatch):
 
 
 def test_candidata_adulterada_depois_da_preparacao_nao_e_promovida(ambiente):
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     csv = candidato.diretorio / "dados" / dp.ARQ_SINESP
-    csv.write_text(csv.read_text(encoding="utf-8").replace("2026,9,Suicídio,Estadual,vítimas,1", "2026,9,Suicídio,Estadual,vítimas,2", 1), encoding="utf-8", newline="\n")
+    csv.write_text(csv.read_text(encoding="utf-8").replace("2026,10,Suicídio,Estadual,vítimas,1", "2026,10,Suicídio,Estadual,vítimas,2", 1), encoding="utf-8", newline="\n")
     antes = _hash_pasta(ambiente["ativa"])
     with pytest.raises(dp.ErroDados, match="integridade"):
         _promover(ambiente, candidato)
@@ -341,9 +399,9 @@ def test_candidata_adulterada_depois_da_preparacao_nao_e_promovida(ambiente):
 
 
 def test_relatorio_de_validacao_forjado_nao_libera_dados_invalidos(ambiente):
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     csv = candidato.diretorio / "dados" / dp.ARQ_SINESP
-    csv.write_text(csv.read_text(encoding="utf-8").replace("2026,9,Suicídio,Estadual,vítimas,1", "2026,9,Suicídio,Estadual,vítimas,-1", 1), encoding="utf-8", newline="\n")
+    csv.write_text(csv.read_text(encoding="utf-8").replace("2026,10,Suicídio,Estadual,vítimas,1", "2026,10,Suicídio,Estadual,vítimas,-1", 1), encoding="utf-8", newline="\n")
     antes = _hash_pasta(ambiente["ativa"])
     with pytest.raises(dp.ErroDados):  # mesmo com status "validado" no relatório, a promoção revalida os arquivos
         _promover(ambiente, candidato)
@@ -352,7 +410,7 @@ def test_relatorio_de_validacao_forjado_nao_libera_dados_invalidos(ambiente):
 
 def test_versao_ativa_mudou_desde_a_preparacao_exige_nova_preparacao(ambiente):
     mensal = dp.carregar_sinesp(ambiente["ativa"])
-    primeira = _preparar(ambiente, _com_setembro(mensal))
+    primeira = _preparar(ambiente, _com_proxima_competencia(mensal))
     segunda = au.preparar(ativa=ambiente["ativa"], staging_root=ambiente["staging"], entradas_sinesp=_entradas(ambiente["entradas"] / "x2", mensal), agora=_agora(30))
     _promover(ambiente, primeira)
     with pytest.raises(au.ErroAtualizacao, match="versão ativa mudou"):
@@ -360,7 +418,7 @@ def test_versao_ativa_mudou_desde_a_preparacao_exige_nova_preparacao(ambiente):
 
 
 def test_historico_registra_as_operacoes(ambiente):
-    candidato = _preparar(ambiente, _com_setembro(dp.carregar_sinesp(ambiente["ativa"])))
+    candidato = _preparar(ambiente, _com_proxima_competencia(dp.carregar_sinesp(ambiente["ativa"])))
     _promover(ambiente, candidato)
     eventos = [json.loads(l) for l in (ambiente["base"] / "historico.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [e["operacao"] for e in eventos] == ["preparar", "aprovar"] and eventos[1]["id"] == candidato.id

@@ -1,11 +1,11 @@
-"""Carregamento e validação dos arquivos mínimos do dashboard (sem Streamlit).
+"""Carregamento e validação dos arquivos mínimos do dashboard — fonte única: Sinesp/MJSP (sem Streamlit).
 
-Os arquivos ficam em ``dashboard/data_publica/`` e são contagens municipais
-agregadas já auditadas no roteiro acadêmico. Nenhuma função aqui lê ``dados/``
-(acervo bruto local): o dashboard deve funcionar em um clone limpo.
+Os arquivos ficam em ``dashboard/data_publica/`` e são contagens municipais agregadas de Joinville/SC, já
+auditadas no roteiro acadêmico e no fluxo de atualização controlada. Nenhuma função aqui lê ``dados/`` (acervo
+bruto local): o dashboard deve funcionar em um clone limpo.
 
-Qualquer arquivo ausente, esquema divergente ou valor inválido gera
-``ErroDados`` com mensagem explícita; nada é preenchido ou corrigido.
+Qualquer arquivo ausente, esquema divergente ou valor inválido gera ``ErroDados`` com mensagem explícita;
+nada é preenchido ou corrigido. Ausência de valor é preservada (``<NA>``) e nunca vira zero.
 """
 
 from __future__ import annotations
@@ -20,27 +20,17 @@ DIRETORIO_DADOS = Path(__file__).resolve().parent / "data_publica"
 
 ARQ_SINESP = "sinesp_joinville_mensal.csv"
 ARQ_SINESP_CATALOGO = "sinesp_catalogo_indicadores.csv"
-ARQ_VD = "ssp_violencia_domestica_joinville.csv"
-ARQ_VD_RASTREIO = "ssp_violencia_domestica_rastreabilidade.csv"
 ARQ_MANIFESTO = "manifesto_dados_publicos.json"
-ARQUIVOS_DE_DADOS = (ARQ_SINESP, ARQ_SINESP_CATALOGO, ARQ_VD, ARQ_VD_RASTREIO)
+ARQUIVOS_DE_DADOS = (ARQ_SINESP, ARQ_SINESP_CATALOGO)
 
 COLUNAS_SINESP = ["ano", "mes", "evento", "abrangencia", "unidade", "valor"]
 COLUNAS_CATALOGO = [
     "evento", "abrangencia", "unidade", "natureza", "medida_origem", "inicio", "fim",
     "meses_observados", "meses_com_valor", "meses_valor_zero", "meses_sem_valor", "limitacoes",
 ]
-COLUNAS_VD = ["municipio", "ano", "mes", "categoria", "fatos_comunicados"]
-COLUNAS_VD_RASTREIO = [
-    "municipio", "ano", "mes", "categoria", "arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela",
-    "coluna_csv", "rotulo_original_categoria", "cabecalho_mes_original", "valor_textual_original",
-]
-CATEGORIAS_VD = (
-    "Ameaça", "Calúnia", "Difamação", "Estupro", "Injúria", "Injúria real",
-    "Lesão corporal grave ou gravíssima dolosa", "Lesão corporal leve dolosa", "Vias de fato",
-)
 ANOS_SINESP = tuple(range(2020, 2036))  # a cobertura real (última competência) vem dos dados e do manifesto
-UNIDADE_VD = "Fato Comunicado"
+UNIDADE_VITIMAS = "vítimas"
+UNIDADE_MANDADOS = "mandados cumpridos (contagem publicada)"
 
 
 class ErroDados(Exception):
@@ -59,8 +49,8 @@ def _ler_texto(nome: str, diretorio: Path) -> pd.DataFrame:
     caminho = Path(diretorio) / nome
     if not caminho.is_file():
         raise ErroDados(
-            f"Arquivo de dados não encontrado: {nome}. Gere os arquivos com "
-            "`python -m scripts.gerar_dados_dashboard` ou restaure dashboard/data_publica/."
+            f"Arquivo de dados não encontrado: {nome}. Restaure dashboard/data_publica/ ou gere os dados com "
+            "`python -m scripts.atualizacao_dados` (requer os XLSX oficiais do Sinesp)."
         )
     try:
         return pd.read_csv(caminho, dtype=str, keep_default_na=False, na_filter=False, encoding="utf-8")
@@ -119,39 +109,21 @@ def validar_catalogo(quadro: pd.DataFrame, nome: str = ARQ_SINESP_CATALOGO) -> p
     return quadro.reset_index(drop=True)
 
 
-def validar_violencia_domestica(quadro: pd.DataFrame, nome: str = ARQ_VD) -> pd.DataFrame:
-    """Valida as 216 observações: 24 competências × 9 categorias, inteiros não negativos, sem lacunas."""
-    _exigir_colunas(quadro, COLUNAS_VD, nome)
-    saida = quadro.copy()
-    saida["ano"] = _inteiro(saida["ano"], "ano", nome, permitir_vazio=False)
-    saida["mes"] = _inteiro(saida["mes"], "mes", nome, permitir_vazio=False)
-    saida["fatos_comunicados"] = _inteiro(saida["fatos_comunicados"], "fatos_comunicados", nome, permitir_vazio=False)
-    if not (saida["municipio"] == "JOINVILLE").all():
-        raise ErroDados(f"{nome}: município diferente de JOINVILLE.")
-    if not saida["ano"].isin([2023, 2024]).all():
-        raise ErroDados(f"{nome}: ano fora de 2023–2024.")
-    if not saida["mes"].between(1, 12).all():
-        raise ErroDados(f"{nome}: mês fora de 1–12.")
-    desconhecidas = sorted(set(saida["categoria"]) - set(CATEGORIAS_VD))
-    if desconhecidas:
-        raise ErroDados(f"{nome}: categoria desconhecida: {desconhecidas}.")
-    if saida.duplicated(["municipio", "ano", "mes", "categoria"]).any():
-        raise ErroDados(f"{nome}: chave (município, ano, mês, categoria) repetida.")
-    esperadas = {(a, m, c) for a in (2023, 2024) for m in range(1, 13) for c in CATEGORIAS_VD}
-    presentes = set(zip(saida["ano"], saida["mes"], saida["categoria"]))
-    if presentes != esperadas:
-        raise ErroDados(f"{nome}: grade incompleta (faltam {len(esperadas - presentes)}, sobram {len(presentes - esperadas)} competências/categorias).")
-    return saida.reset_index(drop=True)
-
-
-def validar_rastreio_vd(quadro: pd.DataFrame, nome: str = ARQ_VD_RASTREIO) -> pd.DataFrame:
-    _exigir_colunas(quadro, COLUNAS_VD_RASTREIO, nome)
-    saida = quadro.copy()
-    saida["ano"] = _inteiro(saida["ano"], "ano", nome, permitir_vazio=False)
-    saida["mes"] = _inteiro(saida["mes"], "mes", nome, permitir_vazio=False)
-    if saida.duplicated(["municipio", "ano", "mes", "categoria"]).any():
-        raise ErroDados(f"{nome}: chave repetida.")
-    return saida.reset_index(drop=True)
+def validar_consistencia(sinesp: pd.DataFrame, catalogo: pd.DataFrame) -> None:
+    """Catálogo e série mensal devem descrever exatamente as mesmas séries, unidades e contagens."""
+    series_dados = set(zip(sinesp["evento"], sinesp["abrangencia"]))
+    series_catalogo = set(zip(catalogo["evento"], catalogo["abrangencia"]))
+    if series_dados != series_catalogo:
+        raise ErroDados(f"Catálogo e série mensal descrevem séries diferentes: só nos dados {sorted(series_dados - series_catalogo)}; "
+                        f"só no catálogo {sorted(series_catalogo - series_dados)}.")
+    cat = catalogo.set_index(["evento", "abrangencia"])
+    for (evento, abrangencia), serie in sinesp.groupby(["evento", "abrangencia"]):
+        ficha = cat.loc[(evento, abrangencia)]
+        esperado = (str(len(serie)), str(int(serie["valor"].notna().sum())), str(int(serie["valor"].eq(0).sum())), str(int(serie["valor"].isna().sum())),
+                    serie["unidade"].iloc[0])
+        informado = (ficha["meses_observados"], ficha["meses_com_valor"], ficha["meses_valor_zero"], ficha["meses_sem_valor"], ficha["unidade"])
+        if esperado != informado:
+            raise ErroDados(f"Catálogo inconsistente com a série {evento}/{abrangencia}: esperado {esperado}, informado {informado}.")
 
 
 def carregar_sinesp(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
@@ -160,14 +132,6 @@ def carregar_sinesp(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
 
 def carregar_catalogo_sinesp(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
     return validar_catalogo(_ler_texto(ARQ_SINESP_CATALOGO, diretorio))
-
-
-def carregar_violencia_domestica(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
-    return validar_violencia_domestica(_ler_texto(ARQ_VD, diretorio))
-
-
-def carregar_rastreio_vd(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
-    return validar_rastreio_vd(_ler_texto(ARQ_VD_RASTREIO, diretorio))
 
 
 def carregar_manifesto(diretorio: Path = DIRETORIO_DADOS) -> dict:
@@ -181,7 +145,7 @@ def carregar_manifesto(diretorio: Path = DIRETORIO_DADOS) -> dict:
 
 
 def verificar_integridade(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
-    """Compara tamanho de linhas/colunas e SHA-256 dos arquivos com o manifesto."""
+    """Compara linhas/colunas e SHA-256 dos arquivos de dados com o manifesto."""
     manifesto = carregar_manifesto(diretorio)
     linhas = []
     for ficha in manifesto.get("arquivos", []):

@@ -1,15 +1,13 @@
-"""Figuras Matplotlib reutilizáveis do dashboard (sem Streamlit e sem ``pyplot``).
+"""Figuras Matplotlib reutilizáveis do dashboard Sinesp/MJSP (sem Streamlit e sem ``pyplot``).
 
-Recriam, a partir dos dados curados, as quatro figuras da Etapa 10 (Sinesp) e as seis da
-Etapa 14.2 (violência doméstica SSP/SC). Todas começam o eixo vertical em zero, usam valores
-inteiros, identificam fonte, município, período e unidade, e nunca somam categorias ou
-indicadores diferentes. As figuras são objetos ``matplotlib.figure.Figure`` (use
-``st.pyplot(figura)``) e não gravam arquivos.
+Recriam, a partir dos dados curados, as quatro figuras da Etapa 10 (Sinesp) e oferecem gráficos filtráveis por indicador,
+abrangência e período. Todas começam o eixo vertical em zero, usam valores inteiros, identificam fonte, município, período e
+unidade, e nunca somam indicadores, abrangências ou unidades diferentes. As figuras são objetos ``matplotlib.figure.Figure``
+(use ``st.pyplot(figura)``) e não gravam arquivos.
 """
 
 from __future__ import annotations
 
-import math
 import textwrap
 
 import pandas as pd
@@ -19,7 +17,7 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 from dashboard import calculos
 from dashboard.formatacao import ABREV_MESES, fmt_int
 
-# Cores consistentes: 2023 (azul) e 2024 (laranja) são as mesmas nas figuras SSP/SC e Sinesp.
+# Cores consistentes: cada ano tem sempre a mesma cor em todas as figuras do painel.
 COR_ANO = {
     2020: "#7A5195", 2021: "#188977", 2022: "#8C8C8C", 2023: "#2563A6", 2024: "#D97706", 2025: "#C0392B", 2026: "#1B1B1B",
 }
@@ -28,24 +26,14 @@ COR_EVENTO = {
     "Feminicídio": "#7A5195", "Tentativa de feminicídio": "#D97706",
 }
 COR_CINZA_TEXTO = "#333333"
+_PALETA_RESERVA = ("#0B7285", "#9C36B5", "#E67700", "#5F3DC4", "#2B8A3E")
+
+
+def cor_ano(ano: int) -> str:
+    """Cor fixa de cada ano; anos futuros (sem cor definida) recebem uma cor da paleta de reserva, sempre a mesma."""
+    return COR_ANO.get(int(ano)) or _PALETA_RESERVA[int(ano) % len(_PALETA_RESERVA)]
 
 FONTE_SINESP = "Fonte: MJSP / Sinesp VDE"
-FONTE_VD = ("Fonte: SSP/SC — relatórios de violência doméstica. Joinville/SC, janeiro/2023 a dezembro/2024. "
-            "Unidade: fatos comunicados (contagem publicada).")
-NOTA_VD = ("Nota: contagens publicadas, não necessariamente incidência real; sem total entre categorias. "
-           "Grafias de lesão corporal unificadas por decisão metodológica do projeto.")
-
-GRUPOS_VD = {
-    "fig_anual_maiores_ssp142": (("Ameaça", "Lesão corporal leve dolosa", "Injúria"),
-                                 "Violência doméstica em Joinville/SC — categorias de maiores contagens publicadas: 2023 × 2024"),
-    "fig_anual_intermediarias_ssp142": (("Vias de fato", "Difamação", "Calúnia"),
-                                        "Violência doméstica em Joinville/SC — categorias de contagens intermediárias: 2023 × 2024"),
-    "fig_anual_menores_ssp142": (("Estupro", "Lesão corporal grave ou gravíssima dolosa", "Injúria real"),
-                                 "Violência doméstica em Joinville/SC — categorias de menores contagens publicadas: 2023 × 2024"),
-}
-CATEGORIAS_MENSAIS_VD = {
-    "fig_mensal_ameaca_ssp142": "Ameaça", "fig_mensal_lesao_leve_ssp142": "Lesão corporal leve dolosa", "fig_mensal_injuria_ssp142": "Injúria",
-}
 
 
 def _milhar(valor, _posicao=None) -> str:
@@ -60,70 +48,6 @@ def _estilo_eixo(eixo, *, grade_y=True):
     eixo.yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
     eixo.yaxis.set_major_formatter(FuncFormatter(_milhar))
 
-
-def _rodape(figura, fonte: str, nota: str | None, *, largura: int = 125):
-    figura.text(0.01, 0.125, "\n".join(textwrap.wrap(fonte, largura)), fontsize=8.5, color=COR_CINZA_TEXTO, ha="left", va="top")
-    if nota:
-        figura.text(0.01, 0.012, "\n".join(textwrap.wrap(nota, largura)), fontsize=8.5, color=COR_CINZA_TEXTO, ha="left", va="bottom")
-
-
-# ------------------------------------------------------------------ Violência doméstica (14.2)
-def figura_anual_vd(comparacao: pd.DataFrame, categorias, titulo: str, *, mes_inicial: int = 1, mes_final: int = 12) -> Figure:
-    """Barras agrupadas 2023 × 2024 (soma dos meses selecionados), eixo único iniciado em zero."""
-    dados = comparacao.set_index("categoria").loc[list(categorias), ["acumulado_2023", "acumulado_2024"]].astype(int)
-    figura = Figure(figsize=(10, 6.6), dpi=120)
-    eixo = figura.add_axes([0.10, 0.27, 0.87, 0.53])
-    posicoes = list(range(len(categorias)))
-    largura = 0.38
-    for deslocamento, ano in ((-largura / 2, 2023), (largura / 2, 2024)):
-        barras = eixo.bar([p + deslocamento for p in posicoes], dados[f"acumulado_{ano}"].tolist(), width=largura,
-                          color=COR_ANO[ano], label=str(ano), edgecolor="white")
-        eixo.bar_label(barras, labels=[fmt_int(v) for v in dados[f"acumulado_{ano}"]], padding=3, fontsize=11)
-    eixo.set_ylim(0, math.ceil(dados.to_numpy().max() * 1.15) or 1)
-    _estilo_eixo(eixo)
-    eixo.set_xticks(posicoes)
-    eixo.set_xticklabels(["\n".join(textwrap.wrap(c, 20)) for c in categorias], fontsize=11)
-    eixo.set_ylabel("Fatos comunicados (soma dos 12 meses do ano)" if (mes_inicial, mes_final) == (1, 12)
-                    else f"Fatos comunicados (soma dos meses {mes_inicial} a {mes_final})", fontsize=11)
-    eixo.set_xlabel("Categoria", fontsize=11, labelpad=6)
-    subtitulo = ("Soma dos 12 meses de cada ano, por categoria (mesmo eixo vertical, iniciado em zero)" if (mes_inicial, mes_final) == (1, 12)
-                 else f"Soma dos meses {ABREV_MESES[mes_inicial - 1]} a {ABREV_MESES[mes_final - 1]} de cada ano, por categoria (mesmo eixo vertical, iniciado em zero)")
-    eixo.set_title(subtitulo, fontsize=10.5, color=COR_CINZA_TEXTO)
-    eixo.legend(title="Ano", fontsize=11, title_fontsize=11, loc="upper right", frameon=False)
-    figura.suptitle("\n".join(textwrap.wrap(titulo, 75)), fontsize=13, fontweight="bold", x=0.01, ha="left", y=0.985)
-    _rodape(figura, FONTE_VD, NOTA_VD)
-    return figura
-
-
-def figura_mensal_vd(comparativo: pd.DataFrame, categoria: str) -> Figure:
-    """Linhas de 2023 e 2024, janeiro a dezembro, para uma única categoria."""
-    dados = comparativo.sort_values("mes")
-    figura = Figure(figsize=(10, 6.6), dpi=120)
-    eixo = figura.add_axes([0.10, 0.27, 0.87, 0.53])
-    for ano in (2023, 2024):
-        eixo.plot(dados["mes"].astype(int).tolist(), dados[f"fatos_{ano}"].astype(int).tolist(), marker="o", linewidth=2.2, markersize=6,
-                  color=COR_ANO[ano], label=str(ano))
-    eixo.set_xticks(range(1, 13))
-    eixo.set_xticklabels(ABREV_MESES, fontsize=11)
-    eixo.set_ylim(0, math.ceil(max(dados["fatos_2023"].max(), dados["fatos_2024"].max()) * 1.12) or 1)
-    _estilo_eixo(eixo)
-    eixo.set_ylabel("Fatos comunicados por mês", fontsize=11)
-    eixo.set_xlabel("Mês", fontsize=11)
-    eixo.set_title(f"Categoria: {categoria} — 2023 × 2024, janeiro a dezembro (eixo vertical iniciado em zero)", fontsize=10.5, color=COR_CINZA_TEXTO)
-    eixo.legend(title="Ano", fontsize=11, title_fontsize=11, loc="lower right", frameon=False)
-    figura.suptitle("\n".join(textwrap.wrap(f"Violência doméstica em Joinville/SC — {categoria}: fatos comunicados por mês", 75)),
-                    fontsize=13, fontweight="bold", x=0.01, ha="left", y=0.985)
-    _rodape(figura, FONTE_VD, NOTA_VD)
-    return figura
-
-
-def figuras_vd_aprovadas(vd: pd.DataFrame) -> dict[str, Figure]:
-    """As seis figuras da Etapa 14.2, com os mesmos grupos, ordem e valores aprovados."""
-    comparacao = calculos.comparacao_anual_vd(vd)
-    figuras = {nome: figura_anual_vd(comparacao, categorias, titulo) for nome, (categorias, titulo) in GRUPOS_VD.items()}
-    for nome, categoria in CATEGORIAS_MENSAIS_VD.items():
-        figuras[nome] = figura_mensal_vd(calculos.comparativo_mensal_vd(vd, categoria), categoria)
-    return figuras
 
 
 # --------------------------------------------------------------------------- Sinesp (Etapa 10)
@@ -246,7 +170,7 @@ def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, a
                                     f"Todos os anos têm os mesmos meses ({rotulo}); a comparação é entre períodos de igual duração.", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
     anos_plot = tabela["ano"].astype(int).tolist()
-    barras = eixo.bar(range(len(anos_plot)), [int(v) for v in tabela["soma"]], color=[COR_ANO[a] for a in anos_plot], width=0.55)
+    barras = eixo.bar(range(len(anos_plot)), [int(v) for v in tabela["soma"]], color=[cor_ano(a) for a in anos_plot], width=0.55)
     eixo.bar_label(barras, labels=[fmt_int(v) for v in tabela["soma"]], padding=4, fontsize=10)
     eixo.set_xticks(range(len(anos_plot)), [str(a) for a in anos_plot])
     eixo.set_xlim(-0.7, len(anos_plot) - 0.3)
@@ -267,7 +191,34 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
     for ano in sorted(set(serie["ano"].astype(int))):
         parte = serie.loc[serie["ano"].eq(ano)].sort_values("mes")
         eixo.plot(parte["mes"].astype(int).tolist(), [None if pd.isna(v) else int(v) for v in parte["valor"]], marker="o", markersize=4,
-                  linewidth=1.8, color=COR_ANO[ano], label=str(ano))
+                  linewidth=1.8, color=cor_ano(ano), label=str(ano))
     eixo.set_xticks(range(1, 13), ABREV_MESES)
     eixo.legend(loc="lower left", bbox_to_anchor=(0, 1.01), ncol=7, frameon=False, fontsize=10)
+    return figura
+
+
+def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int) -> Figure | None:
+    """Barras horizontais das séries ordenadas pela soma do ano completo ``ano`` (uma única unidade; sem total entre séries)."""
+    if ranking.empty:
+        return None
+    unidade = ranking["unidade"].iloc[0]
+    if ranking["unidade"].nunique() != 1:
+        raise ValueError("Ranking com unidades diferentes: vítimas e mandados não podem ser comparados.")
+    rotulos = ["\n".join(textwrap.wrap(f"{r.evento} ({r.abrangencia})", 52)) for r in ranking.itertuples()]
+    valores = [int(v) for v in ranking["soma"]]
+    figura = Figure(figsize=(10, 0.55 * len(valores) + 3.2), dpi=120)
+    eixo = figura.add_axes([0.42, 0.18, 0.54, 0.62])
+    posicoes = list(range(len(valores)))[::-1]
+    barras = eixo.barh(posicoes, valores, color="#2563A6", height=0.62)
+    eixo.bar_label(barras, labels=[fmt_int(v) for v in valores], padding=4, fontsize=10)
+    eixo.set_yticks(posicoes, rotulos, fontsize=9)
+    eixo.set_xlim(0, max(valores) * 1.18 if max(valores) else 1)
+    eixo.xaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
+    eixo.xaxis.set_major_formatter(FuncFormatter(_milhar))
+    eixo.grid(axis="x", color="#DDDDDD", linewidth=0.8)
+    eixo.set_axisbelow(True)
+    eixo.spines[["top", "right"]].set_visible(False)
+    eixo.set_xlabel(unidade.split(" (")[0].capitalize() + f" em {ano} (soma dos 12 meses)", fontsize=11)
+    figura.suptitle(f"Joinville/SC — séries ordenadas pelo total de {ano} (ano completo)", x=0.01, y=0.97, ha="left", fontsize=13, fontweight="bold")
+    figura.text(0.01, 0.045, f"{FONTE_SINESP} | Unidade: {unidade} | Ordenação dentro de uma única unidade; nenhum total entre indicadores.", fontsize=8.5, color=COR_CINZA_TEXTO)
     return figura

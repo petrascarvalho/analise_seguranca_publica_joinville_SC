@@ -1,4 +1,4 @@
-"""Manifesto versionado dos dados mínimos do dashboard (compartilhado pelo gerador e pela atualização).
+"""Manifesto versionado dos dados mínimos do dashboard — fonte única: Sinesp/MJSP (gerador e atualização).
 
 O manifesto distingue, de forma verificável, quatro datas que NÃO devem ser confundidas:
 
@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-SCHEMA_MANIFESTO = 2
+SCHEMA_MANIFESTO = 3  # 3: fonte única Sinesp/MJSP
 EVENTO_MANDADO = "Mandado de prisão cumprido"
 UNIDADE_VITIMAS = "vítimas"
 UNIDADE_MANDADOS = "mandados cumpridos (contagem publicada)"
@@ -91,45 +91,37 @@ FONTES_BASE = [
             "condicoes_especificas_do_recurso": "Nenhuma proibição, restrição de uso ou exigência de citação específica foi encontrada na página da base VDE nem no Termo de Uso do portal; a página traz notas metodológicas (p.ex. linhas múltiplas em 'Tentativa de Homicídio' e 'Estupro').",
         },
     },
-    {
-        "id": "ssp_sc_violencia_domestica",
-        "nome": "SSP/SC — Segurança em Números (relatórios de violência doméstica 2023–2024)",
-        "descricao": "Contagens mensais de 'Fato Comunicado' de Joinville/SC por categoria, extraídas de três relatórios PDF (216 observações).",
-        "url": "https://ssp.sc.gov.br/segurancaemnumeros/",
-        "recursos": [
-            {"identificador": "VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf", "url": "https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf", "tipo": "pdf"},
-            {"identificador": "VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf", "url": "https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf", "tipo": "pdf"},
-            {"identificador": "VIOLENCIA-DOMESTICA-2024-SC.pdf", "url": "https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2024-SC.pdf", "tipo": "pdf"},
-        ],
-        "licenca": {
-            "data_consulta": "2026-10-27",
-            "catalogo": {
-                "nome": "Segurança em Números (catálogo dados.sc.gov.br)",
-                "url": "https://www.dados.sc.gov.br/dataset/https-ssp-sc-gov-br-segurancaemnumeros",
-                "licenca": "Outra (Aberta) — license_id 'other-open'; a página indica que satisfaz a Definição de Aberto (Open Definition)",
-                "confirmada_na_consulta": True,
-                "observacao": "Confirmada pela API CKAN e pela página. O único recurso do conjunto é um link HTML para ssp.sc.gov.br/segurancaemnumeros; não há texto integral de licença nem licença específica por documento.",
-            },
-            "site": {
-                "licenca": "Copyright © 2023 Todos os Direitos Reservados SC - Governo de Santa Catarina",
-                "url": "https://ssp.sc.gov.br/segurancaemnumeros/",
-                "escopo": "Rodapé do site da SSP/SC; não declara licença de reutilização nem exigência de citação.",
-                "confirmada_na_consulta": True,
-            },
-            "condicoes_especificas_do_recurso": "Nenhuma condição específica foi encontrada nos relatórios consultados além do que a página informa. O aviso de direitos reservados do site e a classificação aberta do catálogo coexistem; a divergência não foi esclarecida com a SSP/SC.",
-        },
-    },
 ]
 
 AVALIACAO_DE_REUTILIZACAO = (
-    "Os arquivos derivados contêm apenas contagens estatísticas municipais agregadas e metadados de rastreabilidade (nomes de arquivos, "
-    "páginas, linhas e colunas). Os documentos oficiais integrais (XLSX e PDF), dados pessoais e informações protegidas NÃO são redistribuídos. "
-    "Nenhuma proibição específica aplicável a esses arquivos derivados foi encontrada; também NÃO há autorização específica explícita: a "
-    "licença do catálogo do MJSP não foi confirmada nesta consulta e o rodapé do portal gov.br declara CC BY-ND 3.0, e o site da SSP/SC "
-    "declara direitos reservados enquanto o catálogo catarinense a classifica como aberta. A atribuição das fontes é obrigatória nas páginas do painel."
+    "Os arquivos derivados contêm apenas contagens estatísticas municipais agregadas de Joinville/SC e metadados de cobertura. Os XLSX oficiais "
+    "integrais, dados pessoais e informações protegidas NÃO são redistribuídos. Nenhuma proibição específica aplicável a esses arquivos derivados foi "
+    "encontrada; também NÃO há autorização específica explícita: a licença do catálogo do MJSP não foi confirmada na consulta (domínio sem resolução) e o "
+    "rodapé do portal gov.br declara CC BY-ND 3.0 (licença geral do site, de aplicação a bases de dados não esclarecida). A atribuição da fonte é "
+    "obrigatória nas páginas do painel. Avaliação técnica, não parecer jurídico."
 )
-ATRIBUICAO = ("Fontes: MJSP / Sinesp VDE (Ministério da Justiça e Segurança Pública) e SSP/SC — Segurança em Números (Secretaria de Estado da Segurança "
-              "Pública de Santa Catarina). Tabelas e gráficos são elaborações próprias do projeto a partir de valores estatísticos públicos.")
+ATRIBUICAO = ("Fonte: MJSP / Sinesp VDE (Ministério da Justiça e Segurança Pública). Tabelas e gráficos são elaborações próprias do projeto "
+              "a partir de valores estatísticos públicos.")
+CRITERIOS = [
+    "Fonte única: Sinesp/MJSP (base VDE); município de Joinville/SC; séries Estadual, Polícia Federal e PRF, quando presentes.",
+    "Observações mensais da base analítica validada; vítimas em total_vitima; mandados em total; ausência preservada como campo vazio, nunca como zero.",
+    "Não inclui outras fontes, XLSX nacionais, dados pessoais ou informações protegidas.",
+]
+METODO_DE_OBTENCAO = (
+    "Download manual (ou assistido por `python -m scripts.atualizacao_dados preparar --baixar-sinesp`) dos XLSX anuais `bancovde-ANO.xlsx` da página oficial da "
+    "base VDE do MJSP; filtro exato UF = SC e município = JOINVILLE; ETL em Python/Pandas com validações; os XLSX não são redistribuídos."
+)
+REGRAS_ETL = [
+    "Recorte exato: uf = 'SC' e municipio = 'JOINVILLE' (sem correspondência parcial); as 14 colunas originais são conferidas.",
+    "Competência: serial Excel (sistema 1900, origem 1899-12-30) convertido em ano/mês; deve ser dia 1 e do mesmo ano do arquivo; datas inválidas interrompem o ETL.",
+    "Medida: vítimas em `total_vitima`; mandados cumpridos em `total` — conceitos distintos, nunca somados.",
+    "Ausências são preservadas (campo vazio) e nunca convertidas em zero; zeros publicados são mantidos como zero.",
+    "Valores devem ser inteiros não negativos; indicador novo, abrangência ausente ou esquema alterado interrompem o ETL.",
+    "Sem deduplicação genérica: linhas repetidas na mesma competência só são somadas em 'Tentativa de homicídio' e 'Estupro', conforme nota metodológica oficial, com aviso.",
+    "Cobertura contígua por série; competência histórica removida, unidade alterada ou série nova bloqueiam a promoção; revisão de valor histórico exige aprovação específica.",
+    "Séries podem terminar em competências diferentes (p.ex. PRF); isso é informado, não corrigido nem preenchido.",
+    "SHA-256 (fins de linha normalizados para LF) de cada arquivo derivado e dos XLSX de origem registrados no manifesto.",
+]
 
 
 def montar_fontes(consulta: dict | None = None) -> list[dict]:
@@ -159,19 +151,22 @@ def montar_manifesto(*, versao: str, versao_anterior: str | None, gerado_em: dat
         "schema_manifesto": SCHEMA_MANIFESTO,
         "versao": versao,
         "versao_anterior": versao_anterior,
-        "descricao": "Arquivos mínimos do dashboard Segurança Pública de Joinville: contagens municipais agregadas, derivadas de bases analíticas validadas.",
+        "descricao": "Arquivos mínimos do dashboard Segurança Pública de Joinville: contagens municipais agregadas do Sinesp/MJSP, derivadas de bases analíticas validadas.",
         "datas": {
             "gerado_em_utc": gerado_em.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "ultima_consulta_as_fontes_utc": (consulta or {}).get("consultado_em_utc"),
-            "nota": "Data de consulta às fontes, data de publicação (informada pela fonte), competência estatística (período dos dados) e data de geração são informações distintas.",
+            "nota": "Data de consulta à fonte, data de publicação (informada pela fonte), competência estatística (período dos dados) e data de geração são informações distintas.",
         },
         "gerador": gerador,
         "roteiro_sha256": roteiro_sha256,
         "situacao_validacao": validacao,
         "aprovacao": aprovacao,
         "cobertura": cobertura,
+        "unidades": {UNIDADE_VITIMAS: "vítimas (total_vitima)", UNIDADE_MANDADOS: "mandados cumpridos (total) — Estadual e Polícia Federal"},
         "revisoes_historicas": revisoes_historicas,
         "criterios": criterios,
+        "metodo_de_obtencao": METODO_DE_OBTENCAO,
+        "regras_etl": REGRAS_ETL,
         "fontes": montar_fontes(consulta),
         "avaliacao_de_reutilizacao": AVALIACAO_DE_REUTILIZACAO,
         "atribuicao": ATRIBUICAO,
@@ -181,16 +176,20 @@ def montar_manifesto(*, versao: str, versao_anterior: str | None, gerado_em: dat
     }
 
 
-def cobertura_padrao(sinesp: pd.DataFrame, vd: pd.DataFrame) -> dict:
-    s_ini, s_fim = primeira_e_ultima_competencia(sinesp)
-    v_ini, v_fim = primeira_e_ultima_competencia(vd)
-    ano_fim = int(s_fim[:4])
+def cobertura_padrao(sinesp: pd.DataFrame) -> dict:
+    """Cobertura geral e INDIVIDUAL de cada série (início, fim, meses, zeros e ausências)."""
+    ini, fim = primeira_e_ultima_competencia(sinesp)
+    ano_fim = int(fim[:4])
     meses_ano_fim = sorted(int(m) for m in sinesp.loc[sinesp["ano"].astype(int).eq(ano_fim), "mes"].unique())
     parcial = ano_fim if meses_ano_fim != list(range(1, 13)) else None
+    series = []
+    for (evento, abrangencia), serie in sinesp.groupby(["evento", "abrangencia"], sort=True):
+        s_ini, s_fim = primeira_e_ultima_competencia(serie)
+        series.append({"evento": evento, "abrangencia": abrangencia, "unidade": serie["unidade"].iloc[0], "primeira_competencia": s_ini,
+                       "ultima_competencia": s_fim, "meses_observados": int(len(serie)), "meses_com_valor": int(serie["valor"].notna().sum()),
+                       "meses_valor_zero": int(serie["valor"].eq(0).sum()), "meses_sem_valor": int(serie["valor"].isna().sum())})
     return {
-        "sinesp": {"primeira_competencia": s_ini, "ultima_competencia": s_fim, "ano_parcial": parcial,
-                   "descricao": f"{s_ini} a {s_fim}; município de Joinville/SC; séries Estadual, PF e PRF"
-                                + (f"; {parcial} é parcial" if parcial else "")},
-        "ssp_violencia_domestica": {"primeira_competencia": v_ini, "ultima_competencia": v_fim,
-                                    "descricao": f"{v_ini} a {v_fim}; Joinville/SC; nove categorias; unidade 'Fato Comunicado'"},
+        "sinesp": {"primeira_competencia": ini, "ultima_competencia": fim, "ano_parcial": parcial,
+                   "descricao": f"{ini} a {fim}; município de Joinville/SC; séries Estadual, PF e PRF" + (f"; {parcial} é parcial" if parcial else "")},
+        "series": series,
     }
