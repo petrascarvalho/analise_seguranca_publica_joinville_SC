@@ -33,7 +33,7 @@ def link_pagina(arquivo: str, rotulo: str, icone: str) -> None:
     """Link para outra página do painel (caminho relativo ao arquivo de entrada, scripts/painel_streamlit.py). Fora da navegação principal (ex.: página aberta sozinha), mostra só o nome da página."""
     try:
         st.page_link(arquivo, label=rotulo, icon=icone)
-    except st.errors.StreamlitAPIException:
+    except (st.errors.StreamlitAPIException, KeyError):  # KeyError: Streamlit 1.54–1.55 falha assim fora da navegação
         st.markdown(f"**{icone} {rotulo}**")
 
 

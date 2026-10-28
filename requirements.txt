@@ -1,4 +1,6 @@
-streamlit>=1.40,<2.0
+# Streamlit 1.66.0: versão da suíte completa. O painel exige no mínimo a 1.55 (st.tabs com on_change="rerun"; na 1.54 a página
+# Indicadores falha). A 1.55.0 foi conferida só com a execução das três páginas.
+streamlit==1.66.0
 openpyxl>=3.1,<4.0
 pdfplumber>=0.11,<1.0
 pypdf>=5.0,<7.0
