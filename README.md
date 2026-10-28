@@ -308,9 +308,9 @@ O painel tem **três páginas** e usa somente `dashboard/data_publica/` (Sinesp)
 
 | Página | Conteúdo |
 |---|---|
-| **Projeto** | Pergunta, três indicadores de destaque, o gráfico do homicídio doloso por ano e os limites da leitura |
+| **Projeto** | Fonte e período, três cartões de destaque (indicador, abrangência, unidade, período e base de comparação), o gráfico do homicídio doloso por ano, os principais achados e atalhos para as análises |
 | **Indicadores Sinesp** | Filtros (Categoria → Indicador → Abrangência; Período → Meses), resumo em cartões e cinco abas: Evolução, Comparações, Padrões e tendência, Estatística e outliers, Indicadores e interpretação |
-| **Qualidade e metodologia** | Integridade dos arquivos (SHA-256), cobertura por série, métodos, limitações, atualização e licenças |
+| **Qualidade e metodologia** | Resumo no topo (arquivos íntegros, versão, última competência, ausentes) e abas com integridade, cobertura, métodos, limitações, atualização e licenças |
 
 O filtro de meses vale para o resumo e as análises mensais; totais anuais, média móvel, acumulado e perfil mensal usam sempre os 12 meses e mostram o aviso "Análise de ano completo". A seta dos cartões acompanha o sinal da diferença. Só a aba aberta é calculada (a página abre em cerca de 3 s em vez de 7 s). Cada gráfico tem a tabela com os valores usados. A chave **Visualização compacta (celular)** gera figuras estreitas com os mesmos números. Capturas: [Projeto](documentacao/painel/imagens/01_projeto_desktop.png), [Qualidade e metodologia](documentacao/painel/imagens/03_qualidade_desktop.png), [tela estreita](documentacao/painel/imagens/04_projeto_tela_estreita.png) e modo compacto ([série mensal](documentacao/painel/imagens/05_modo_compacto_prf_mensal.png), [mapa de calor](documentacao/painel/imagens/06_modo_compacto_mapa_calor.png)).
 
