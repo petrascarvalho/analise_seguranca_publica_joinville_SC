@@ -2,103 +2,170 @@
 
 **Curso:** SENAI/SC — LAB365 | Módulo 2 — Semana 13
 **Aluno:** Petras Ruben Carvalho
-**Projeto:** Análise dos indicadores oficiais do Sinesp/MJSP em Joinville/SC (janeiro/2020 a setembro/2026)
+**Projeto:** Indicadores oficiais de segurança pública de Joinville/SC — Sinesp/MJSP (janeiro/2020 a setembro/2026) e acervo SSP/SC
 
-Este repositório reúne o tratamento, a análise e a visualização dos indicadores de segurança pública que o **Ministério da Justiça e Segurança Pública (Sinesp/MJSP)** publica para **Joinville/SC**. O projeto usa uma fonte única, oficial e auditável, e é formado por três partes:
+Este repositório reúne a obtenção, o tratamento, a auditoria, a análise e a visualização de dados oficiais de segurança pública de **Joinville/SC**. Há duas fontes oficiais, com papéis diferentes:
+
+- **Sinesp/MJSP** — produto analítico **validado**: é a fonte única do painel Streamlit (911 observações mensais, 12 séries).
+- **SSP/SC** — **acervo oficial de Joinville preservado e em validação**: 45 boletins e relatórios em PDF, com a violência doméstica auditada mês a mês. Ainda **não** aparece no painel.
 
 | Parte | Onde está | O que faz |
 |---|---|---|
-| **ETL** (script principal) | [`scripts/etl_sinesp.py`](scripts/etl_sinesp.py) | Lê os XLSX oficiais, trata, valida, analisa e exporta os resultados em 18 etapas comentadas |
-| **Painel Streamlit** (script principal) | [`scripts/painel_streamlit.py`](scripts/painel_streamlit.py) | Dashboard de três páginas: Projeto, Indicadores Sinesp e Qualidade e metodologia |
-| **Notebook** | [`notebooks/analise_sinesp.ipynb`](notebooks/analise_sinesp.ipynb) | A mesma análise em formato de relatório, com tabelas e gráficos |
+| **ETL** (script principal 1) | [`scripts/etl_sinesp.py`](scripts/etl_sinesp.py) | Lê os XLSX oficiais do Sinesp, trata, valida, analisa e exporta, em 18 etapas comentadas |
+| **Painel** (script principal 2) | [`scripts/painel_streamlit.py`](scripts/painel_streamlit.py) | Dashboard de três páginas: Projeto, Indicadores Sinesp e Qualidade e metodologia |
+| **Notebook** | [`notebooks/analise_sinesp.ipynb`](notebooks/analise_sinesp.ipynb) | A análise do Sinesp em formato de relatório |
+| **Acervo SSP/SC** (módulo auxiliar) | [`src/pipeline/ssp_sc.py`](src/pipeline/ssp_sc.py) | Inventário dos PDFs, extração validada, auditoria da violência doméstica e das republicações |
+| **Consolidação** (módulo auxiliar) | [`src/pipeline/consolidacao.py`](src/pipeline/consolidacao.py) | Esquema comum, UNION auditável (`pd.concat`) e matriz de compatibilidade |
 
 **Aplicação publicada:** <https://seguranca-publica-joinville-sinesp.streamlit.app/>
+
+![Página Indicadores Sinesp](documentacao/painel/imagens/02_indicadores_desktop.png)
 
 ---
 
 ## 1. Título e resumo
 
-**Análise dos indicadores oficiais de segurança pública do Sinesp/MJSP em Joinville/SC, 2020–2026.**
+**Indicadores oficiais de segurança pública de Joinville/SC: análise do Sinesp/MJSP (2020–2026) e auditoria do acervo SSP/SC.**
 
-Python, Pandas e Matplotlib transformam os arquivos anuais do Sinesp em **911 observações** mensais de **12 séries** (indicador × abrangência), de janeiro/2020 a setembro/2026. Cada série mantém sua unidade (vítimas ou mandados cumpridos), sua abrangência (Estadual, Polícia Federal ou Polícia Rodoviária Federal) e sua cobertura. Não existe um "total geral de criminalidade": indicadores, unidades e abrangências diferentes nunca são somados.
+Com Python, Pandas e Matplotlib, os arquivos anuais do Sinesp viram **911 observações** mensais de **12 séries** (indicador × abrangência), de janeiro/2020 a setembro/2026, publicadas num painel Streamlit. Cada série mantém sua unidade (vítimas ou mandados cumpridos), sua abrangência (Estadual, Polícia Federal ou Polícia Rodoviária Federal) e sua cobertura. Em paralelo, os 45 documentos da SSP/SC foram inventariados e auditados: a violência doméstica de Joinville (216 observações, 2023–2024) está extraída e conferida, mas a unidade publicada, "Fato Comunicado", não tem definição oficial; os homicídios dos boletins mensais têm versões divergentes entre edições. Nenhum total geral de criminalidade é calculado: indicadores, unidades, abrangências e fontes diferentes nunca são somados.
 
 ## 2. Problema, objetivo e importância
 
-**Pergunta analítica:** como evoluíram, desde janeiro/2020, os indicadores oficiais do Sinesp/MJSP para Joinville/SC, e o que a comparação entre períodos equivalentes permite — e não permite — afirmar?
+**Pergunta analítica:** como evoluíram, desde janeiro/2020, os indicadores oficiais de segurança pública de Joinville/SC, e o que a comparação entre períodos equivalentes permite — e não permite — afirmar?
 
-**Objetivo:** produzir uma análise municipal reproduzível, com origem auditável, estatísticas adequadas a contagens mensais e comparações justas entre períodos de mesma duração.
+**Objetivo:** produzir uma análise municipal reproduzível, com origem auditável, estatísticas adequadas a contagens mensais, comparações justas entre períodos de mesma duração e um registro honesto do que ainda não pode ser publicado.
 
-**Importância:** estudantes, cidadãos, pesquisadores e gestores podem consultar a evolução dos indicadores com fonte, unidade e limites explícitos. Os dados são registros administrativos: não medem toda a criminalidade e não demonstram efeitos de políticas públicas.
+**Importância:** estudantes, cidadãos, pesquisadores e gestores podem consultar os números com fonte, unidade e limites explícitos. São registros administrativos: não medem toda a criminalidade e não demonstram efeitos de políticas públicas.
 
 ## 3. Escopo e resultados esperados
 
-**No escopo (fonte única Sinesp/MJSP, Joinville/SC):** homicídio doloso e tentativa, feminicídio e tentativa, lesão corporal seguida de morte, latrocínio, suicídio, mortes a esclarecer, mortes no trânsito (Estadual e PRF) e mandados de prisão cumpridos (Estadual e Polícia Federal).
+| Situação | Conteúdo |
+|---|---|
+| **No painel (validado)** | Sinesp/MJSP: homicídio doloso e tentativa, feminicídio e tentativa, lesão corporal seguida de morte, latrocínio, suicídio, mortes a esclarecer, mortes no trânsito (Estadual e PRF), mandados de prisão cumpridos (Estadual e Polícia Federal) |
+| **Preservado e em validação** | SSP/SC: violência doméstica mensal (9 categorias, 2023–2024) e vítimas de homicídio publicadas nos boletins mensais (2020–2026) |
+| **Histórico preservado** | Prefeitura/SEPROT (furtos e roubos 2023–2025, valores divergentes entre notícias) e o trabalho anterior da SSP/SC no painel (página removida; último commit com ela: `bad9723`), indexados em [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md) |
+| **Fora do escopo** | Furtos, roubos em geral, estupro e tráfico no Sinesp (não existem nos arquivos de Joinville), atendimentos da Guarda Municipal, taxas populacionais, dados por bairro ou horário, previsões e inferência causal |
 
-**Fora do escopo:** furtos, roubos em geral, estupro e tráfico (não existem nos arquivos do Sinesp para Joinville), atendimentos da Guarda Municipal, taxas populacionais, dados por bairro ou horário, previsões e inferência causal. O trabalho anterior com a **SSP/SC e Prefeitura/SEPROT** é histórico e está **fora do escopo**: não alimenta o painel e está indexado em [historico/ssp_sc/LEIAME.md](historico/ssp_sc/LEIAME.md) (último commit com a página da SSP/SC no painel: `bad9723`).
+Para o painel, o Sinesp/MJSP continua sendo a **fonte única**: a SSP/SC e Prefeitura/SEPROT ficam fora do escopo do painel até que a validação permita publicá-las.
 
-**Resultados esperados:** ETL reproduzível, análise exploratória e estatística descritiva, gráficos com fonte e unidade, painel interativo publicado, documentação e vídeo de até três minutos. Prazo informado: **30/10/2026, 22h (Brasília)**. O planejamento no Trello foi **dispensado por orientação do professor**.
+**Requisitos da atividade (enunciado):** repositório individual com histórico e README completo; ETL em Python reproduzível e documentado; EDA, estatísticas e visualizações fundamentadas; aplicação Streamlit publicada no Streamlit Community Cloud; fontes, licenças e proteção de dados; publicação no repositório da turma; vídeo de até três minutos; envio dos links no AVA até **30/10/2026, 22h (Brasília)**. O planejamento no Trello foi **dispensado por orientação do professor**.
 
-## 4. Fonte e autorização
+## 4. Fontes e autorização
+
+### 4.1 Sinesp/MJSP (validado)
 
 | Item | Descrição |
 |---|---|
-| Fonte | [Sinesp VDE / MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023) — base nacional dos gestores estaduais |
-| Arquivos | `bancovde-2020.xlsx` a `bancovde-2026.xlsx` (um por ano, 14 colunas, ~24 MB cada) |
+| Fonte | [Sinesp VDE / MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023) — base nacional enviada pelos gestores estaduais |
+| Arquivos | `bancovde-2020.xlsx` a `bancovde-2026.xlsx` (um por ano, 14 colunas, ~24 MB cada); download: `.../dnsp-base-de-dados/bancovde-ANO.xlsx/@@download/file` |
 | Recorte | `uf = SC` e `municipio = JOINVILLE` (filtro exato) |
 | Medidas | vítimas em `total_vitima`; mandados cumpridos em `total` |
-| Versão dos dados | `20261027T114400Z` (inclui setembro/2026; SHA-256 de cada arquivo no manifesto) |
+| Versão dos dados | `20261027T114400Z` (SHA-256 de cada XLSX e dos arquivos derivados no manifesto) |
 
-Os XLSX ficam em `dados/brutos/sinesp/`, fora do Git. O repositório publica apenas arquivos **mínimos, agregados e derivados** (`dashboard/data_publica/`). Detalhes de origem: [documentacao/analises/ORIGEM_E_COBERTURA.md](documentacao/analises/ORIGEM_E_COBERTURA.md).
+Duas edições oficiais estão guardadas em `dados/brutos/sinesp/`: `oficial_20261027/` (republicada em 27/10/2026, usada pela base aprovada) e a edição auditada em agosto/2026 (raiz da pasta e `pendente_validacao_origem/`). A procedência de 2020–2022 foi conferida contra os arquivos oficiais ([evidência](documentacao/auditoria/sinesp_origem_2020_2022.csv)): 2021 e 2022 têm hash igual; em 2020 o hash difere, mas todas as linhas e células são idênticas. O MJSP informa que o valor zero significa ausência de ocorrência.
 
-**Condições de reutilização (consulta de 27/10/2026):** o catálogo `dados.mj.gov.br` seria "Creative Commons Atribuição", segundo o responsável, mas esse registro **não pôde ser confirmado** (o domínio não resolveu); o rodapé do portal gov.br declara CC BY-ND 3.0 (licença geral do site). Nenhuma proibição específica foi encontrada, mas também não há autorização específica explícita. É uma avaliação técnica, não parecer jurídico; a atribuição da fonte aparece no painel.
+**Condições de reutilização (consulta de 27/10/2026):** o catálogo `dados.mj.gov.br` seria "Creative Commons Atribuição", segundo o responsável, mas esse registro **não pôde ser confirmado** (o domínio não resolveu); o rodapé do portal gov.br declara CC BY-ND 3.0, licença geral do site. Nenhuma proibição específica foi encontrada, mas também não há autorização específica explícita (avaliação técnica, não parecer jurídico). Por prudência, o repositório publica só arquivos **mínimos, agregados e derivados** (`dashboard/data_publica/`), sempre com atribuição; os XLSX ficam fora do Git.
 
-## 5. Pipeline e metodologia
+### 4.2 SSP/SC (preservado e em validação)
 
-Os dados passam por quatro camadas, cada uma em uma pasta:
+| Item | Descrição |
+|---|---|
+| Fonte | Secretaria de Estado da Segurança Pública de SC — [Segurança em Números](https://ssp.sc.gov.br/segurancaemnumeros/) |
+| Documentos | **45 PDFs oficiais**: 42 boletins mensais (2023–2026) e 3 relatórios de violência doméstica (1º e 2º semestres de 2023 e ano de 2024), com todos os municípios de SC |
+| Derivados | 45 CSVs extraídos dos PDFs (um por documento). O CSV não substitui o PDF: serve para localizar página, tabela e linha de cada valor |
+| Joinville | violência doméstica por "Município do Fato" e "Fato Comunicado"; vítimas de homicídio em totais anuais e acumulados do ano |
 
-| Camada | Pasta | No Git? |
+Os PDFs ficam em `dados/brutos/ssp_sc/` (fora do Git) e são guardados inteiros, inclusive com os demais municípios, para comprovar a extração. As condições de reutilização da SSP/SC não foram avaliadas formalmente; por isso nenhum dado dessa fonte é publicado no repositório.
+
+### 4.3 Inventário dos dados
+
+| Classe | Conjunto | Onde | Registros | Uso |
+|---|---|---|---|---|
+| **A. Ativa e validada** | Sinesp, base mensal publicada | `dashboard/data_publica/` (2 CSVs + manifesto) | 911 observações, 12 séries, 401 zeros, 0 ausentes | ETL, notebook e painel |
+| A | Sinesp, XLSX oficiais | `dados/brutos/sinesp/` (7 da edição atual + 7 da edição auditada) | ~24 MB por arquivo | ETL e atualização controlada |
+| A | Sinesp, saídas do ETL e esquema comum | `dados/processados/sinesp/` | 911 | auditoria e UNION |
+| **B. Preservada, em validação** | SSP/SC, PDFs oficiais e CSVs extraídos | `dados/brutos/ssp_sc/` | 45 + 45 arquivos (sem cópias duplicadas) | `src/pipeline/ssp_sc.py` |
+| B | SSP/SC, violência doméstica tratada | `dados/processados/ssp_sc/violencia_domestica_joinville_tratada.csv` | 216 (9 categorias × 24 meses) | auditoria e UNION candidata |
+| B | SSP/SC, homicídios dos boletins | `dados/processados/ssp_sc/homicidios_*.csv` | 294 valores publicados, 58 grupos | auditoria de republicações |
+| **C. Histórica de Joinville** | Extração anterior da SSP/SC (16/10/2026) | `dados/processados/ssp_sc/ssp_joinville_2023..2026.csv` | 510 | preservada; testes históricos |
+| C | Prefeitura/SEPROT e saídas do pipeline anterior | `dados/processados/prefeitura/`, `dados/processados/analises/`, `historico/saidas_antigas/` | 6 linhas (Prefeitura) | preservada; testes históricos |
+| **D. Sem relação com o escopo** | — | — | — | nada identificado no acervo de dados |
+
+Todos os dados ficam em `dados/` (fora do Git), com SHA-256 conferido antes e depois do processamento.
+
+## 5. ETL e metodologia
+
+Os dados passam por camadas, cada uma numa pasta:
+
+| Camada | Sinesp | SSP/SC |
 |---|---|---|
-| Bruto | `dados/brutos/sinesp/` — XLSX oficiais, sem alteração | Não |
-| Processado | `dados/processados/sinesp/` — recorte de Joinville e base analítica gerados pelo ETL | Não |
-| Aprovado para o painel | `dashboard/data_publica/` — 2 CSVs + manifesto com SHA-256 | Sim |
+| Bruto (sem alteração) | `dados/brutos/sinesp/` (XLSX) | `dados/brutos/ssp_sc/pdfs/` (PDF) |
+| Derivado da extração | — | `dados/brutos/ssp_sc/csv_extraidos/` |
+| Tratado | `dados/processados/sinesp/` | `dados/processados/ssp_sc/` |
+| Aprovado para o painel | `dashboard/data_publica/` | nenhum (em validação) |
 
-**ETL ([`scripts/etl_sinesp.py`](scripts/etl_sinesp.py)).** Células `# %%` para o VS Code. Cada etapa tem objetivo, explicação, resultado esperado e uma conferência:
+### 5.1 ETL do Sinesp — [`scripts/etl_sinesp.py`](scripts/etl_sinesp.py)
+
+Células `# %%` para o VS Code. Cada etapa tem objetivo, explicação, resultado esperado e uma conferência que interrompe o processo se algo não bater:
 
 | Etapas | O que fazem |
 |---|---|
 | 01–03 | Bibliotecas, pastas e localização dos sete XLSX, com conferência do SHA-256 |
-| 04–07 | Leitura (só SC/JOINVILLE, 911 linhas), inspeção, dicionário das colunas e duplicidades — nenhuma linha é apagada |
-| 08–12 | Datas do Excel, escolha da medida, ausências como `<NA>` (nunca zero), tipos e consolidação mensal |
-| 13 | Validação e comparação com a base publicada (mesmo SHA-256) |
+| 04–07 | Leitura só das linhas SC/JOINVILLE (911), inspeção, dicionário das 14 colunas e duplicidades — nenhuma linha é apagada |
+| 08–12 | Datas do Excel (serial a partir de 30/12/1899, dia 1 e ano do arquivo), escolha da medida (vítimas × mandados), ausências como `<NA>` (nunca zero), tipos `Int64` e consolidação mensal |
+| 13 | Validação e comparação com a base publicada (mesmo SHA-256 do manifesto) |
 | 14–16 | Estatísticas, análise exploratória e gráficos |
-| 17–18 | Exportação somente para `dados/processados/sinesp/` e conclusões |
+| 17–18 | Exportação **somente** para `dados/processados/sinesp/` e conclusões |
 
-Sem os XLSX, o ETL roda em **modo demonstração** (usa a base publicada e não exporta nada). A base do painel **nunca** é sobrescrita pelo ETL: ela só muda pelo fluxo controlado de atualização (seção 10).
+Sem os XLSX, o ETL roda em **modo demonstração** (usa a base publicada e não exporta nada). Regras: filtro exato; zeros publicados mantidos; nenhum valor ausente vira zero; vítimas e mandados nunca somados; só *Tentativa de homicídio* e *Estupro* podem ter parcelas somadas no mesmo mês, como manda a nota oficial; qualquer outra repetição interrompe o processo.
 
-**Regras principais:** filtro exato SC/JOINVILLE; nenhum valor ausente vira zero e zeros publicados são mantidos; vítimas e mandados nunca são somados; só *Tentativa de homicídio* e *Estupro* podem ter parcelas somadas no mesmo mês, como manda a nota oficial; o ano parcial (2026) só é comparado com o mesmo período dos anos anteriores. Detalhes: [documentacao/analises/METODOLOGIA.md](documentacao/analises/METODOLOGIA.md).
+**Estatísticas:** soma anual só com os 12 meses publicados; o ano parcial (2026) só é comparado com o mesmo período dos anos anteriores, série a série (a PRF termina em agosto); variação percentual só com base positiva, com a diferença absoluta sempre informada; desvio-padrão descritivo (`ddof=0`); quartis por interpolação linear e limites de Tukey (Q1 − 1,5·IQR; Q3 + 1,5·IQR), tratados como informativos apenas quando a série tem ao menos 12 meses, IQR > 0, menos de 50% de zeros e Q3 > 1; distribuição com o zero como faixa própria (regra de Sturges); perfil mensal pela mediana dos anos completos.
 
-**Notebook ([`notebooks/analise_sinesp.ipynb`](notebooks/analise_sinesp.ipynb)).** Mesma sequência em formato de relatório: fonte, leitura, tratamento, duplicidades, ausências e zeros, cobertura, estatísticas, gráficos, conclusões e limitações. Usa as mesmas funções do ETL e do painel, sem repetir cálculos.
+### 5.2 Acervo SSP/SC — [`src/pipeline/ssp_sc.py`](src/pipeline/ssp_sc.py)
 
-**Módulos auxiliares.** `src/pipeline/` (leitura dos XLSX, caminhos, verificação da fonte, manifesto e atualização controlada) e `dashboard/` (cálculos, gráficos e componentes do painel). O roteiro antigo, [historico/scripts/analise_seguranca_publica.py](historico/scripts/analise_seguranca_publica.py), é **histórico** (primeiras etapas Sinesp e trabalho da SSP/SC) e não faz parte da entrega.
+1. **Inventário:** SHA-256, tamanho e tipo de cada PDF, com o CSV correspondente.
+2. **Extração validada:** executa, a partir dos arquivos originais, as etapas 11 a 14.1 do roteiro histórico, onde a leitura dos PDFs foi construída e conferida (cabeçalhos de ano e mês, páginas pareadas, 68 verificações). Nada é redigitado.
+3. **Violência doméstica:** uma linha por categoria e mês (216), com página do PDF, rótulo original e SHA-256 do documento. As duas grafias das lesões corporais ("0 Dolosa" e "- Dolosa") são mapeadas para a mesma categoria por decisão documentada; nenhuma categoria é somada a outra.
+4. **Homicídios dos boletins:** cada valor publicado vira uma linha (294). Um JOIN muitos-para-um (cardinalidade conferida) anexa o grupo de republicação (58 grupos). Nenhuma versão é escolhida.
+5. **Exportação** para `dados/processados/ssp_sc/` com nomes novos, sem sobrescrever a extração anterior; os originais são conferidos por hash antes e depois.
+
+### 5.3 UNION e JOIN — [`src/pipeline/consolidacao.py`](src/pipeline/consolidacao.py)
+
+Cada fonte é tratada separadamente e convertida para um esquema comum: `fonte`, `municipio`, `uf`, `serie_id`, `indicador`, `indicador_original`, `abrangencia`, `ano`, `mes`, `periodicidade`, `periodo_inicio`, `periodo_fim`, `unidade`, `valor`, `arquivo_origem` e `situacao_validacao`. Só então as linhas podem ser empilhadas com `pd.concat` (UNION). A função recusa a união se mudar a quantidade de linhas, repetir uma observação ou deixar uma série com duas unidades. Não há `merge` por município, mês ou ano, porque isso multiplicaria linhas e misturaria conceitos.
+
+| Conjunto | Granularidade | Unidade | Situação | UNION com o Sinesp | JOIN |
+|---|---|---|---|---|---|
+| Sinesp, 12 séries | mensal | vítimas; mandados | validado | base de referência | com o catálogo (evento + abrangência, muitos-para-um) |
+| SSP/SC, violência doméstica | mensal | Fato Comunicado (sem definição) | em validação | tecnicamente compatível; **não aprovada** | não: sem chave equivalente no Sinesp |
+| SSP/SC, homicídios | ano completo e acumulado, várias edições | vítimas | 41 de 58 grupos divergentes | não: granularidade diferente | não: conceito diferente de "homicídio doloso" |
+| Prefeitura/SEPROT | anual | não informada | divergente | não | não |
+
+**Resultado:** a união candidata Sinesp + violência doméstica tem 1.127 linhas (911 + 216), sem multiplicação nem chave repetida, mas **não foi gravada** como consolidação: o arquivo `dados/processados/joinville_indicadores_consolidados.csv` não existe porque a SSP/SC continua em validação. Ficam gravados a Sinesp no esquema comum (`dados/processados/sinesp/sinesp_esquema_comum.csv`) e a matriz (`dados/processados/matriz_compatibilidade_union.csv`).
+
+### 5.4 Notebook — [`notebooks/analise_sinesp.ipynb`](notebooks/analise_sinesp.ipynb)
+
+Mesma sequência do ETL em formato de relatório: fonte, leitura, tratamento, duplicidades, ausências e zeros, cobertura, estatísticas, gráficos, conclusões e limitações. Usa as mesmas funções do ETL e do painel, sem repetir cálculos. O roteiro antigo, [historico/scripts/analise_seguranca_publica.py](historico/scripts/analise_seguranca_publica.py), é **histórico** (primeiras etapas do Sinesp e o trabalho da SSP/SC); dele só a extração da SSP/SC é reaproveitada pelo módulo `ssp_sc.py`.
 
 ## 6. Bibliotecas e tecnologias
 
 | Ferramenta | Uso |
 |---|---|
 | Python 3.12, VS Code | Desenvolvimento e execução |
-| Pandas 3.0 | Leitura, tratamento, validação e estatísticas |
-| Matplotlib 3.11 | Todos os gráficos |
-| Streamlit 1.66 | Painel interativo |
-| lxml, openpyxl | Leitura das planilhas oficiais; XLSX sintéticos nos testes |
+| Pandas | Leitura, tratamento, validação, UNION e estatísticas |
+| Matplotlib | Todos os gráficos |
+| Streamlit 1.66.0 (versão fixa) | Painel; o mínimo seria a 1.55 (abas com execução só da aba aberta) |
+| lxml, openpyxl | Planilhas do Sinesp; XLSX sintéticos nos testes |
+| pdfplumber, pypdf | Leitura dos PDFs da SSP/SC |
 | pytest | Testes automatizados |
 | ipykernel | Notebook e células `# %%` (instalar à parte) |
-| Git e GitHub | Versionamento e publicação |
 
-As faixas de versão estão em [requirements.txt](requirements.txt).
+As versões estão em [requirements.txt](requirements.txt); a instalação foi conferida num ambiente novo.
 
 ## 7. Resultados encontrados
 
-A versão auditada inicial tinha **900 registros Sinesp** (até agosto/2026). Em 27/10/2026 o Sinesp publicou setembro/2026 e a base passou a **911 observações**, com 12 séries, 0 valores ausentes e 401 zeros publicados — **11 observações novas e nenhum valor histórico alterado**.
+### 7.1 Sinesp/MJSP (validado)
+
+A versão auditada inicial tinha **900 registros Sinesp** (até agosto/2026). Em 27/10/2026 o Sinesp publicou setembro/2026 e a base passou a **911 observações**, com 12 séries, 0 valores ausentes e 401 zeros publicados — 11 observações novas e nenhum valor histórico alterado.
 
 | Indicador (Estadual, vítimas) | Anos completos | Mesmo período |
 |---|---|---|
@@ -107,42 +174,166 @@ A versão auditada inicial tinha **900 registros Sinesp** (até agosto/2026). Em
 | Feminicídio | 3 em 2020 → 2 em 2025 | 2 → 0 (jan–set) |
 | Tentativa de feminicídio | 10 em 2020 → 9 em 2025 | 5 → 12 (jan–set) |
 
-- Em homicídio doloso, janeiro/2020 (10) e janeiro/2023 (19) ficam acima do limite superior de Tukey (9,5). O método IQR só é informativo em 5 das 12 séries; nas demais, zeros e contagens baixas impedem a leitura.
-- Latrocínio e lesão corporal seguida de morte somam 4 e 8 vítimas em 81 meses.
+Em homicídio doloso, janeiro/2020 (10) e janeiro/2023 (19) ficam acima do limite superior de Tukey (9,5); o método IQR só é informativo em 5 das 12 séries. Latrocínio e lesão corporal seguida de morte somam 4 e 8 vítimas em 81 meses.
 
-Tabelas completas por ano, por período equivalente e estatísticas mensais: [documentacao/analises/RESULTADOS.md](documentacao/analises/RESULTADOS.md) (conferidas automaticamente com a base pelos testes).
+<details>
+<summary><b>Tabelas completas do Sinesp (por ano, períodos equivalentes e estatísticas mensais)</b></summary>
+
+#### Totais publicados por ano
+
+**2020–2025 são anos completos; a coluna 2026 contém apenas janeiro–setembro (PRF: janeiro–agosto) e não deve ser comparada diretamente com totais anuais.** Unidade: vítimas, exceto mandados (contagem publicada). PF = Polícia Federal; PRF = Polícia Rodoviária Federal. As linhas não se somam.
+
+| Indicador / abrangência | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 (parcial) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Feminicídio — Estadual | 3 | 6 | 2 | 2 | 3 | 2 | 0 |
+| Homicídio doloso — Estadual | 62 | 62 | 49 | 55 | 36 | 29 | 25 |
+| Lesão corporal seguida de morte — Estadual | 0 | 2 | 3 | 1 | 1 | 0 | 1 |
+| Mandados — Estadual | 612 | 790 | 884 | 980 | 1035 | 1248 | 936 |
+| Mortalidade no trânsito¹ — Estadual | 22 | 21 | 33 | 26 | 34 | 20 | 14 |
+| Mortes a esclarecer — Estadual | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Mortes no trânsito — PRF | 10 | 11 | 13 | 7 | 8 | 13 | 6 |
+| Latrocínio — Estadual | 0 | 1 | 3 | 0 | 0 | 0 | 0 |
+| Suicídio — Estadual | 43 | 52 | 67 | 44 | 48 | 39 | 31 |
+| Tentativa de feminicídio — Estadual | 10 | 4 | 7 | 7 | 10 | 9 | 12 |
+| Tentativa de homicídio — Estadual | 98 | 96 | 103 | 101 | 82 | 53 | 77 |
+| Mandados — PF | — | — | — | — | — | 8 | 8 |
+
+¹ Morte no trânsito ou em decorrência dele, exceto homicídio doloso. `—` representa falta de cobertura da série, não zero. O valor de 2026 de *Mortes no trânsito — PRF* cobre janeiro–agosto.
+
+#### Comparações equivalentes: janeiro–agosto
+
+Todos os valores têm oito meses e são comparáveis entre todas as séries, inclusive a PRF. Homicídio doloso soma 18 em janeiro–agosto de 2025 e 22 em janeiro–agosto de 2026; tentativa de homicídio soma 37 e 68.
+
+| Indicador / abrangência | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Feminicídio — Estadual | 2 | 3 | 1 | 1 | 3 | 0 | 0 |
+| Homicídio doloso — Estadual | 50 | 40 | 29 | 40 | 21 | 18 | 22 |
+| Lesão corporal seguida de morte — Estadual | 0 | 2 | 0 | 1 | 0 | 0 | 1 |
+| Mandados — Estadual | 396 | 517 | 605 | 567 | 729 | 836 | 821 |
+| Mortalidade no trânsito¹ — Estadual | 15 | 15 | 25 | 20 | 28 | 12 | 12 |
+| Mortes a esclarecer — Estadual | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Mortes no trânsito — PRF | 5 | 9 | 9 | 4 | 5 | 10 | 6 |
+| Latrocínio — Estadual | 0 | 1 | 1 | 0 | 0 | 0 | 0 |
+| Suicídio — Estadual | 21 | 30 | 41 | 33 | 36 | 22 | 27 |
+| Tentativa de feminicídio — Estadual | 8 | 2 | 3 | 7 | 4 | 4 | 10 |
+| Tentativa de homicídio — Estadual | 74 | 53 | 60 | 62 | 57 | 37 | 68 |
+| Mandados — PF | — | — | — | — | — | 6 | 6 |
+
+#### Comparações equivalentes: janeiro–setembro
+
+Todos os valores têm nove meses. A série *Mortes no trânsito — PRF* ainda não tem setembro/2026 (`—` em 2026); seus anos anteriores aparecem só como referência. Homicídio doloso soma 21 em janeiro–setembro de 2025 e **25 em 2026**; tentativa de homicídio soma 43 e 77; feminicídio, 2 e 0; tentativa de feminicídio, 5 e 12.
+
+| Indicador / abrangência | 2020 | 2021 | 2022 | 2023 | 2024 | 2025 | 2026 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Feminicídio — Estadual | 2 | 3 | 1 | 1 | 3 | 2 | 0 |
+| Homicídio doloso — Estadual | 53 | 46 | 34 | 47 | 25 | 21 | 25 |
+| Lesão corporal seguida de morte — Estadual | 0 | 2 | 1 | 1 | 0 | 0 | 1 |
+| Mandados — Estadual | 468 | 589 | 681 | 654 | 812 | 954 | 936 |
+| Mortalidade no trânsito¹ — Estadual | 18 | 17 | 28 | 22 | 30 | 14 | 14 |
+| Mortes a esclarecer — Estadual | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Mortes no trânsito — PRF | 5 | 10 | 10 | 5 | 7 | 11 | — |
+| Latrocínio — Estadual | 0 | 1 | 3 | 0 | 0 | 0 | 0 |
+| Suicídio — Estadual | 25 | 34 | 45 | 35 | 41 | 25 | 31 |
+| Tentativa de feminicídio — Estadual | 9 | 2 | 4 | 7 | 5 | 5 | 12 |
+| Tentativa de homicídio — Estadual | 77 | 60 | 69 | 73 | 65 | 43 | 77 |
+| Mandados — PF | — | — | — | — | — | 6 | 8 |
+
+#### Estatísticas mensais descritivas
+
+Período observado: janeiro/2020–setembro/2026, com 81 meses por série estável; a PRF tem 80 meses (até agosto/2026) e os mandados da PF, 21 meses desde janeiro/2025. A soma refere-se a todo o período observado; o desvio-padrão descreve os meses disponíveis (`ddof=0`), sem inferência.
+
+| Indicador / abrangência | Meses | Soma | Média mensal | Mediana | Mín. | Máx. | DP (ddof=0) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Feminicídio — Estadual | 81 | 18 | 0,22 | 0 | 0 | 3 | 0,54 |
+| Homicídio doloso — Estadual | 81 | 318 | 3,93 | 3 | 0 | 19 | 2,78 |
+| Lesão corporal seguida de morte — Estadual | 81 | 8 | 0,10 | 0 | 0 | 2 | 0,34 |
+| Mandados — Estadual | 81 | 6485 | 80,06 | 80 | 0 | 160 | 26,24 |
+| Mortalidade no trânsito¹ — Estadual | 81 | 170 | 2,10 | 2 | 0 | 7 | 1,45 |
+| Mortes a esclarecer — Estadual | 81 | 0 | 0,00 | 0 | 0 | 0 | 0,00 |
+| Mortes no trânsito — PRF | 80 | 68 | 0,85 | 1 | 0 | 3 | 0,85 |
+| Latrocínio — Estadual | 81 | 4 | 0,05 | 0 | 0 | 2 | 0,27 |
+| Suicídio — Estadual | 81 | 324 | 4,00 | 4 | 0 | 12 | 2,01 |
+| Tentativa de feminicídio — Estadual | 81 | 59 | 0,73 | 0 | 0 | 5 | 0,97 |
+| Tentativa de homicídio — Estadual | 81 | 610 | 7,53 | 8 | 0 | 16 | 3,00 |
+| Mandados — PF | 21 | 16 | 0,76 | 0 | 0 | 4 | 1,11 |
+
+</details>
+
+### 7.2 SSP/SC — violência doméstica (exploratório, em validação)
+
+Fatos comunicados por categoria em Joinville, segundo os relatórios da SSP/SC. São 216 células (9 categorias × 24 meses, janeiro/2023 a dezembro/2024), sem republicações (cada mês vem de um único relatório), 27 zeros publicados e nenhum valor ausente.
+
+| Categoria | 2023 | 2024 | Diferença | Média mensal (24 meses) |
+|---|---:|---:|---:|---:|
+| Ameaça | 1.957 | 2.085 | +128 | 168,4 |
+| Lesão corporal leve dolosa | 989 | 959 | −30 | 81,2 |
+| Injúria | 541 | 716 | +175 | 52,4 |
+| Vias de fato | 229 | 281 | +52 | 21,3 |
+| Difamação | 190 | 211 | +21 | 16,7 |
+| Calúnia | 109 | 119 | +10 | 9,5 |
+| Estupro | 22 | 30 | +8 | 2,2 |
+| Lesão corporal grave ou gravíssima dolosa | 19 | 10 | −9 | 1,2 |
+| Injúria real | 2 | 6 | +4 | 0,3 |
+
+**Leitura permitida:** comparação de cada categoria consigo mesma entre 2023 e 2024 na unidade publicada. **Não permitida:** somar categorias (um mesmo fato pode envolver mais de uma), tratar "Fato Comunicado" como vítima, pessoa ou ocorrência única, comparar com o Sinesp, ou apresentar os números como definitivos.
+
+### 7.3 SSP/SC — vítimas de homicídio nos boletins (republicações)
+
+Os 42 boletins mensais republicam os totais de anos anteriores e o acumulado do ano. Dos 58 grupos de valores republicados, 17 são iguais em todas as edições e **41 têm versões diferentes**, sem nota que explique a mudança:
+
+| Ano | Edições | Versões publicadas (SSP/SC) | Sinesp, homicídio doloso |
+|---|---:|---|---:|
+| 2020 | 11 | 65 ou 66 | 62 |
+| 2021 | 24 | 62 ou 68 | 62 |
+| 2022 | 35 | 49 ou 51 | 49 |
+| 2023 | 31 | 56 ou 58 | 55 |
+| 2024 | 18 | 36 ou 37 | 36 |
+| 2025 | 7 | 32 | 29 |
+
+Os conceitos não são iguais ("vítimas de homicídio" na SSP/SC; "homicídio doloso" no Sinesp): a comparação serve apenas para mostrar a diferença, nunca para somar ou escolher um valor.
 
 ## 8. Discussão e conclusão
 
-Homicídio doloso caiu de 62 vítimas em 2020 para 29 em 2025, com oscilações intermediárias (49 em 2022, 55 em 2023). Em 2026, o mesmo período mostra alta em relação a 2025 (de 21 para 25 em janeiro–setembro), e as tentativas de homicídio quase dobraram (43 para 77). Em contagens pequenas, a diferença absoluta informa mais que o percentual. Zero publicado não prova eliminação do fenômeno nem eficácia de política.
+No Sinesp, homicídio doloso caiu de 62 vítimas em 2020 para 29 em 2025, com oscilações (49 em 2022, 55 em 2023). Em 2026, o mesmo período mostra alta em relação a 2025 (21 para 25 em janeiro–setembro), e as tentativas de homicídio subiram de 43 para 77. Em contagens pequenas, a diferença absoluta informa mais que o percentual, e zero publicado não prova eliminação do fenômeno nem eficácia de política.
+
+Na SSP/SC, a violência doméstica mostra, em 2024, mais registros que em 2023 em sete das nove categorias, com a ameaça como categoria mais frequente; é uma descrição na unidade publicada, enquanto o significado de "Fato Comunicado" não for confirmado. Os homicídios dos boletins mostram que o mesmo número pode mudar entre edições: sem a versão definitiva informada pela SSP/SC, esses valores servem para auditoria, não para série histórica.
 
 ## 9. Aplicação profissional
 
-O painel mostra como publicar indicadores municipais com transparência: fonte, período e unidade explícitos, comparações justas e um fluxo de atualização que detecta revisões da fonte antes de aceitá-las. Para uso operacional faltariam dados territoriais, base demográfica para taxas e séries de outras instituições — por exemplo, não há série comparável de atendimentos da Guarda Municipal nesta base.
+O projeto mostra como publicar indicadores municipais com transparência: fonte, período e unidade explícitos, comparações entre períodos equivalentes, conferência de integridade por hash e um fluxo de atualização que detecta revisões da fonte antes de aceitá-las. A auditoria da SSP/SC mostra o outro lado do trabalho com dados públicos: documentar divergências e lacunas antes de qualquer gráfico. Para uso operacional faltariam dados territoriais, base demográfica para taxas e séries de outras instituições — por exemplo, não há série comparável de atendimentos da Guarda Municipal.
 
 ## 10. Aplicação Streamlit
 
-O painel tem **três páginas** e usa somente `dashboard/data_publica/` (não lê `dados/`, não executa o ETL e não acessa a rede):
+O painel tem **três páginas** e usa somente `dashboard/data_publica/` (Sinesp): não lê `dados/`, não executa o ETL e não acessa a rede.
 
 | Página | Conteúdo |
 |---|---|
-| **Projeto** | Pergunta, indicadores de destaque, gráfico principal e acesso às análises |
-| **Indicadores Sinesp** | Filtros (Categoria → Indicador → Abrangência; Período → Meses), resumo e cinco abas: Evolução, Comparações, Padrões e tendência, Estatística e outliers, Indicadores e interpretação |
-| **Qualidade e metodologia** | Integridade (SHA-256), cobertura, métodos, limitações, atualização e licenças |
+| **Projeto** | Pergunta, três indicadores de destaque, o gráfico do homicídio doloso por ano e os limites da leitura |
+| **Indicadores Sinesp** | Filtros (Categoria → Indicador → Abrangência; Período → Meses), resumo em cartões e cinco abas: Evolução, Comparações, Padrões e tendência, Estatística e outliers, Indicadores e interpretação |
+| **Qualidade e metodologia** | Integridade dos arquivos (SHA-256), cobertura por série, métodos, limitações, atualização e licenças |
 
-Cada gráfico tem a tabela com os valores usados. A chave **Visualização compacta (celular)** gera figuras estreitas com os mesmos números. Guia de uso: [documentacao/painel/USO_DO_PAINEL.md](documentacao/painel/USO_DO_PAINEL.md).
+O filtro de meses vale para o resumo e as análises mensais; totais anuais, média móvel, acumulado e perfil mensal usam sempre os 12 meses e mostram o aviso "Análise de ano completo". A seta dos cartões acompanha o sinal da diferença. Só a aba aberta é calculada (a página abre em cerca de 3 s em vez de 7 s). Cada gráfico tem a tabela com os valores usados. A chave **Visualização compacta (celular)** gera figuras estreitas com os mesmos números. Capturas: [Projeto](documentacao/painel/imagens/01_projeto_desktop.png), [Qualidade e metodologia](documentacao/painel/imagens/03_qualidade_desktop.png), [tela estreita](documentacao/painel/imagens/04_projeto_tela_estreita.png) e modo compacto ([série mensal](documentacao/painel/imagens/05_modo_compacto_prf_mensal.png), [mapa de calor](documentacao/painel/imagens/06_modo_compacto_mapa_calor.png)).
 
-**Publicação:** Aplicação Streamlit publicada: <https://seguranca-publica-joinville-sinesp.streamlit.app/>. **Deploy realizado** no Streamlit Community Cloud a partir da branch `main` ([documentacao/painel/DEPLOY_STREAMLIT.md](documentacao/painel/DEPLOY_STREAMLIT.md)); o aplicativo reflete o último commit enviado ao GitHub. A revisão visual em navegador e em dispositivos móveis reais ainda está pendente.
+**Publicação:** Aplicação Streamlit publicada: <https://seguranca-publica-joinville-sinesp.streamlit.app/>. **Deploy realizado** no Streamlit Community Cloud (repositório `petrascarvalho/analise_seguranca_publica_joinville_SC`, branch `main`, arquivo `scripts/painel_streamlit.py`, Python 3.12, sem segredos, tema em `.streamlit/config.toml`). O aplicativo reflete o último commit enviado ao GitHub. A navegação e os gráficos foram conferidos no Chrome local (desktop e 390 px emulados); a revisão visual no aplicativo publicado e em dispositivos móveis reais ainda está pendente.
 
-**Atualização dos dados:** manual e controlada — verificar → preparar → aprovar ([documentacao/analises/ATUALIZACAO_DE_DADOS.md](documentacao/analises/ATUALIZACAO_DE_DADOS.md)). **Não há atualização automática operacional.**
+**Atualização dos dados (Sinesp):** manual e controlada. **Não há atualização automática operacional**: nada roda em agendamento, e o painel nunca baixa dados.
 
 ```bat
 python -m src.pipeline.atualizacao_dados verificar
-python -m src.pipeline.atualizacao_dados preparar --entradas-sinesp <pasta com os XLSX>
+python -m src.pipeline.atualizacao_dados preparar --entradas-sinesp <pasta com os XLSX 2020 a 2026>
+python -m src.pipeline.atualizacao_dados comparar <id>
 python -m src.pipeline.atualizacao_dados aprovar <id> --confirmo <id>
+python -m src.pipeline.atualizacao_dados reverter <versao> --confirmo <versao>
 ```
 
-**Testes:** suíte ativa com **234 testes aprovados** (`.\.venv\Scripts\python.exe -m pytest tests -q`) — integridade, totais, filtros, setas do resumo, gráficos, modo compacto, estatísticas, atualização controlada, ETL e notebook. Suíte histórica com 12 testes (`.\.venv\Scripts\python.exe -m pytest tests_historicos -q`), que dependem do acervo local.
+- **Verificar** consulta só os metadados da fonte e classifica indícios (nova competência, possível revisão, mudança de formato, falha de consulta); não altera nada.
+- **Preparar** exige todos os XLSX, roda o ETL numa candidata isolada (`atualizacao/staging/`) e compara com a versão ativa. Bloqueiam: esquema alterado, indicador novo ou ausente, valor inválido, lacuna de competências, competência removida, unidade alterada. Exigem `--aceitar-revisoes`, só depois de analisar: valores históricos alterados pela fonte.
+- **Aprovar** só promove com a confirmação igual ao id, preserva a versão anterior em `atualizacao/versoes/` e reverte sozinho se a troca falhar.
+- Depois: `git add` explícito de `dashboard/data_publica/`, commit e push; o Cloud reconstrói o app.
+
+A última atualização (27/10/2026) trouxe setembro/2026: 11 competências novas, nenhuma revisão histórica, promovida sem `--aceitar-revisoes`. O gov.br não tem API pública e bloqueia `HEAD`; a verificação é indício, não prova.
+
+**Testes:** suíte ativa com **240 testes aprovados** (`.\.venv\Scripts\python.exe -m pytest tests -q`): integridade e manifesto, totais (inclusive as tabelas deste README), filtros, setas, gráficos, modo compacto, estatísticas, atualização controlada, ETL, notebook, acervo SSP/SC e UNION. Os testes que dependem dos arquivos brutos são pulados quando eles não existem. Suíte histórica com 12 testes (`.\.venv\Scripts\python.exe -m pytest tests_historicos -q`).
 
 ## 11. Como executar
 
@@ -154,63 +345,61 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip install ipykernel
 
-:: 2. ETL (lê dados/brutos/sinesp e grava só em dados/processados/sinesp)
+:: 2. ETL do Sinesp (lê dados/brutos/sinesp e grava só em dados/processados/sinesp)
 .\.venv\Scripts\python.exe -m scripts.etl_sinesp
 
-:: 3. Painel (abre em http://localhost:8501)
+:: 3. Acervo SSP/SC e matriz de compatibilidade (leem dados/brutos/ssp_sc; gravam em dados/processados)
+.\.venv\Scripts\python.exe -m src.pipeline.ssp_sc
+.\.venv\Scripts\python.exe -m src.pipeline.consolidacao
+
+:: 4. Painel (abre em http://localhost:8501)
 .\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py
 
-:: 4. Testes
+:: 5. Testes
 .\.venv\Scripts\python.exe -m pytest tests -q
 .\.venv\Scripts\python.exe -m pytest tests_historicos -q
 ```
 
 **Notebook:** abra `notebooks/analise_sinesp.ipynb` no VS Code, escolha o kernel da `.venv` e use *Run All*.
 
-**Arquivos fora do Git:** para refazer o ETL, baixe os sete `bancovde-ANO.xlsx` do [catálogo oficial](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados) e salve em `dados/brutos/sinesp/`. Sem eles, o ETL e o notebook rodam em modo demonstração, e o painel funciona normalmente.
+**Arquivos fora do Git:** baixe os sete `bancovde-ANO.xlsx` do [catálogo do MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados) para `dados/brutos/sinesp/` e os PDFs da SSP/SC da página [Segurança em Números](https://ssp.sc.gov.br/segurancaemnumeros/) para `dados/brutos/ssp_sc/pdfs/`. Sem eles, o ETL e o notebook rodam em modo demonstração e o painel funciona normalmente.
 
 ## 12. Estrutura de pastas
 
 ```text
 Seguranca Publica Joinville/
-├── README.md
+├── README.md                    documentação única do projeto
 ├── requirements.txt
 ├── scripts/
 │   ├── etl_sinesp.py            ← script principal 1: ETL e análise (18 etapas)
 │   └── painel_streamlit.py      ← script principal 2: entrada do painel
-├── notebooks/
-│   └── analise_sinesp.ipynb
-├── src/pipeline/                módulos auxiliares (leitura dos XLSX, atualização controlada, manifesto)
-├── dashboard/
-│   ├── pages/                   home.py, sinesp.py, quality.py
-│   ├── calculos.py, graficos.py, dados_publicos.py, formatacao.py, ui.py
-│   └── data_publica/            base aprovada: 2 CSVs + manifesto
-├── dados/                       (local, fora do Git)
-│   ├── brutos/sinesp/           XLSX oficiais
-│   └── processados/sinesp/      saídas do ETL
-├── documentacao/
-│   ├── analises/                METODOLOGIA, ORIGEM_E_COBERTURA, RESULTADOS, ATUALIZACAO_DE_DADOS
-│   ├── painel/                  USO_DO_PAINEL, DEPLOY_STREAMLIT e imagens/
-│   └── auditoria/               evidência de origem dos XLSX 2020–2022
-├── tests/                       suíte ativa
-├── tests_historicos/            suíte histórica
-├── ferramentas/                 gerador das imagens de revisão
-└── historico/                   material anterior, fora da entrega (ver historico/LEIAME.md)
+├── notebooks/analise_sinesp.ipynb
+├── src/pipeline/                módulos auxiliares
+│   ├── transform.py, utils.py           leitura dos XLSX e caminhos
+│   ├── atualizacao_dados.py, fontes_oficiais.py, versionamento_dados.py   atualização controlada
+│   ├── ssp_sc.py                        acervo e auditoria SSP/SC
+│   └── consolidacao.py                  esquema comum, UNION e matriz
+├── dashboard/                   páginas, cálculos, gráficos e data_publica/ (base aprovada)
+├── documentacao/                imagens do painel e evidência de origem do Sinesp
+├── dados/                       (local, fora do Git) brutos/ e processados/ de cada fonte
+├── tests/, tests_historicos/
+└── historico/                   roteiro antigo, trabalho anterior SSP/SC e Prefeitura (ver historico/LEIAME.md)
 ```
 
 ## 13. Limitações e melhorias futuras
 
 - 2026 é parcial (até setembro; PRF até agosto) e só é comparado com o mesmo período dos anos anteriores.
 - Registros administrativos agregados: não medem toda a criminalidade, não estimam subnotificação e não sustentam causalidade.
-- Sem taxas populacionais, dados por bairro ou horário, nem total entre indicadores.
-- A fonte pode revisar valores históricos; a atualização controlada detecta revisões e só as aceita com aprovação.
-- Melhorias possíveis: fixar versões das dependências, definir a licença do código e incluir taxas por habitante quando houver base demográfica compatível.
+- Sem taxas populacionais, dados por bairro ou horário, nem total entre indicadores ou fontes.
+- O Sinesp pode revisar valores históricos; a atualização controlada detecta e só aceita com aprovação.
+- SSP/SC: "Fato Comunicado" sem definição oficial; categorias listadas por município podem variar entre relatórios; violência doméstica só para 2023–2024; homicídios com 41 grupos de versões divergentes; condições de reutilização não avaliadas.
+- Próximos passos: confirmar com a SSP/SC a definição de "Fato Comunicado" e a versão definitiva dos homicídios; só então avaliar a publicação no painel. Também: confirmar o uso dos dados com o MJSP e definir a licença do código.
 
 ## 14. Créditos e referências
 
-- Ministério da Justiça e Segurança Pública — Sinesp VDE, base de dados dos gestores estaduais (seção 4).
-- Notas metodológicas do Sinesp VDE, disponíveis na página oficial da base.
-- Documentação técnica deste projeto em [documentacao/](documentacao/).
+- Ministério da Justiça e Segurança Pública — Sinesp VDE, base de dados e notas metodológicas dos gestores estaduais.
+- Secretaria de Estado da Segurança Pública de Santa Catarina — Segurança em Números (boletins mensais e relatórios de violência doméstica).
+- Prefeitura de Joinville / SEPROT — notícias com totais de furtos e roubos (acervo histórico).
 
 ## 15. Links de entrega
 
@@ -223,4 +412,4 @@ Seguranca Publica Joinville/
 
 ## 16. Conclusões sustentadas pelas análises
 
-O ETL reconstrói, a partir dos XLSX oficiais, exatamente a base publicada (911 observações, mesmo SHA-256 do manifesto), sem apagar linhas, sem converter ausências em zero e sem misturar unidades. A análise sustenta descrições dos valores publicados e comparações entre períodos equivalentes; não sustenta total geral de criminalidade, causalidade, subnotificação ou taxas populacionais.
+O ETL reconstrói, a partir dos XLSX oficiais, exatamente a base publicada do Sinesp (911 observações, mesmo SHA-256 do manifesto), sem apagar linhas, sem converter ausências em zero e sem misturar unidades. A extração da SSP/SC também é reproduzível a partir dos PDFs (216 células de violência doméstica, 68 verificações aprovadas) e mostra os limites dessa fonte: unidade não definida e versões divergentes de homicídio. A análise sustenta descrições dos valores publicados e comparações entre períodos equivalentes; não sustenta total geral de criminalidade, causalidade, subnotificação, taxas populacionais nem a soma de fontes diferentes.

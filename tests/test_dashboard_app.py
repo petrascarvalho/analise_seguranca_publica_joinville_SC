@@ -188,7 +188,7 @@ def test_qualidade_mostra_integridade_cobertura_fonte_e_limitacoes():
     assert len(cobertura) == 12 and cobertura["Última competência"].isin(["2026-09", "2026-08"]).all()
     assert cobertura.loc[cobertura["Última competência"].eq("2026-08"), "Abrangência"].tolist() == ["Polícia Rodoviária Federal"]
     assert "Regras do ETL" in [s.value for s in app.subheader] and "Procedimento de atualização dos dados" in [s.value for s in app.subheader]
-    assert "ATUALIZACAO_DE_DADOS.md" in corpo and "não** baixa dados" in corpo
+    assert "README.md" in corpo and "não** baixa dados" in corpo
     for ausente in ("SSP", "Fato Comunicado", "Prefeitura"):
         assert ausente not in corpo, ausente
     assert not app.error
@@ -288,7 +288,7 @@ def test_paginas_mostram_versao_fonte_ultima_competencia_e_como_se_atualiza():
     qualidade = _pagina("quality")
     texto = _texto(qualidade) + " ".join(e.label for e in qualidade.expander)
     assert manifesto["versao"] in texto and "Aprovação" in texto and "aprovada em" in texto
-    assert "verificar" in texto and "preparar" in texto and "aprovar" in texto and "ATUALIZACAO_DE_DADOS.md" in texto
+    assert "verificar" in texto and "preparar" in texto and "aprovar" in texto and "README.md" in texto
 
 
 def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(tmp_path):

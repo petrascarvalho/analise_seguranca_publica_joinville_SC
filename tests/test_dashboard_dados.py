@@ -11,7 +11,7 @@ from dashboard import calculos
 from dashboard import dados_publicos as dp
 from src.pipeline.utils import project_path
 
-README = project_path("documentacao", "analises", "RESULTADOS.md")  # tabelas completas de resultados (o README traz o resumo)
+README = project_path("README.md")  # tabelas completas de resultados (seção 7.1, bloco recolhível)
 
 # README: rótulo da linha -> (evento, abrangência) do arquivo curado.
 ROTULOS_README = {
@@ -175,7 +175,7 @@ def test_totais_anuais_e_janeiro_agosto_iguais_as_tabelas_do_readme(sinesp):
             else:
                 assert int(parte.loc[ano, "soma"]) == valor and parte.loc[ano, "cobertura"] == "ano completo", f"{rotulo} {ano}"
     linhas = README.read_text(encoding="utf-8").splitlines()
-    inicio = next(i for i, l in enumerate(linhas) if l.startswith("## Comparações equivalentes: janeiro–agosto"))
+    inicio = next(i for i, l in enumerate(linhas) if l.startswith("#### Comparações equivalentes: janeiro–agosto"))
     tabela = {}
     for linha in linhas[inicio:]:
         if linha.startswith("|") and not linha.startswith("|---") and "Indicador / abrangência" not in linha:
@@ -194,7 +194,7 @@ def test_totais_anuais_e_janeiro_agosto_iguais_as_tabelas_do_readme(sinesp):
             else:
                 assert int(parte.loc[ano]) == valor, f"{rotulo} jan–ago {ano}"
     # janeiro–setembro: a PRF ainda não tem setembro/2026 (a tabela traz '—' em 2026 e a série não entra nesse período)
-    setembro = _tabela_readme("## Comparações equivalentes: janeiro–setembro")
+    setembro = _tabela_readme("#### Comparações equivalentes: janeiro–setembro")
     assert len(setembro) == 12
     periodo9 = calculos.comparacao_periodo_sinesp(sinesp, 9)
     for rotulo, valores in setembro.items():
