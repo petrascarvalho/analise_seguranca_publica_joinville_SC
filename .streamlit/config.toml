@@ -1,22 +1,19 @@
-# Tema nativo do Streamlit 1.66; ui.py permite quebra de linha nos deltas das métricas.
-# Uma cor de destaque (o azul dos gráficos), fundo claro, bordas suaves e títulos menores para não quebrarem em várias linhas.
+# Tema nativo do Streamlit 1.66. As cores são uma PROPOSTA visual inspirada na bandeira de Joinville
+# (azul #074EA2 do arquivo SVG do projeto); não são códigos cromáticos oficiais do município.
+# O CSS dos cards e do cabeçalho fica em dashboard/ui.py (função aplicar_estilo).
 [theme]
 base = "light"
-primaryColor = "#104D9B"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#EAF3FC"
+primaryColor = "#074EA2"
+backgroundColor = "#EAF4FC"
+secondaryBackgroundColor = "#DCECF9"
 textColor = "#20354F"
-linkColor = "#104D9B"
-borderColor = "#C6D8ED"
-dataframeBorderColor = "#C6D8ED"
-dataframeHeaderBackgroundColor = "#EAF3FC"
+linkColor = "#074EA2"
+borderColor = "#BFD6EB"
+dataframeBorderColor = "#BFD6EB"
+dataframeHeaderBackgroundColor = "#DCECF9"
 font = "sans serif"
-headingFontSizes = ["2.1rem", "1.5rem", "1.3rem", "1.05rem", "0.95rem", "0.9rem"]
-headingFontWeights = [700, 650, 600, 600, 600, 600]
+headingFontSizes = ["1.7rem", "1.35rem", "1.15rem", "1.05rem", "0.95rem", "0.9rem"]
+headingFontWeights = [700, 700, 650, 600, 600, 600]
 metricValueFontSize = "2rem"
 baseRadius = "0.6rem"
-paddingTop = "3rem"
-showSidebarBorder = true
-
-[theme.sidebar]
-backgroundColor = "#EAF3FC"
+paddingTop = "2rem"

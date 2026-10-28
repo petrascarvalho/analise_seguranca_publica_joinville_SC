@@ -44,7 +44,7 @@ def test_readme_separa_o_sinesp_validado_do_acervo_ssp_em_validacao():
     readme = _ler("README.md")
     for esperado in (
         "fonte única", "Sinesp/MJSP", "Joinville/SC", "SSP/SC e Prefeitura/SEPROT", "fora do escopo", "bad9723",
-        "Indicadores Sinesp", "Qualidade e metodologia", "três páginas",
+        "Indicadores Sinesp", "Qualidade dos dados", "página única",
         # Etapa 24: SSP/SC preservada e em validação, fora do painel; nada apresentado como definitivo
         "em validação", "Fato Comunicado", "não tem definição oficial", "41 têm versões diferentes", "src/pipeline/ssp_sc.py",
         "src/pipeline/consolidacao.py", "pd.concat", "não foi gravada", "1.127 linhas",
@@ -61,13 +61,12 @@ def test_readme_separa_o_sinesp_validado_do_acervo_ssp_em_validacao():
         assert pendente in readme, pendente
 
 
-def test_navegacao_documentada_tem_tres_paginas_e_sem_pagina_ssp():
+def test_painel_e_uma_pagina_unica_com_quatro_secoes_e_a_ssp_sc_so_na_secao_propria():
     app = _ler("scripts", "painel_streamlit.py")
-    for page in ("home.py", "sinesp.py", "quality.py"):
-        assert f'_RAIZ / "dashboard" / "pages" / "{page}"' in app
-        assert project_path("dashboard", "pages", page).is_file()
-    assert app.count("st.Page(") == 3 and "st.navigation(" in app
-    assert not project_path("dashboard", "pages", "violencia_domestica.py").exists()
+    for page in ("home.py", "sinesp.py", "violencia_domestica.py", "quality.py"):
+        assert f'"{page}"' in app and project_path("dashboard", "pages", page).is_file()
+    assert "st.Page(" not in app and "st.navigation(" not in app  # sem navegação entre páginas
+    assert "DADOS DA SEGURANÇA PÚBLICA DE JOINVILLE/SC" in app
 
 
 def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_inventar_url():

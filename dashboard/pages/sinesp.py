@@ -1,15 +1,15 @@
-"""Página "Indicadores Sinesp": filtros, resumo, gráficos e tabelas da série escolhida.
+"""Seção "Indicadores Sinesp": filtros, cards, gráficos e tabelas da série escolhida.
 
-Comandos do Streamlit usados nesta página (o arquivo é executado de novo a cada interação):
-    • st.toggle — chave liga/desliga (modo compacto); o valor fica em st.session_state["modo_compacto"].
-    • st.selectbox — lista suspensa (categoria, indicador, abrangência); devolve a opção escolhida.
+Comandos do Streamlit usados nesta seção (o arquivo é executado de novo a cada interação):
+    • st.selectbox — lista suspensa (Indicador); devolve a opção escolhida.
     • st.select_slider — controle deslizante de intervalo (anos e meses); devolve (início, fim).
-    • st.metric — cartão com um número e a diferença em relação ao período anterior (delta).
+    • st.button / st.toggle — botão "Restaurar filtros" e chave liga/desliga do modo compacto (st.session_state["modo_compacto"]).
+    • ui.cartoes_html — linha de cards brancos de mesma altura (CSS Grid, definido em dashboard/ui.py).
     • st.tabs — abas; o conteúdo de cada uma fica dentro de "with abas[i]:".
-    • st.dataframe — tabela interativa; st.pyplot — mostra uma figura do Matplotlib; st.expander — seção recolhível.
-    • st.info, st.warning e st.caption — mensagens e notas metodológicas.
+    • st.dataframe — tabela interativa; st.pyplot — figura do Matplotlib; st.expander — seção recolhível.
 
-Os números vêm de dashboard/calculos.py e as figuras de dashboard/graficos.py; esta página só organiza a apresentação.
+Os números vêm de dashboard/calculos.py e as figuras de dashboard/graficos.py; esta seção só organiza a apresentação.
+A abrangência (Estadual, Polícia Federal, PRF) não é um filtro: ela faz parte do nome do indicador, como em "Homicídio doloso — Estadual".
 """
 
 import sys
@@ -25,51 +25,50 @@ import streamlit as st  # noqa: E402
 from dashboard import calculos, graficos, ui  # noqa: E402
 from dashboard.formatacao import ABREV_MESES, NOMES_MESES, fmt_dec, fmt_dif, fmt_int, fmt_pct  # noqa: E402
 
-ui.cabecalho("Indicadores Sinesp — Joinville/SC", "Explore uma série por vez. Filtros na barra lateral; resultados nas abas abaixo.")
 sinesp, catalogo = ui.carregar_dados_consistentes()
 _ini, _fim = sinesp.assign(c=sinesp["ano"] * 100 + sinesp["mes"])["c"].agg(["min", "max"])
-st.caption(f"Fonte: MJSP / Sinesp VDE. Município de Joinville/SC, {NOMES_MESES[int(_ini) % 100 - 1]}/{int(_ini) // 100} a {NOMES_MESES[int(_fim) % 100 - 1]}/{int(_fim) // 100}. "
-           "Contagens mensais publicadas (agregadas). Escolha a série nos filtros e navegue pelas abas.")
+ui.secao("Indicadores Sinesp — Joinville/SC", "indicadores",
+         f"Fonte: MJSP / Sinesp VDE, Joinville/SC, {NOMES_MESES[int(_ini) % 100 - 1]}/{int(_ini) // 100} a {NOMES_MESES[int(_fim) % 100 - 1]}/{int(_fim) // 100}. "
+         "Contagens mensais publicadas (agregadas). Escolha o indicador e navegue pelas abas.")
 
 # ------------------------------------------------------------------------------------------ filtros
-catalogo = catalogo.assign(categoria=catalogo["natureza"].str.split(":").str[0].str.strip())
-# Organização vertical inspirada no Projeto_ZP/app_v2.py. A atualização imediata
-# mantém Categoria → Indicador → Abrangência coerentes a cada interação.
-caixa_filtros = st.sidebar
-caixa_filtros.header("Filtros")
-caixa_filtros.caption("Os resultados são atualizados ao selecionar.")
-caixa_filtros.markdown("**Série**")
-f1 = f2 = f3 = caixa_filtros
-categorias = ["Todas"] + sorted(catalogo["categoria"].unique())
-categoria = f1.selectbox("Categoria", categorias, key="categoria", help="Natureza do indicador no catálogo (criminal, atividade policial, complementar). Filtra a lista de indicadores.")
-eventos = sorted(catalogo.loc[catalogo["categoria"].eq(categoria) | (categoria == "Todas"), "evento"].unique())
-evento = ui.selecao_dependente(f2, "Indicador", eventos, chave="indicador", padrao="Homicídio doloso")
-abrangencias = catalogo.loc[catalogo["evento"].eq(evento), "abrangencia"].tolist()
-abrangencia = ui.selecao_dependente(f3, "Abrangência", abrangencias, chave="abrangencia", help="Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
-anos_disponiveis = sorted(int(a) for a in sinesp["ano"].unique())
-caixa_filtros.divider()
-caixa_filtros.markdown("**Período**")
-g1 = g2 = caixa_filtros
-ano_ini, ano_fim = g1.select_slider("Período (anos)", options=anos_disponiveis, value=(anos_disponiveis[0], anos_disponiveis[-1]), key="periodo_anos")
-anos_sel = list(range(ano_ini, ano_fim + 1))
-mes_ini, mes_fim = g2.select_slider("Meses", options=list(range(1, 13)), value=(1, 12), key="periodo_meses", format_func=lambda m: ABREV_MESES[m - 1],
-                                    help="Vale para o resumo, o mapa de calor, a evolução mensal, as estatísticas, o boxplot, a distribuição e os outliers. "
-                                         "Totais anuais, comparações de anos completos, média móvel, acumulado e sazonalidade usam sempre os 12 meses.")
-caixa_filtros.caption("Meses filtram as análises mensais. Anos completos e acumulados usam os 12 meses.")
+# Cada série (indicador × abrangência) vira uma opção "Indicador — Abrangência". Assim não existe um filtro de abrangência redundante,
+# e a abrangência continua visível em todos os títulos, legendas e tabelas.
+catalogo = catalogo.assign(serie=catalogo["evento"] + " — " + catalogo["abrangencia"])
+series = sorted(catalogo["serie"])
+SERIE_PADRAO = "Homicídio doloso — Estadual"
+anos_padrao = sorted(int(a) for a in sinesp.loc[sinesp["evento"].eq("Homicídio doloso"), "ano"].unique())
 
 
 def restaurar_filtros():
-    st.session_state.update(categoria="Todas", indicador="Homicídio doloso", abrangencia="Estadual",
-                            periodo_anos=(anos_disponiveis[0], anos_disponiveis[-1]), periodo_meses=(1, 12))
+    """Volta ao indicador, ao período e aos meses iniciais (a preferência de visualização compacta é mantida)."""
+    st.session_state.update(serie=SERIE_PADRAO, periodo_anos=(anos_padrao[0], anos_padrao[-1]), periodo_meses=(1, 12))
 
 
-caixa_filtros.button("Restaurar filtros", on_click=restaurar_filtros, width="stretch", type="primary",
-                     help="Retorna à série e ao período iniciais; mantém a preferência de visualização.")
-caixa_filtros.divider()
-caixa_filtros.markdown("**Visualização**")
-caixa_filtros.toggle("Visualização compacta (celular)", key="modo_compacto",
-                     help="Gráficos mais estreitos, com fontes maiores, menos marcas nos eixos e os textos explicativos abaixo da imagem. A aplicação não detecta o tamanho "
-                          "da tela: ative em telas pequenas. Os números e as tabelas são os mesmos nos dois modos.")
+with st.container(border=True):
+    st.markdown("**Filtros** — os resultados são atualizados ao selecionar.")
+    f1, f2, f3 = st.columns([2.2, 1.5, 1.5])
+    serie_escolhida = f1.selectbox("Indicador", series, key="serie", index=series.index(SERIE_PADRAO),
+                                   help="Cada opção é um indicador com a sua abrangência. Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
+    ficha = catalogo.loc[catalogo["serie"].eq(serie_escolhida)].iloc[0]
+    evento, abrangencia = ficha["evento"], ficha["abrangencia"]
+    serie = calculos.serie_sinesp(sinesp, evento, abrangencia)
+    # Filtro dependente: os anos oferecidos são os da série escolhida (a PF, por exemplo, só existe desde 2025).
+    anos_disponiveis = sorted(int(a) for a in serie["ano"].unique())
+    anterior = st.session_state.get("periodo_anos")
+    if anterior is not None and not (anterior[0] in anos_disponiveis and anterior[1] in anos_disponiveis):
+        del st.session_state["periodo_anos"]  # a escolha não existe nesta série: o controle recomeça com o período inteiro (value abaixo)
+    ano_ini, ano_fim = f2.select_slider("Período (anos)", options=anos_disponiveis, value=(anos_disponiveis[0], anos_disponiveis[-1]), key="periodo_anos")
+    mes_ini, mes_fim = f3.select_slider("Meses", options=list(range(1, 13)), value=(1, 12), key="periodo_meses", format_func=lambda m: ABREV_MESES[m - 1],
+                                        help="Vale para o resumo, o mapa de calor, a evolução mensal, as estatísticas, o boxplot, a distribuição e os outliers. "
+                                             "Totais anuais, comparações de anos completos, média móvel, acumulado e sazonalidade usam sempre os 12 meses.")
+    anos_sel = list(range(ano_ini, ano_fim + 1))
+    b1, b2 = st.columns([1, 2.2], vertical_alignment="center")
+    b1.button("Restaurar filtros", on_click=restaurar_filtros, width="stretch", type="primary",
+              help="Retorna ao indicador, ao período e aos meses iniciais; mantém a preferência de visualização.")
+    b2.toggle("Visualização compacta (celular)", key="modo_compacto",
+              help="Gráficos mais estreitos, com fontes maiores, menos marcas nos eixos e os textos explicativos abaixo da imagem. A aplicação não detecta o tamanho "
+                   "da tela: ative em telas pequenas. Os números e as tabelas são os mesmos nos dois modos.")
 graficos.definir_modo_compacto(ui.modo_compacto())  # vale para todas as figuras criadas nesta execução
 filtro_meses = (mes_ini, mes_fim) != (1, 12)
 meses_sel = list(range(mes_ini, mes_fim + 1))
@@ -81,12 +80,11 @@ def aviso_ano_completo() -> None:
     if filtro_meses:
         st.caption("Análise de ano completo (12 meses): não usa o filtro de meses. Totais anuais são sempre a soma dos 12 meses.")
 
-ficha = catalogo.loc[catalogo["evento"].eq(evento) & catalogo["abrangencia"].eq(abrangencia)].iloc[0]
-serie = calculos.serie_sinesp(sinesp, evento, abrangencia)
+
 unidade = ficha["unidade"]
 unidade_curta = unidade.split(" (")[0]
-# Recorte ativo: o que está sendo analisado (filtros, unidade e cobertura da série), num único bloco de texto.
-st.markdown(f"**Filtros ativos:** categoria **{categoria}** · indicador **{evento}** · abrangência **{abrangencia}** · anos **{ano_ini}–{ano_fim}** · meses **{_MESES_TEXTO}**"
+# Recorte ativo: o que está sendo analisado (indicador com abrangência, período, unidade e cobertura da série), num único bloco de texto.
+st.markdown(f"**Recorte ativo:** indicador **{serie_escolhida}** · anos **{ano_ini}–{ano_fim}** · meses **{_MESES_TEXTO}**"
             f" · visualização **{'compacta' if ui.modo_compacto() else 'completa'}**  \n"
             f"**Unidade:** {unidade} · **Natureza:** {ficha['natureza']} · **Cobertura da série:** {ficha['inicio']} a {ficha['fim']}")
 if abrangencia == "Polícia Federal":
@@ -110,47 +108,50 @@ sinesp_mes = sinesp.loc[sinesp["mes"].isin(meses_sel)]
 if filtro_meses:
     st.caption(f"Filtro de meses ativo: {ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]}. Valem para os resultados mensais; anos completos e acumulados continuam com os 12 meses.")
 
-# ------------------------------------------------------------------------------------- indicadores
-st.subheader("Resumo")
-k1, k2, k3 = ui.cartoes(3)
+# ------------------------------------------------------------------------------------- cards do indicador
+st.subheader("Cards do indicador selecionado")
+cards = []   # cada card é um dicionário: titulo, valor, detalhe, variacao, diferenca, ajuda (ver ui.cartoes_html)
+detalhe = f"{evento} · {abrangencia}"
 soma_meses = calculos.soma_no_periodo(serie, mes_ini, mes_fim)
 soma_meses = soma_meses.loc[soma_meses["ano"].isin(anos_sel) & soma_meses["soma"].notna()]
-if filtro_meses:  # com filtro de meses, o KPI principal é a soma desses meses no último ano em que todos foram publicados
+if filtro_meses:  # com filtro de meses, o card principal é a soma desses meses no último ano em que todos foram publicados
     if len(soma_meses):
         ultimo_m = soma_meses.iloc[-1]
         anterior_m = soma_meses.loc[soma_meses["ano"].eq(int(ultimo_m["ano"]) - 1)]
         dif_m = int(ultimo_m["soma"]) - int(anterior_m.iloc[0]["soma"]) if len(anterior_m) else None
-        delta_m = f"{fmt_dif(dif_m)} vs {int(ultimo_m['ano']) - 1}" if dif_m is not None else None
-        ui.kpi(k1, f"{ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]} de {int(ultimo_m['ano'])} ({unidade_curta})", fmt_int(ultimo_m["soma"]), delta=delta_m, delta_color="off", delta_arrow=ui.direcao_da_seta(dif_m),
-                  help="Soma dos meses selecionados; só entra o ano com todos esses meses publicados. A diferença compara com o mesmo intervalo do ano anterior.")
+        cards.append({"titulo": f"{ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]} de {int(ultimo_m['ano'])} ({unidade_curta})", "detalhe": detalhe,
+                      "valor": fmt_int(ultimo_m["soma"]), "variacao": f"{fmt_dif(dif_m)} vs {int(ultimo_m['ano']) - 1}" if dif_m is not None else "", "diferenca": dif_m,
+                      "ajuda": "Soma dos meses selecionados; só entra o ano com todos esses meses publicados. A diferença compara com o mesmo intervalo do ano anterior."})
     else:
-        ui.kpi(k1, "Soma dos meses selecionados", "—", help="Nenhum ano do período tem todos os meses selecionados publicados.")
+        cards.append({"titulo": "Soma dos meses selecionados", "detalhe": detalhe, "valor": "—", "ajuda": "Nenhum ano do período tem todos os meses selecionados publicados."})
 elif len(completos):
     ultimo = completos.iloc[-1]
-    delta, dif_anual = None, None
+    variacao, dif_anual = "", None
     if len(completos) > 1:
         anterior = completos.iloc[-2]
         if int(anterior["ano"]) == int(ultimo["ano"]) - 1:
             dif_anual = int(ultimo["soma"]) - int(anterior["soma"])
-            delta = f"{fmt_dif(dif_anual)} vs {int(anterior['ano'])}"
-    ui.kpi(k1, f"Último ano completo: {int(ultimo['ano'])} ({unidade_curta})", fmt_int(ultimo["soma"]), delta=delta, delta_color="off", delta_arrow=ui.direcao_da_seta(dif_anual),
-              help="Soma dos 12 meses publicados. A diferença compara apenas com o ano completo imediatamente anterior.")
+            variacao = f"{fmt_dif(dif_anual)} vs {int(anterior['ano'])}"
+    cards.append({"titulo": f"Último ano completo: {int(ultimo['ano'])} ({unidade_curta})", "detalhe": detalhe, "valor": fmt_int(ultimo["soma"]),
+                  "variacao": variacao, "diferenca": dif_anual, "ajuda": "Soma dos 12 meses publicados. A diferença compara apenas com o ano completo imediatamente anterior."})
 else:
-    ui.kpi(k1, "Último ano completo", "—", help="Nenhum ano completo no período selecionado.")
+    cards.append({"titulo": "Último ano completo", "detalhe": detalhe, "valor": "—", "ajuda": "Nenhum ano completo no período selecionado."})
 if filtro_meses:
-    ui.kpi(k2, "Meses filtrados", f"{len(meses_sel)} de 12", help="Intervalo de meses escolhido no filtro.")
+    cards.append({"titulo": "Meses filtrados", "detalhe": detalhe, "valor": f"{len(meses_sel)} de 12", "ajuda": "Intervalo de meses escolhido no filtro."})
 elif len(periodo_sel) and serie_parcial:
     ult_p = periodo_sel.iloc[-1]
     ant = periodo_sel.loc[periodo_sel["ano"].eq(int(ult_p["ano"]) - 1)]
     dif_p = int(ult_p["soma"]) - int(ant.iloc[0]["soma"]) if len(ant) else None
-    delta_p = f"{fmt_dif(dif_p)} vs {nome_periodo} de {int(ult_p['ano']) - 1}" if dif_p is not None else None
-    ui.kpi(k2, f"{nome_periodo.capitalize()} de {int(ult_p['ano'])} ({unidade_curta})", fmt_int(ult_p["soma"]), delta=delta_p, delta_color="off", delta_arrow=ui.direcao_da_seta(dif_p),
-              help=f"Períodos equivalentes: os dois anos têm os mesmos {mes_final_serie} meses.")
+    cards.append({"titulo": f"{nome_periodo.capitalize()} de {int(ult_p['ano'])} ({unidade_curta})", "detalhe": detalhe, "valor": fmt_int(ult_p["soma"]),
+                  "variacao": f"{fmt_dif(dif_p)} vs {nome_periodo} de {int(ult_p['ano']) - 1}" if dif_p is not None else "", "diferenca": dif_p,
+                  "ajuda": f"Períodos equivalentes: os dois anos têm os mesmos {mes_final_serie} meses."})
 else:
-    ui.kpi(k2, nome_periodo.capitalize(), "—", help="A série tem o último ano completo: não há período parcial a comparar.")
+    cards.append({"titulo": nome_periodo.capitalize(), "detalhe": detalhe, "valor": "—", "ajuda": "A série tem o último ano completo: não há período parcial a comparar."})
 resumo = calculos.resumo_serie_sinesp(serie_mes)
-ui.kpi(k3, "Meses com valor publicado", f"{resumo['meses_com_valor']} de {resumo['meses_observados']}",
-          help=f"Meses com valor zero publicado: {resumo['meses_valor_zero']}. Meses sem valor: {resumo['meses_sem_valor']} (nunca preenchidos).")
+cards.append({"titulo": "Meses com valor publicado", "detalhe": detalhe, "valor": f"{resumo['meses_com_valor']} de {resumo['meses_observados']}",
+              "base": f"Zeros publicados: {resumo['meses_valor_zero']}. Meses sem valor: {resumo['meses_sem_valor']} (nunca preenchidos).",
+              "ajuda": "Zero publicado é observação; mês sem valor nunca é preenchido."})
+ui.cartoes_html(cards)
 
 # Abas com execução preguiçosa (Streamlit 1.66): só a aba selecionada é calculada e desenhada (cada figura leva ~0,3 s para virar PNG).
 abas = st.tabs(["Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"], key="aba_analise", on_change="rerun")
@@ -201,7 +202,7 @@ with abas[0]:
         if not anos_mensal:
             st.info("Selecione ao menos um ano para ver a evolução mensal.")
         if mensal is not None:
-            ui.mostrar_figura(mensal, "Evolução mensal: uma linha por ano, com a mesma cor em todas as figuras. Valores publicados, sem preenchimento.",
+            ui.mostrar_figura(mensal, "Evolução mensal: uma barra por ano, com o mesmo tom de azul em todas as figuras. Valores publicados, sem preenchimento.",
                               tabela_ano_mes(calculos.quadro_ano_mes(serie_mes.loc[serie_mes["ano"].isin(anos_mensal)])))
         st.divider()
         variacoes = calculos.variacoes_anuais(serie.loc[serie["ano"].isin(anos_sel)])
@@ -273,7 +274,7 @@ with abas[1]:
                 tabela = ranking.rename(columns={"evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "soma": f"Total de {int(ano_rank)}"})
                 tabela[f"Total de {int(ano_rank)}"] = tabela[f"Total de {int(ano_rank)}"].map(fmt_int)
                 figura = graficos.figura_ranking_sinesp(ranking, int(ano_rank), destaque=(evento, abrangencia))
-                ui.mostrar_figura(figura, "Ordenação das séries dentro de uma única unidade; a barra laranja é a série selecionada. Não há total entre indicadores nem entre abrangências.", tabela)
+                ui.mostrar_figura(figura, "Ordenação das séries dentro de uma única unidade; a barra mais escura é a série selecionada. Não há total entre indicadores nem entre abrangências.", tabela)
             st.caption("Séries com cobertura diferente (p.ex. PF a partir de 2025) só entram nos anos em que estão completas.")
 
 # ------------------------------------------------------------------------------ 3. padrões e tendência (secundária)
@@ -398,7 +399,7 @@ with abas[4]:
 
 # ---------------------------------------------------------------------------------- figuras Etapa 10
 with st.expander("Material histórico (Etapa 10) — independente dos filtros", expanded=False):
-    st.warning("**Material histórico, independente dos filtros desta página** (categoria, indicador, abrangência, anos e meses não alteram estas quatro figuras).")
+    st.warning("**Material histórico, independente dos filtros desta página** (indicador, anos e meses não alteram estas quatro figuras).")
     st.write("As quatro figuras da Etapa 10 do roteiro, recriadas a partir dos dados curados (vítimas, abrangência Estadual; anos completos 2020–2025 e janeiro–agosto de 2020 a 2026). "
              "Elas são fixas e independem dos filtros acima.")
     mostrar_etapa10 = st.checkbox("Mostrar as quatro figuras", key="mostrar_etapa10", help="Gerar as figuras leva alguns segundos; por isso elas só são desenhadas quando você pedir.")
@@ -417,7 +418,3 @@ with st.expander("Material histórico (Etapa 10) — independente dos filtros", 
             for coluna, nome in zip(colunas, nomes[i:i + 2]):
                 with coluna:
                     ui.mostrar_figura(figuras[nome])
-
-# ---------------------------------------------------------------------------------- versão e fonte dos dados
-st.divider()
-ui.mostrar_versao_dos_dados()

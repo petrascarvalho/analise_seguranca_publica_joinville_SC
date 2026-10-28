@@ -6,6 +6,7 @@ from streamlit.testing.v1 import AppTest
 
 from dashboard import calculos, graficos
 from dashboard import dados_publicos as dp
+from apoio_painel import cartoes, escolher_serie
 from src.pipeline.utils import project_path
 
 ANOS = list(range(2020, 2027))
@@ -51,43 +52,40 @@ def test_soma_no_periodo_exige_todos_os_meses_publicados(sinesp):
 
 
 # ---------------------------------------------------------------------------------------------------- filtros
-def test_filtros_visiveis_categoria_indicador_abrangencia_anos_e_meses():
+def test_filtros_visiveis_indicador_com_abrangencia_anos_e_meses():
     app = _pagina()
     assert not app.exception and not app.error
-    assert [s.label for s in app.selectbox][:3] == ["Categoria", "Indicador", "Abrangência"]
+    assert [s.label for s in app.selectbox] == ["Indicador"]  # sem Categoria e sem Abrangência como filtros separados
     assert [s.label for s in app.select_slider][:2] == ["Período (anos)", "Meses"]
-    assert app.selectbox(key="categoria").options == ["Todas", "atividade policial", "complementar", "criminal"]
-    app.selectbox(key="categoria").select("atividade policial").run()
-    assert app.selectbox(key="indicador").options == ["Mandado de prisão cumprido"] and not app.exception
-    app.selectbox(key="categoria").select("criminal").run()
-    assert "Suicídio" not in app.selectbox(key="indicador").options and "Homicídio doloso" in app.selectbox(key="indicador").options
-    app.selectbox(key="categoria").select("Todas").run()
-    assert len(app.selectbox(key="indicador").options) == 11  # os 11 indicadores do Sinesp para Joinville
+    opcoes = app.selectbox(key="serie").options
+    assert len(opcoes) == 12 and len({o.split(" — ")[0] for o in opcoes}) == 11  # as 12 séries; os 11 indicadores do Sinesp para Joinville
+    assert opcoes.count("Mandado de prisão cumprido — Estadual") == 1 and "Mandado de prisão cumprido — Polícia Federal" in opcoes
+    assert "Mortes no trânsito — Polícia Rodoviária Federal" in opcoes  # PF e PRF preservadas
+    assert app.selectbox(key="serie").value == "Homicídio doloso — Estadual"
 
 
 def test_filtro_de_meses_chega_aos_kpis_e_aos_resultados_mensais():
     app = _pagina()
     app.select_slider[1].set_value((1, 3)).run()
     assert not app.exception and not app.error
-    rotulos = {m.label: m for m in app.metric}
+    rotulos = {m.label: m for m in cartoes(app)}
     kpi = next(m for r, m in rotulos.items() if r.startswith("Jan–Mar de 2026"))
     assert kpi.value == "11" and "vs 2025" in kpi.delta  # 8 + 1 + 2 em jan–mar/2026
     assert rotulos["Meses filtrados"].value == "3 de 12" and rotulos["Meses com valor publicado"].value == "21 de 21"  # 7 anos × 3 meses
     assert any("Filtro de meses ativo: Jan–Mar" in c.value for c in app.caption)
     app.select_slider[1].set_value((10, 12)).run()  # meses ainda não publicados em 2026: o KPI usa o último ano que os tem
-    assert not app.exception and any(m.label.startswith("Out–Dez de 2025") for m in app.metric)
+    assert not app.exception and any(m.label.startswith("Out–Dez de 2025") for m in cartoes(app))
     app.select_slider[1].set_value((1, 12)).run()
-    assert [m.value for m in app.metric][:2] == ["29", "25"]  # sem filtro: os resultados aprovados
+    assert [m.value for m in cartoes(app)][:2] == ["29", "25"]  # sem filtro: os resultados aprovados
 
 
 def test_filtro_de_meses_preserva_o_modo_compacto_e_funciona_na_prf():
     app = _pagina()
     app.toggle[0].set_value(True).run()
-    app.selectbox(key="indicador").select("Mortes no trânsito").run()
-    app.selectbox(key="abrangencia").select("Polícia Rodoviária Federal").run()
+    escolher_serie(app, "Mortes no trânsito", "Polícia Rodoviária Federal")
     app.select_slider[1].set_value((1, 9)).run()
     assert app.toggle[0].value is True and not app.exception and not app.error
-    assert any(m.label.startswith("Jan–Set de 2025") for m in app.metric)  # PRF 2026 só vai até agosto: o último ano com jan–set é 2025
+    assert any(m.label.startswith("Jan–Set de 2025") for m in cartoes(app))  # PRF 2026 só vai até agosto: o último ano com jan–set é 2025
 
 
 def test_etapa_10_e_identificada_como_material_historico_independente_dos_filtros():
@@ -152,31 +150,31 @@ def test_documentacao_das_fontes_complementares_registra_matriz_e_divergencia():
 # ===================================================================================== Etapa 20.5
 def test_filtros_ativos_ficam_visiveis_e_analises_de_ano_completo_sao_identificadas():
     app = _pagina()
-    ativos = next(m.value for m in app.markdown if m.value.startswith("**Filtros ativos:**"))
-    assert "categoria **Todas**" in ativos and "indicador **Homicídio doloso**" in ativos and "abrangência **Estadual**" in ativos
+    ativos = next(m.value for m in app.markdown if m.value.startswith("**Recorte ativo:**"))
+    assert "indicador **Homicídio doloso — Estadual**" in ativos and "categoria" not in ativos  # a abrangência vai dentro do nome do indicador
     assert "anos **2020–2026**" in ativos and "janeiro–dezembro (12 meses)" in ativos and "visualização **completa**" in ativos
     assert not any("Análise de ano completo" in c.value for c in app.caption)  # sem filtro de meses não há o que avisar
     app.select_slider[1].set_value((4, 6)).run()
     app.toggle[0].set_value(True).run()
-    ativos = next(m.value for m in app.markdown if m.value.startswith("**Filtros ativos:**"))
+    ativos = next(m.value for m in app.markdown if m.value.startswith("**Recorte ativo:**"))
     assert "abril–junho (3 meses)" in ativos and "visualização **compacta**" in ativos
     avisos = []
     for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
         avisos += [c.value for c in aba.caption if "Análise de ano completo (12 meses)" in c.value]
     assert len(avisos) >= 6 and all("não usa o filtro de meses" in a for a in avisos)  # anos completos, períodos, variações, anual, média móvel, acumulado, sazonalidade
-    assert any(m.label.startswith("Abr–Jun de 2026") and m.value == "7" for m in app.metric)  # 4 + 0 + 3: soma só dos meses escolhidos, rotulada com o intervalo
-    app.selectbox(key="categoria").select("criminal").run()
-    ativos = next(m.value for m in app.markdown if m.value.startswith("**Filtros ativos:**"))
-    assert "categoria **criminal**" in ativos and not app.exception
+    assert any(m.label.startswith("Abr–Jun de 2026") and m.value == "7" for m in cartoes(app))  # 4 + 0 + 3: soma só dos meses escolhidos, rotulada com o intervalo
+    escolher_serie(app, "Suicídio")
+    ativos = next(m.value for m in app.markdown if m.value.startswith("**Recorte ativo:**"))
+    assert "indicador **Suicídio — Estadual**" in ativos and not app.exception
 
 
 def test_soma_de_alguns_meses_nunca_vira_total_anual():
     app = _pagina()
     app.select_slider[1].set_value((1, 3)).run()
     _aba(app, "Comparações")
-    anual = [m for m in app.metric if m.label.startswith("Último ano completo")]
+    anual = [m for m in cartoes(app) if m.label.startswith("Último ano completo")]
     assert not anual  # com filtro de meses o KPI é rotulado pelo intervalo, nunca como "ano completo"
-    assert any(m.label.startswith("Jan–Mar de 2026") for m in app.metric)
+    assert any(m.label.startswith("Jan–Mar de 2026") for m in cartoes(app))
     tabelas = [d.value for d in app.dataframe]
     anos_completos = next(t for t in tabelas if "Cobertura" in t.columns and "Meses presentes" in t.columns)
     assert int(anos_completos.set_index("Ano").loc[2025, "Soma (vítimas)"].replace(".", "")) == 29  # total anual = 12 meses, não jan–mar

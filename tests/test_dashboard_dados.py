@@ -404,9 +404,16 @@ def test_hash_normalizado_ignora_fim_de_linha_do_checkout():
 def test_codigo_ativo_nao_depende_do_acervo_do_roteiro_nem_de_outras_fontes():
     codigos = list(project_path("dashboard").rglob("*.py")) + [project_path("scripts", "painel_streamlit.py")] + [
         project_path("src", "pipeline", p) for p in ("fontes_oficiais.py", "atualizacao_dados.py", "versionamento_dados.py")]
+    # A seção de violência doméstica SSP/SC é separada e em validação: só estes arquivos podem citá-la; o resto continua sem referência à SSP/SC.
+    ssp = {"dados_ssp.py", "violencia_domestica.py", "graficos.py", "quality.py", "painel_streamlit.py"}
     for caminho in codigos:
         texto = caminho.read_text(encoding="utf-8")
         assert not re.search(r"\b[A-Za-z]:[\\/]", texto), caminho  # nenhum caminho absoluto de Windows
-        assert "dados/processados" not in texto and "dados/brutos/ssp" not in texto and "scripts.analysis" not in texto, caminho
-        assert not re.search(r"ssp_sc|violencia_domestica|fatos_comunicados|Fato Comunicado|SEPROT|seprot", texto), caminho
+        assert "dados/brutos/ssp" not in texto and "scripts.analysis" not in texto, caminho
+        assert not re.search(r"SEPROT|seprot", texto), caminho
         assert "analise_seguranca_publica" not in texto, caminho
+        if "dashboard" in caminho.parts or caminho.name == "painel_streamlit.py":
+            assert not re.search(r"^\s*(from|import) src", texto, re.MULTILINE), caminho  # o painel não importa o pacote dos PDFs/ETL
+        if caminho.name not in ssp:
+            assert "dados/processados" not in texto, caminho
+            assert not re.search(r"ssp_sc|violencia_domestica|fatos_comunicados|Fato Comunicado", texto), caminho

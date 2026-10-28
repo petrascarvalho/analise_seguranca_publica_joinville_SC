@@ -21,16 +21,19 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 from dashboard import calculos
 from dashboard.formatacao import ABREV_MESES, fmt_dec, fmt_int
 
-# Cores consistentes: cada ano tem sempre a mesma cor em todas as figuras do painel.
+# Identidade azul e branca (proposta inspirada na bandeira de Joinville; não são códigos oficiais do município).
+# Cada ano tem sempre o mesmo tom de azul em todas as figuras do painel: do mais claro (2020) ao mais escuro (2026).
 COR_ANO = {
-    2020: "#7A5195", 2021: "#188977", 2022: "#8C8C8C", 2023: "#104D9B", 2024: "#D97706", 2025: "#C0392B", 2026: "#1B1B1B",
+    2020: "#A9CBEA", 2021: "#7FB0DE", 2022: "#4F8FCB", 2023: "#2A73B8", 2024: "#074EA2", 2025: "#0A3470", 2026: "#04193A",
 }
 COR_EVENTO = {
-    "Homicídio doloso": "#104D9B", "Tentativa de homicídio": "#188977",
-    "Feminicídio": "#7A5195", "Tentativa de feminicídio": "#D97706",
+    "Homicídio doloso": "#074EA2", "Tentativa de homicídio": "#4F8FCB",
+    "Feminicídio": "#0A3470", "Tentativa de feminicídio": "#8FBBE3",
 }
+COR_AZUL = "#074EA2"           # azul principal (barras e destaques)
+COR_AZUL_CLARO = "#8FBBE3"     # barras de apoio
 COR_CINZA_TEXTO = "#20354F"
-_PALETA_RESERVA = ("#0B7285", "#9C36B5", "#E67700", "#5F3DC4", "#2B8A3E")
+_PALETA_RESERVA = ("#3E7FBF", "#1C5FA8", "#6AA3D6", "#0D4283", "#90B9E2")  # anos sem cor definida: ainda tons de azul
 
 
 def cor_ano(ano: int) -> str:
@@ -376,7 +379,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
         figura = Figure(figsize=(10, 0.55 * len(valores) + 3.2), dpi=120)
         eixo = figura.add_axes([0.42, 0.18, 0.54, 0.62])
     posicoes = list(range(len(valores)))[::-1]
-    cores = ["#D97706" if destaque and (r.evento, r.abrangencia) == tuple(destaque) else "#104D9B" for r in ranking.itertuples()]
+    cores = ["#0A3470" if destaque and (r.evento, r.abrangencia) == tuple(destaque) else COR_AZUL_CLARO for r in ranking.itertuples()]
     barras = eixo.barh(posicoes, valores, color=cores, height=0.62)
     for barra in barras:
         barra.set_gid("ranking")
@@ -537,8 +540,8 @@ def figura_media_movel_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
                                     "A média móvel é a média dos 12 meses até o mês indicado e só existe quando os 12 meses têm valor. Suaviza oscilações; não indica causa.",
                                     max(maximo * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Ano (cada marca = janeiro)")
     x = _x_mensal(tabela)
-    mensal, = eixo.plot(x, _valores_float(tabela["valor"]), color="#9A9A9A", linewidth=1.2, marker="o", markersize=3.5, label="Valor mensal")
-    movel, = eixo.plot(x, _valores_float(tabela["media_movel"]), color="#2879C7", linewidth=2.8, label="Média móvel de 12 meses")
+    mensal, = eixo.plot(x, _valores_float(tabela["valor"]), color="#8FA9C4", linewidth=1.2, marker="o", markersize=3.5, label="Valor mensal")
+    movel, = eixo.plot(x, _valores_float(tabela["media_movel"]), color=COR_AZUL, linewidth=2.8, label="Média móvel de 12 meses")
     mensal.set_gid("serie_mensal")
     movel.set_gid("media_movel")
     _eixo_anos(eixo, tabela)
@@ -582,7 +585,8 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
         parcial = mes_final < 12
         legenda = f"{int(ano)} (parcial, até {ABREV_MESES[mes_final - 1].lower()})" if parcial else str(int(ano))
         rotulo_legenda = f"{legenda}: {fmt_int(valor_final)}" if esta_compacto() else legenda  # compacto: o valor final fica na legenda
-        linha, = eixo.plot(parte["mes"].astype(int).tolist(), valores, color=cor_ano(int(ano)), linewidth=2, marker="o", markersize=4, label=rotulo_legenda)
+        linha, = eixo.plot(parte["mes"].astype(int).tolist(), valores, color=cor_ano(int(ano)), linewidth=2, marker="o", markersize=4, label=rotulo_legenda,
+                           linestyle="-" if int(ano) % 2 == 0 else "--")  # tons de azul + traço alternado ajudam a separar anos vizinhos
         linha.set_gid(f"acumulado_{int(ano)}")
         finais.append((int(ano), mes_final, valor_final, parcial, cor_ano(int(ano))))
     # Anos completos que terminam no mesmo valor dividem um único rótulo (evita pilhas de textos); anos parciais têm rótulo próprio.
@@ -674,7 +678,7 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                                     "faixa própria — zero é observação, não ausência. O maior valor observado está na última faixa; faixas vazias são mantidas.",
                                     max(float(tabela["n_meses"].max()) * 1.25, 1), _rodape(abrangencia, unidade), "Número de meses",
                                     xlabel=f"Faixa do valor mensal ({unidade.split(' (')[0]})")
-    barras = eixo.bar(range(len(tabela)), [int(n) for n in tabela["n_meses"]], color="#104D9B", width=0.8)
+    barras = eixo.bar(range(len(tabela)), [int(n) for n in tabela["n_meses"]], color=COR_AZUL, width=0.8)
     for barra, inicio in zip(barras, tabela["inicio"]):
         barra.set_gid("frequencia")
         if int(inicio) == 0:
@@ -707,14 +711,14 @@ def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                                     max(float(perfil["maximo"].max()) * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
     meses = perfil["mes"].astype(int).tolist()
     medianas = perfil["mediana"].astype("float64").tolist()
-    barras = eixo.bar(meses, medianas, width=0.7, color="#104D9B", label="Mediana do mês" if esta_compacto() else f"Mediana do mês ({anos_texto})")
+    barras = eixo.bar(meses, medianas, width=0.7, color=COR_AZUL, label="Mediana do mês" if esta_compacto() else f"Mediana do mês ({anos_texto})")
     for barra in barras:
         barra.set_gid("mediana_mensal")
     faixa = eixo.vlines(meses, perfil["minimo"].astype("float64").tolist(), perfil["maximo"].astype("float64").tolist(), color="#20354F", linewidth=1.2, label="Mínimo a máximo")
     faixa.set_gid("faixa_min_max")
     if not esta_compacto():
         eixo.bar_label(barras, labels=[fmt_int(m) if float(m).is_integer() else fmt_dec(m, 1) for m in medianas], label_type="center", color="white", fontweight="bold", fontsize=9,
-                      bbox={"boxstyle": "square,pad=0.15", "facecolor": "#104D9B", "edgecolor": "none"})  # dentro da barra: o traço mínimo–máximo não cobre o número
+                      bbox={"boxstyle": "square,pad=0.15", "facecolor": COR_AZUL, "edgecolor": "none"})  # dentro da barra: o traço mínimo–máximo não cobre o número
     _eixo_meses(eixo)
     _legenda(eixo, 2)
     _aviso_sem_variacao(eixo, perfil["maximo"].tolist() + perfil["minimo"].tolist())
@@ -744,9 +748,9 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     pontos, = eixo.plot(x, _valores_float(serie["valor"]), color="#7A7A7A", linewidth=1, marker="o", markersize=4, label="Valor mensal")
     pontos.set_gid("pontos")
     if d["interpretavel"]:
-        faixa = eixo.axhspan(d["q1"], d["q3"], color="#104D9B", alpha=0.12, label="Q1 a Q3" if esta_compacto() else f"Q1 a Q3 ({_dec1(d['q1'])} a {_dec1(d['q3'])}; IQR = {_dec1(d['iqr'])})")
+        faixa = eixo.axhspan(d["q1"], d["q3"], color=COR_AZUL, alpha=0.12, label="Q1 a Q3" if esta_compacto() else f"Q1 a Q3 ({_dec1(d['q1'])} a {_dec1(d['q3'])}; IQR = {_dec1(d['iqr'])})")
         faixa.set_gid("faixa_q1_q3")
-        mediana = eixo.axhline(d["mediana"], color="#104D9B", linestyle=":", linewidth=1.6, label="Mediana" if esta_compacto() else f"Mediana ({_dec1(d['mediana'])})")
+        mediana = eixo.axhline(d["mediana"], color=COR_AZUL, linestyle=":", linewidth=1.6, label="Mediana" if esta_compacto() else f"Mediana ({_dec1(d['mediana'])})")
         mediana.set_gid("mediana")
         superior = eixo.axhline(d["limite_superior"], color="#C0392B", linestyle="--", linewidth=1.6, label="Limite superior" if esta_compacto() else f"Limite superior ({_dec1(d['limite_superior'])})")
         superior.set_gid("limite_superior")
@@ -773,4 +777,70 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
         _banner(eixo, f"Método IQR não informativo: {d['rotulo']}")
     _eixo_anos(eixo, serie)
     _legenda(eixo, 3)
+    return figura
+
+
+# ------------------------------------------------------------------------------------------ SSP/SC (violência doméstica)
+COR_SSP_2023, COR_SSP_2024 = "#8FBBE3", "#074EA2"   # dois tons de azul para os dois anos
+
+
+def figura_violencia_domestica_ssp(vd: pd.DataFrame, categoria: str | None = None) -> Figure | None:
+    """Fatos comunicados de violência doméstica (SSP/SC, Joinville), 2023 × 2024.
+
+    Sem ``categoria``: barras horizontais, uma por categoria e ano (cada categoria só se compara com ela mesma; nada é somado).
+    Com ``categoria``: barras mensais dessa categoria, janeiro a dezembro, um tom de azul por ano.
+    A unidade "Fato Comunicado" está em validação: o gráfico diz isso e não sugere comparação com o Sinesp.
+    """
+    if vd is None or vd.empty:
+        return None
+    compacto = esta_compacto()
+    figura = Figure(figsize=(4.4, 6.8) if compacto else (10, 6.2), dpi=120)
+    eixo = figura.add_subplot(111)
+    cores = {2023: COR_SSP_2023, 2024: COR_SSP_2024}
+    nome = f"— {categoria}" if categoria else "por categoria"
+    largura_titulo = 30 if compacto else 90
+    titulo = "\n".join(textwrap.wrap(f"Violência doméstica em Joinville/SC — fatos comunicados {nome}", largura_titulo))
+    aviso = "\n".join(textwrap.wrap("Unidade: Fato Comunicado — definição em validação (não equivale a vítimas, pessoas ou ocorrências únicas).", 44 if compacto else 120))
+    rodape = "Fonte: SSP/SC — Segurança em Números, relatórios de violência doméstica (2023–2024). Análise exploratória; não integra os indicadores Sinesp."
+    rodape = "\n".join(textwrap.wrap(rodape, 48 if compacto else 130))
+    # Alturas dos textos em fração da figura (tamanho da fonte × 1,5 de entrelinha ÷ 72 pontos por polegada ÷ altura em polegadas).
+    altura = figura.get_figheight()
+    fonte_titulo, fonte_aviso = (12, 9) if compacto else (14, 10)
+    altura_titulo = (titulo.count("\n") + 1) * fonte_titulo * 1.5 / 72 / altura
+    altura_aviso = (aviso.count("\n") + 1) * fonte_aviso * 1.5 / 72 / altura
+    figura.text(0.03, 0.985, titulo, ha="left", va="top", fontsize=fonte_titulo, fontweight="semibold", color="#103C6D")
+    figura.text(0.03, 0.985 - altura_titulo - 0.01, aviso, ha="left", va="top", fontsize=fonte_aviso, color="#7A4B00")
+    figura.text(0.03, 0.015, rodape, ha="left", va="bottom", fontsize=8 if compacto else 9, color="#607A94")
+    topo = 0.985 - altura_titulo - altura_aviso - 0.07   # o gráfico começa logo abaixo dos textos
+    if categoria is None:
+        totais = vd.groupby(["categoria", "ano"])["valor"].sum().unstack("ano").sort_values(2024)
+        posicoes = list(range(len(totais)))
+        for deslocamento, ano in ((-0.2, 2023), (0.2, 2024)):
+            barras = eixo.barh([p + deslocamento for p in posicoes], [int(v) for v in totais[ano]], height=0.38, color=cores[ano], label=str(ano))
+            eixo.bar_label(barras, labels=[fmt_int(v) for v in totais[ano]], padding=3, fontsize=8 if compacto else 9, color="#103C6D")
+        eixo.set_yticks(posicoes, ["\n".join(textwrap.wrap(c, 22 if compacto else 40)) for c in totais.index], fontsize=8 if compacto else 10)
+        eixo.set_xlabel("Fatos comunicados no ano" if compacto else "Fatos comunicados no ano (soma dos 12 meses publicados)", fontsize=9 if compacto else 10)
+        eixo.set_xlim(0, float(totais.to_numpy().max()) * 1.18)
+        eixo.xaxis.set_major_formatter(FuncFormatter(_milhar))
+        eixo.grid(axis="x", color="#D9E5F2", linewidth=0.8)
+        figura.subplots_adjust(left=0.36 if compacto else 0.30, right=0.95, bottom=0.2 if compacto else 0.17, top=topo)
+    else:
+        parte = vd.loc[vd["categoria"].eq(categoria)]
+        mensal = parte.pivot(index="mes", columns="ano", values="valor").reindex(range(1, 13))
+        for deslocamento, ano in ((-0.2, 2023), (0.2, 2024)):
+            barras = eixo.bar([m + deslocamento for m in mensal.index], [int(v) for v in mensal[ano]], width=0.38, color=cores[ano], label=str(ano))
+            if not compacto:
+                eixo.bar_label(barras, labels=[fmt_int(v) for v in mensal[ano]], padding=2, fontsize=8, color="#103C6D")
+        eixo.set_xticks(range(1, 13), ABREV_MESES, fontsize=8 if compacto else 10)
+        eixo.set_ylabel("Fatos comunicados no mês", fontsize=9 if compacto else 10)
+        eixo.set_ylim(0, max(float(mensal.to_numpy().max()) * 1.3, 1))
+        eixo.yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
+        eixo.grid(axis="y", color="#D9E5F2", linewidth=0.8)
+        figura.subplots_adjust(left=0.14 if compacto else 0.08, right=0.97, bottom=0.2 if compacto else 0.17, top=topo)
+    eixo.set_axisbelow(True)
+    eixo.spines[["top", "right"]].set_visible(False)
+    eixo.legend(loc="lower right" if categoria is None else "upper right", ncol=1 if categoria is None else 2, frameon=False, fontsize=9 if compacto else 10, title="Ano", title_fontsize=9 if compacto else 10)
+    figura.sinesp_ajustada = True   # o layout já é fixo: ui.mostrar_figura não precisa reajustá-lo
+    figura.sinesp_compacta = compacto
+    figura.sinesp_notas = {"interpretacao": "Cada categoria é comparada apenas consigo mesma; categorias não são somadas e o total não é vítimas.", "rodape": rodape.replace("\n", " ")}
     return figura

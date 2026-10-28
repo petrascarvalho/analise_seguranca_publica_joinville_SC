@@ -285,7 +285,7 @@ def test_ranking_destaca_a_serie_selecionada_sem_mudar_valores(sinesp):
     barras = [b for b in figura.axes[0].patches if b.get_gid() == "ranking"]
     assert sorted(int(b.get_width()) for b in barras) == sorted(ranking["soma"].astype(int).tolist())
     cores = [b.get_facecolor() for b in barras]
-    assert sum(1 for c in cores if c[:3] == pytest.approx((217 / 255, 119 / 255, 6 / 255), abs=1e-3)) == 1  # exatamente uma barra de destaque
+    assert sum(1 for c in cores if c[:3] == pytest.approx((10 / 255, 52 / 255, 112 / 255), abs=1e-3)) == 1  # exatamente uma barra de destaque (azul mais escuro)
 
 
 @pytest.mark.parametrize("evento, abrangencia", [("Homicídio doloso", "Estadual"), ("Mandado de prisão cumprido", "Polícia Federal"),

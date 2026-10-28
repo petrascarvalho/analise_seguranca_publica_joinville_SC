@@ -12,8 +12,7 @@ from dashboard import dados_publicos as dp  # noqa: E402
 from dashboard import ui  # noqa: E402
 from dashboard.formatacao import fmt_int  # noqa: E402
 
-ui.cabecalho("Qualidade dos dados e metodologia",
-             "Sinesp/MJSP · Joinville/SC. Integridade, cobertura e limites dos dados publicados.")
+ui.secao("Qualidade dos dados", "qualidade", "Sinesp/MJSP · Joinville/SC. Integridade, cobertura e limites dos dados publicados.")
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 manifesto = ui.carregar_manifesto()
@@ -25,17 +24,22 @@ if integridade["integro"].all():
 
 # Resumo da qualidade: os números que respondem "posso confiar nestes dados?" antes dos detalhes técnicos.
 cob_sinesp = cobertura.get("sinesp", {})
-with st.container():
-    q1, q2, q3, q4 = ui.cartoes(4)
-    ui.kpi(q1, "Arquivos íntegros (SHA-256)", f"{int(integridade['integro'].sum())} de {len(integridade)}")
-    versao = str(manifesto.get("versao", "—"))
-    ui.kpi(q2, "Versão dos dados (data)", f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 else versao, help=f"Identificador completo: {versao}")
-    ui.kpi(q3, "Última competência", cob_sinesp.get("ultima_competencia", "—"),
-           help=f"Cobertura {cob_sinesp.get('primeira_competencia', '—')} a {cob_sinesp.get('ultima_competencia', '—')}. A PRF termina antes das demais; mandados da PF só a partir de 2025.")
-    ui.kpi(q4, "Valores ausentes", fmt_int(int(sinesp["valor"].isna().sum())), help="Ausência nunca é convertida em zero; zeros publicados são mantidos.")
-    st.caption("Unidades: **vítimas** e **mandados cumpridos** (nunca somadas). Fonte: MJSP / Sinesp VDE. Os XLSX originais não são distribuídos.")
+versao = str(manifesto.get("versao", "—"))
+ui.cartoes_html([
+    {"titulo": "Arquivos íntegros (SHA-256)", "valor": f"{int(integridade['integro'].sum())} de {len(integridade)}", "detalhe": "dados publicados × manifesto",
+     "base": "Cada arquivo tem o hash conferido ao abrir o painel."},
+    {"titulo": "Versão dos dados", "valor": f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 else versao, "detalhe": f"Identificador {versao}",
+     "base": "Atualização manual e controlada."},
+    {"titulo": "Última competência", "valor": cob_sinesp.get("ultima_competencia", "—"), "detalhe": f"Cobertura {cob_sinesp.get('primeira_competencia', '—')} a {cob_sinesp.get('ultima_competencia', '—')}",
+     "base": "A PRF termina antes das demais; mandados da PF só a partir de 2025."},
+    {"titulo": "Valores ausentes", "valor": fmt_int(int(sinesp["valor"].isna().sum())), "detalhe": f"Zeros publicados: {fmt_int(int(sinesp['valor'].eq(0).sum()))}",
+     "base": "Ausência nunca é convertida em zero."},
+])
+st.caption("Unidades: **vítimas** e **mandados cumpridos** (nunca somadas). Fonte: MJSP / Sinesp VDE. Os XLSX originais não são distribuídos.")
 
-abas = st.tabs(["Integridade e versão", "Fonte e cobertura", "Métodos e limitações", "Atualização e licenças"])
+aba_integridade = st.container()   # detalhes de integridade e versão (logo abaixo dos cards)
+ui.secao("Fontes, metodologia e limitações", "metodologia", "Origem dos dados, regras de tratamento e o que as análises não permitem afirmar.")
+abas = [aba_integridade] + list(st.tabs(["Fonte e cobertura", "Métodos e limitações", "Atualização e licenças"]))
 
 # ------------------------------------------------------------------------------ integridade e versão
 with abas[0]:
@@ -130,7 +134,9 @@ with abas[2]:
         "- As séries Estadual, PF e PRF têm abrangências e coberturas distintas e não são somadas; mandados não são pessoas únicas.\n"
         "- Revisões de valores históricos pela fonte podem ocorrer: são detectadas na preparação de uma atualização e só entram com aprovação específica.\n"
         "- Os XLSX originais não são distribuídos; a reprodução exige baixá-los da fonte oficial.\n"
-        "- Contagens pequenas geram variações percentuais instáveis; observe a magnitude absoluta."
+        "- Contagens pequenas geram variações percentuais instáveis; observe a magnitude absoluta.\n"
+        "- **SSP/SC (violência doméstica):** fonte separada e em validação; “Fato Comunicado” não tem definição oficial confirmada, não é vítima nem ocorrência única "
+        "e não se soma ao Sinesp. Detalhes na seção própria."
     )
 
 
@@ -158,3 +164,7 @@ with abas[3]:
             st.write("O acervo bruto local foi encontrado neste computador. O painel **não** o utiliza.")
         else:
             st.write("O acervo bruto local não está presente neste ambiente — situação esperada em um clone limpo ou em um deploy. O painel funciona normalmente.")
+
+# ------------------------------------------------------------------------------ versão e fonte dos dados
+st.divider()
+ui.mostrar_versao_dos_dados()

@@ -1,7 +1,9 @@
-"""Auxiliares de interface do dashboard Sinesp/MJSP (Streamlit): cache de dados, erros explícitos e avisos."""
+"""Auxiliares de interface do painel (Streamlit): identidade azul e branca (CSS), cabeçalho com a bandeira, cards de mesma altura,
+cache de dados, erros explícitos e avisos."""
 
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 
 import pandas as pd
@@ -12,29 +14,79 @@ from dashboard import graficos
 from dashboard.formatacao import NOMES_MESES
 
 
+# Cores da identidade visual (PROPOSTA inspirada na bandeira de Joinville; não são códigos oficiais do município).
+AZUL_BANDEIRA = "#074EA2"   # azul do arquivo SVG da bandeira usado no projeto
+FUNDO = "#EAF4FC"           # fundo da página
+CARTAO = "#FFFFFF"          # cards
+BORDA = "#BFD6EB"
+TITULO = "#103C6D"
+TEXTO_SECUNDARIO = "#607A94"
+TEXTO_LEGENDA = "#4A6381"       # legendas e textos pequenos: contraste suficiente sobre o fundo azul-claro
+DESTAQUE = "#DCECF9"
+
+# CSS da página única: fundo azul-claro, cards brancos e a grade dos cards (CSS Grid).
+# .grade-cartoes é a linha de cards; cada .cartao tem 5 linhas (título, detalhe, valor, variação, base).
+# Com "subgrid", os cards da mesma linha dividem as mesmas alturas: títulos, valores e variações ficam alinhados.
+CSS = f"""<style>
+.stApp {{ background: {FUNDO}; }}
+.block-container {{ max-width: 1200px; padding-top: 4.5rem; }}   /* deixa espaço para a barra superior do Streamlit */
+h1, h2, h3, h4 {{ color: {TITULO} !important; }}
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] * {{ color: {TEXTO_LEGENDA} !important; opacity: 1 !important; }}
+[data-testid="stImage"] img {{ border: 1px solid {BORDA}; border-radius: 12px; background: {CARTAO}; }}
+/* contêineres com borda e expansores viram cards brancos */
+[data-testid="stVerticalBlockBorderWrapper"], [data-testid="stExpander"] {{ background: {CARTAO}; border-color: {BORDA} !important; }}
+.st-key-cabecalho {{ background: {CARTAO}; border: 1px solid {BORDA}; border-bottom: 4px solid {AZUL_BANDEIRA}; border-radius: 12px; padding: 0.9rem 1.2rem; }}
+.st-key-cabecalho h1 {{ padding: 0; }}
+.grade-cartoes {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 1rem; margin: 0.25rem 0 0; }}
+.cartao {{ background: {CARTAO}; border: 1px solid {BORDA}; border-radius: 12px; padding: 0.9rem 1.1rem; margin-bottom: 0.9rem;
+          display: flex; flex-direction: column; gap: 0.3rem; box-shadow: 0 1px 2px rgba(16, 60, 109, 0.08); box-sizing: border-box; }}
+@supports (grid-template-rows: subgrid) {{
+  .cartao {{ display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0.3rem; }}
+}}
+.cartao-titulo {{ font-weight: 700; color: {TITULO}; line-height: 1.3; overflow-wrap: anywhere; min-height: 2.6em; }}
+.cartao-detalhe {{ color: {TEXTO_LEGENDA}; font-size: 0.85rem; line-height: 1.3; overflow-wrap: anywhere; min-height: 2.6em; }}
+.cartao-valor {{ font-size: 2.1rem; font-weight: 700; color: {AZUL_BANDEIRA}; line-height: 1.15; overflow-wrap: anywhere; }}
+.cartao-variacao {{ font-size: 0.9rem; font-weight: 600; color: {TITULO}; line-height: 1.3; overflow-wrap: anywhere; min-height: 1.3em; }}
+.cartao-base {{ color: {TEXTO_LEGENDA}; font-size: 0.8rem; line-height: 1.3; overflow-wrap: anywhere; min-height: 2.6em; }}
+</style>"""
+
+
+def aplicar_estilo() -> None:
+    """Injeta o CSS da identidade azul e branca (uma vez por execução da página)."""
+    st.html(CSS)
+
+
 def cabecalho(titulo: str, descricao: str) -> None:
-    """Identidade municipal local, sem rede e sem alterar a arte da bandeira."""
-    # Streamlit 1.66 trunca o Markdown interno das métricas. Permitir quebra
-    # preserva os deltas completos (incluindo o período comparado) em cartões estreitos.
-    st.html("""<style>
-        [data-testid="stMetricDelta"] { max-width: 100%; height: auto; }
-        [data-testid="stMetricDelta"] p, [data-testid="stMetricValue"] p {
-            white-space: normal !important; overflow: visible !important;
-            text-overflow: clip !important; overflow-wrap: anywhere;
-        }
-    </style>""")
-    with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
-        st.image(str(Path(__file__).parent / "assets" / "bandeira_joinville.svg"),
-                 width=104, alt="Bandeira de Joinville: campo azul, losango branco e brasão municipal")
-        with st.container():
-            st.title(titulo)
-            st.caption(descricao)
+    """Cabeçalho: bandeira de Joinville (arquivo SVG local, sem rede e sem alterar a arte) ao lado do título."""
+    with st.container(key="cabecalho"):
+        with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
+            st.image(str(Path(__file__).parent / "assets" / "bandeira_joinville.svg"),
+                     width=84, alt="Bandeira de Joinville: campo azul, losango branco e brasão municipal")
+            with st.container():
+                st.title(titulo)
+                st.caption(descricao)
 
 
-def cartoes(quantidade: int, *, borda: bool = True):
-    """Cartões nativos que quebram de linha sem reduzir os rótulos a colunas estreitas."""
-    with st.container(horizontal=True, gap="small"):
-        return [st.container(width=240, height="stretch", border=borda) for _ in range(quantidade)]
+def secao(titulo: str, ancora: str, descricao: str | None = None) -> None:
+    """Título de uma seção da página única (com âncora para o índice do topo) e, opcionalmente, uma linha de descrição."""
+    st.header(titulo, anchor=ancora)
+    if descricao:
+        st.caption(descricao)
+
+
+def cartoes_html(cartoes: list[dict]) -> None:
+    """Uma linha de cards brancos de mesma altura (CSS Grid). Cada card é um dicionário com:
+    titulo, valor, e opcionalmente detalhe, variacao (texto), diferenca (número que define a seta), base e ajuda (dica ao passar o mouse).
+    A seta segue o sinal da diferença e não tem cor de "bom" ou "ruim": alta não é tratada como melhor nem pior.
+    """
+    partes = []
+    for c in cartoes:
+        seta = {"up": "▲ ", "down": "▼ ", "off": ""}[direcao_da_seta(c.get("diferenca"))] if c.get("variacao") else ""
+        campos = [("titulo", c["titulo"]), ("detalhe", c.get("detalhe", "")), ("valor", c["valor"]),
+                  ("variacao", seta + c["variacao"] if c.get("variacao") else ""), ("base", c.get("base", ""))]
+        miolo = "".join(f'<div class="cartao-{nome}">{escape(str(texto))}</div>' for nome, texto in campos)
+        partes.append(f'<div class="cartao" title="{escape(c.get("ajuda", ""), quote=True)}" data-direcao="{direcao_da_seta(c.get("diferenca"))}">{miolo}</div>')
+    st.html(f'<div class="grade-cartoes">{"".join(partes)}</div>')
 
 
 def selecao_dependente(local, rotulo: str, opcoes: list, *, chave: str, padrao=None, **kwargs):
@@ -62,36 +114,6 @@ def direcao_da_seta(diferenca) -> str:
     if diferenca is None or pd.isna(diferenca) or int(diferenca) == 0:
         return "off"
     return "up" if int(diferenca) > 0 else "down"
-
-
-def cartao_indicador(coluna, *, indicador: str, detalhe: str, rotulo: str, valor: str, delta: str | None, diferenca, base: str, ajuda: str | None = None) -> None:
-    """Cartão com borda: indicador em destaque, abrangência/unidade/período numa linha, o número (st.metric) e a base de comparação.
-
-    O texto fica em markdown (quebra linha em telas estreitas, nunca é cortado); o rótulo do st.metric fica oculto para não repetir.
-    A seta segue o sinal da diferença e a cor é neutra (``delta_color="off"``): alta não é tratada como boa nem como ruim.
-    """
-    with coluna.container(border=True):
-        st.markdown(f"**{indicador}**")
-        st.caption(detalhe, help=ajuda)
-        st.metric(rotulo, valor, delta=delta, delta_color="off", delta_arrow=direcao_da_seta(diferenca), label_visibility="collapsed")
-        st.caption(base)
-
-
-def kpi(coluna, rotulo: str, valor, **opcoes) -> None:
-    """Número de destaque com o rótulo em texto comum acima (quebra linha em telas estreitas em vez de ser cortado com "…").
-
-    O rótulo continua no ``st.metric`` (oculto) para leitores de tela e testes; ``opcoes`` são as mesmas do ``st.metric``.
-    """
-    coluna.caption(rotulo, help=opcoes.pop("help", None))  # o ícone de ajuda fica junto do rótulo visível
-    coluna.metric(rotulo, valor, label_visibility="collapsed", **opcoes)
-
-
-def link_pagina(arquivo: str, rotulo: str, icone: str) -> None:
-    """Link para outra página do painel (caminho relativo ao arquivo de entrada, scripts/painel_streamlit.py). Fora da navegação principal (ex.: página aberta sozinha), mostra só o nome da página."""
-    try:
-        st.page_link(arquivo, label=rotulo, icon=icone)
-    except (st.errors.StreamlitAPIException, KeyError):  # KeyError: Streamlit 1.54–1.55 falha assim fora da navegação
-        st.markdown(f"**{icone} {rotulo}**")
 
 
 def aviso_ano_parcial(ano: int, mes_final: int) -> str:
