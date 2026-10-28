@@ -17,6 +17,18 @@ def sinesp():
     return dp.carregar_sinesp()
 
 
+def _aba(app, nome):
+    """A página executa só a aba selecionada (st.tabs com on_change="rerun"): seleciona a aba e executa de novo."""
+    app.session_state["aba_analise"] = nome
+    return app.run()
+
+
+def _em_cada_aba(app):
+    """Percorre as quatro abas de análise e devolve, a cada uma, o app já executado com ela selecionada."""
+    for nome in ("Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers"):
+        yield nome, _aba(app, nome)
+
+
 def _pagina():
     return AppTest.from_file(str(project_path("dashboard", "pages", "sinesp.py")), default_timeout=180).run()
 
@@ -146,7 +158,9 @@ def test_filtros_ativos_ficam_visiveis_e_analises_de_ano_completo_sao_identifica
     app.toggle[0].set_value(True).run()
     ativos = next(m.value for m in app.markdown if m.value.startswith("**Filtros ativos:**"))
     assert "abril–junho (3 meses)" in ativos and "visualização **compacta**" in ativos
-    avisos = [c.value for c in app.caption if "Análise de ano completo (12 meses)" in c.value]
+    avisos = []
+    for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
+        avisos += [c.value for c in aba.caption if "Análise de ano completo (12 meses)" in c.value]
     assert len(avisos) >= 6 and all("não usa o filtro de meses" in a for a in avisos)  # anos completos, períodos, variações, anual, média móvel, acumulado, sazonalidade
     assert any(m.label.startswith("Abr–Jun de 2026") and m.value == "7" for m in app.metric)  # 4 + 0 + 3: soma só dos meses escolhidos, rotulada com o intervalo
     app.selectbox(key="categoria").select("criminal").run()
@@ -157,6 +171,7 @@ def test_filtros_ativos_ficam_visiveis_e_analises_de_ano_completo_sao_identifica
 def test_soma_de_alguns_meses_nunca_vira_total_anual():
     app = _pagina()
     app.select_slider[1].set_value((1, 3)).run()
+    _aba(app, "Comparações")
     anual = [m for m in app.metric if m.label.startswith("Último ano completo")]
     assert not anual  # com filtro de meses o KPI é rotulado pelo intervalo, nunca como "ano completo"
     assert any(m.label.startswith("Jan–Mar de 2026") for m in app.metric)

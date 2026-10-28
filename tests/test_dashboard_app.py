@@ -108,6 +108,18 @@ def test_sinesp_serie_prf_vai_ate_agosto_sem_preenchimento():
     assert any("PRF pode terminar em competência diferente" in i.value for i in app.info)
 
 
+def _aba(app, nome):
+    """A página executa só a aba selecionada (st.tabs com on_change="rerun"): seleciona a aba e executa de novo."""
+    app.session_state["aba_analise"] = nome
+    return app.run()
+
+
+def _em_cada_aba(app):
+    """Percorre as quatro abas de análise e devolve, a cada uma, o app já executado com ela selecionada."""
+    for nome in ("Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers"):
+        yield nome, _aba(app, nome)
+
+
 def test_sinesp_todos_os_indicadores_e_abrangencias_executam():
     catalogo = dp.carregar_catalogo_sinesp()
     app = _pagina("sinesp")
@@ -121,14 +133,19 @@ def test_sinesp_organiza_a_analise_em_quatro_grupos_com_tabela_por_grafico():
     app = _pagina("sinesp")
     _sem_erros(app)
     assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"]
-    tabelas = [e for e in app.expander if e.label == "Valores usados neste gráfico (tabela)"]
-    assert len(tabelas) >= 9  # mapa de calor, períodos, ranking, anual, mensal, média móvel, acumulado, boxplot, distribuição, sazonalidade, outliers
-    assert any("Método informativo" in i.value for i in app.info)  # homicídio doloso: limites de Tukey informativos
-    assert any("Sazonalidade (exploratória)" in m.value for m in app.markdown) and not app.error
+    tabelas, informativos, sazonalidade = 0, False, False
+    for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
+        _sem_erros(aba)
+        tabelas += sum(1 for e in aba.expander if e.label == "Valores usados neste gráfico (tabela)")
+        informativos |= any("Método informativo" in i.value for i in aba.info)  # homicídio doloso: limites de Tukey informativos
+        sazonalidade |= any("Sazonalidade (exploratória)" in m.value for m in aba.markdown)
+    assert tabelas >= 9  # mapa de calor, períodos, ranking, anual, mensal, média móvel, acumulado, boxplot, distribuição, sazonalidade, outliers
+    assert informativos and sazonalidade
 
 
 def test_sinesp_outliers_nao_conclui_anomalia_quando_o_metodo_nao_e_informativo():
     app = _pagina("sinesp")
+    _aba(app, "Estatística e outliers")
     app.selectbox(key="indicador").select("Roubo seguido de morte (latrocínio)").run()
     _sem_erros(app)
     assert any("Método IQR não informativo" in w.value and "IQR igual a zero" in w.value for w in app.warning)
@@ -137,11 +154,12 @@ def test_sinesp_outliers_nao_conclui_anomalia_quando_o_metodo_nao_e_informativo(
     app.selectbox(key="abrangencia").select("Polícia Federal").run()
     _sem_erros(app)
     assert any("maioria de zeros publicados" in w.value for w in app.warning)
-    assert any("Sazonalidade não avaliada" in i.value for i in app.info)  # PF: um único ano completo
+    assert any("Sazonalidade não avaliada" in i.value for i in _aba(app, "Padrões e tendência").info)  # PF: um único ano completo
 
 
 def test_sinesp_comparacao_de_anos_completos_e_ranking_por_unidade():
     app = _pagina("sinesp")
+    _aba(app, "Comparações")
     app.selectbox(key="ano_a").select(2020).run()
     app.selectbox(key="ano_b").select(2025).run()
     _sem_erros(app)

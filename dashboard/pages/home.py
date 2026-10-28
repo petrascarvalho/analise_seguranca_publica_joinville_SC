@@ -47,20 +47,23 @@ def _destaques() -> list[dict]:
     if len(completos) >= 2:
         ultimo, anterior = completos.iloc[-1], completos.iloc[-2]
         dif = int(ultimo["soma"]) - int(anterior["soma"])
-        cartoes.append({"rotulo": f"Homicídio doloso em {int(ultimo['ano'])} (ano completo)", "valor": fmt_int(ultimo["soma"]),
-                        "delta": f"{fmt_dif(dif)} vs {int(anterior['ano'])}", "seta": ui.direcao_da_seta(dif)})
+        cartoes.append({"rotulo": f"Homicídio doloso · {int(ultimo['ano'])} (completo)", "valor": fmt_int(ultimo["soma"]),
+                        "delta": f"{fmt_dif(dif)} vs {int(anterior['ano'])}", "seta": ui.direcao_da_seta(dif),
+                        "ajuda": f"Homicídio doloso, Estadual (vítimas). Soma dos 12 meses de {int(ultimo['ano'])}, comparada com o ano completo {int(anterior['ano'])}."})
     for evento in ("Homicídio doloso", "Tentativa de homicídio"):
         r = calculos.comparacao_ultimo_periodo_sinesp(calculos.serie_sinesp(sinesp, evento, "Estadual"))
         if r is not None:
             dif = int(r["diferenca_absoluta"])
-            cartoes.append({"rotulo": f"{evento}, {r['periodo']} de {r['ano_atual']}", "valor": fmt_int(r["valor_atual"]),
-                            "delta": f"{fmt_dif(dif)} vs {r['periodo']} de {r['ano_anterior']}", "seta": ui.direcao_da_seta(dif)})
+            curto = "–".join(mes[:3] for mes in r["periodo"].split("–"))  # "janeiro–setembro" → "jan–set": o rótulo curto não é cortado no cartão
+            cartoes.append({"rotulo": f"{evento} · {curto}/{r['ano_atual']}", "valor": fmt_int(r["valor_atual"]),
+                            "delta": f"{fmt_dif(dif)} vs {r['periodo']} de {r['ano_anterior']}", "seta": ui.direcao_da_seta(dif),
+                            "ajuda": f"{evento}, Estadual (vítimas). Soma de {r['periodo']} de {r['ano_atual']}, comparada com o mesmo período de {r['ano_anterior']}."})
     return cartoes
 
 
 colunas = st.columns(3)
 for coluna, cartao in zip(colunas, _destaques()):
-    coluna.metric(cartao["rotulo"], cartao["valor"], delta=cartao["delta"], delta_color="off", delta_arrow=cartao["seta"], border=True)
+    coluna.metric(cartao["rotulo"], cartao["valor"], delta=cartao["delta"], delta_color="off", delta_arrow=cartao["seta"], help=cartao["ajuda"], border=True)
 st.caption("Diferenças entre períodos de igual duração. São observações sobre contagens publicadas, não explicações: nenhuma causa é afirmada.")
 
 # ------------------------------------------------------------------------------------ gráfico principal

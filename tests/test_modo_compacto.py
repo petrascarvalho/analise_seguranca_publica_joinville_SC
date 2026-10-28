@@ -191,6 +191,18 @@ def test_criar_figuras_nao_altera_os_dados(sinesp):
 
 
 # ---------------------------------------------------------------------------------------------------------- página
+def _aba(app, nome):
+    """A página executa só a aba selecionada (st.tabs com on_change="rerun"): seleciona a aba e executa de novo."""
+    app.session_state["aba_analise"] = nome
+    return app.run()
+
+
+def _em_cada_aba(app):
+    """Percorre as quatro abas de análise e devolve, a cada uma, o app já executado com ela selecionada."""
+    for nome in ("Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers"):
+        yield nome, _aba(app, nome)
+
+
 def _pagina():
     return AppTest.from_file(str(project_path("dashboard", "pages", "sinesp.py")), default_timeout=180).run()
 
@@ -219,10 +231,16 @@ def test_modo_compacto_na_pagina_move_o_texto_explicativo_para_componentes_nativ
     assert "Cada linha acumula" not in legendas  # completo: o texto está dentro da imagem
     app.toggle[0].set_value(True).run()
     assert not app.exception and not app.error
-    legendas = " ".join(c.value for c in app.caption)
+    legendas, tukey, tabelas = "", False, 0
+    for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
+        assert not aba.exception and not aba.error, nome
+        legendas += " ".join(c.value for c in aba.caption)
+        tukey |= any("Limites de Tukey" in c.value or "limites de Tukey" in c.value for c in aba.caption)
+        tabelas += sum(1 for e in aba.expander if e.label == "Valores usados neste gráfico (tabela)")
     assert "Cada linha acumula os meses de um ano" in legendas and "Fonte: MJSP / Sinesp VDE | Abrangência: Estadual | Unidade: vítimas" in legendas
-    assert any("Limites de Tukey" in c.value or "limites de Tukey" in c.value for c in app.caption)
-    assert sum(1 for e in app.expander if e.label == "Valores usados neste gráfico (tabela)") >= 9  # as tabelas de apoio continuam nos dois modos
+    assert tukey
+    assert tabelas >= 9  # as tabelas de apoio continuam nos dois modos
+    app = _aba(app, "Evolução")
     metricas = [m.value for m in app.metric][:2]
     app.toggle[0].set_value(False).run()
     assert [m.value for m in app.metric][:2] == metricas == ["29", "25"]  # mesmos resultados nos dois modos
