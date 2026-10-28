@@ -1,6 +1,8 @@
 # Trabalho histórico: SSP/SC (violência doméstica e homicídios) e Prefeitura/SEPROT
 
-**Fora do escopo do produto entregue.** A partir da Etapa 18 (27/10/2026) o projeto e o dashboard usam **exclusivamente o Sinesp/MJSP**
+**Fora do escopo do produto entregue** (o painel). Desde a Etapa 24 (28/10/2026), o acervo SSP/SC de Joinville voltou ao
+escopo de **dados e investigação**: a extração e a auditoria são refeitas por `src/pipeline/ssp_sc.py` (ver a seção 5.2 do `README.md`),
+sem publicação no painel enquanto a validação não for concluída. A partir da Etapa 18 (27/10/2026) o projeto e o dashboard usam **exclusivamente o Sinesp/MJSP**
 para Joinville/SC. Este índice registra onde está o trabalho anterior sobre a SSP/SC e a Prefeitura/SEPROT, para que ele não se perca.
 Nada aqui é executado pelo painel, pela suíte de testes ativa nem pela atualização dos dados.
 
@@ -21,7 +23,7 @@ páginas e os dados SSP/SC é `bad9723`.
 
 | Item | Onde |
 |---|---|
-| Etapas 11–14.2 do roteiro | `historico/scripts/analise_seguranca_publica.py` (ainda presentes, como histórico; **não** fazem parte do painel nem dos dados ativos; o roteiro de referência da entrega é `scripts/analise_sinesp.py`) |
+| Etapas 11–14.2 do roteiro | `historico/scripts/analise_seguranca_publica.py` (ainda presentes, como histórico; **não** fazem parte do painel nem dos dados ativos; o ETL da entrega é `scripts/etl_sinesp.py`; a extração SSP/SC destas etapas é reaproveitada por `src/pipeline/ssp_sc.py`) |
 | Documentação da fonte e da extração | `historico/ssp_sc/documentacao/SSP_SC.md`, `historico/ssp_sc/documentacao/CSV_COMPLEMENTARES.md`, `historico/ssp_sc/documentacao/ssp_csv_extraction_etapa_1_1.md` |
 | Extração histórica | `historico/scripts/legacy/extrair_ssp_joinville.py`, `historico/scripts/extract.py`, `historico/ssp_sc/ssp_csv_data_viewer.ipynb` |
 | Página do dashboard | `dashboard/pages/violencia_domestica.py` (removida da navegação; recuperável no commit `bad9723`) |
