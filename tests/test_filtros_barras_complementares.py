@@ -9,7 +9,7 @@ from dashboard import dados_publicos as dp
 from src.pipeline.utils import project_path
 
 ANOS = list(range(2020, 2027))
-PROTOTIPO = project_path("documentacao", "analises", "fontes", "indicadores_complementares_joinville.csv")
+PROTOTIPO = project_path("historico", "indicadores_complementares", "indicadores_complementares_joinville.csv")
 
 
 @pytest.fixture(scope="module")
@@ -129,7 +129,7 @@ def test_prototipo_complementar_e_separado_explicita_fonte_e_nao_valida_divergen
 
 
 def test_documentacao_das_fontes_complementares_registra_matriz_e_divergencia():
-    texto = project_path("documentacao", "analises", "fontes", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
+    texto = project_path("historico", "indicadores_complementares", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
     for esperado in ("11 eventos", "8.865", "1.351", "933", "361", "divergente", "Estupro", "Tráfico de drogas", "NL", "não foram convertidas variações percentuais",
                      "Nada deste documento foi incorporado ao dashboard", "https://dados.sc.gov.br/", "joinville-cidade-em-dados"):
         assert esperado.lower() in texto.lower(), esperado
@@ -183,7 +183,7 @@ def test_perfil_mensal_em_barras_usa_mediana_e_so_anos_completos(sinesp):
 
 
 def test_documentacao_registra_o_relatorio_da_ssp_e_a_minuta_de_solicitacao():
-    texto = project_path("documentacao", "analises", "fontes", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
+    texto = project_path("historico", "indicadores_complementares", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
     for esperado in ("061/2024/GEAC/DINE/SSP/SC", "15/03/2024", "https://portalelegis.alesc.sc.gov.br/documentos/z1LZ8", "669", "Tabela 03", "Tabela 04",
                      "possível inconsistência editorial", "não usar 669 como total de furtos", "Minuta de solicitação", "SEPROT", "2020 a 2026"):
         assert esperado.lower() in texto.lower(), esperado

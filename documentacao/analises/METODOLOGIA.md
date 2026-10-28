@@ -15,8 +15,7 @@ indicador significa, como as estatísticas são calculadas e como conferir que o
 
 Os XLSX ficam em `dados/brutos/sinesp/` e não vão para o GitHub. A pasta guarda duas edições oficiais, sem duplicar arquivos:
 `oficial_20261027/` (edição usada pela base aprovada; hashes no manifesto) e a raiz + `pendente_validacao_origem/` (edição auditada em
-agosto/2026, usada pelo roteiro histórico e pelos testes históricos). Origem e verificações: [fontes/ORIGEM_SINESP.md](fontes/ORIGEM_SINESP.md)
-e [fontes/SINESP_JOINVILLE.md](fontes/SINESP_JOINVILLE.md).
+agosto/2026, usada pelo roteiro histórico e pelos testes históricos). Origem e verificações: [ORIGEM_E_COBERTURA.md](ORIGEM_E_COBERTURA.md).
 
 ## 2. Indicadores (12 séries)
 
@@ -29,8 +28,7 @@ e [fontes/SINESP_JOINVILLE.md](fontes/SINESP_JOINVILLE.md).
 
 Vítimas vêm da coluna `total_vitima`; mandados, da coluna `total`. São unidades diferentes e **nunca são somadas**, assim como abrangências
 diferentes. Furto, roubo em geral, estupro e tráfico de drogas **não existem** nos arquivos do Sinesp para Joinville; a investigação de
-fontes municipais e as divergências encontradas estão em [fontes/INDICADORES_COMPLEMENTARES_JOINVILLE.md](fontes/INDICADORES_COMPLEMENTARES_JOINVILLE.md)
-(nada disso entra na base).
+fontes municipais e as divergências encontradas foram arquivadas em `historico/indicadores_complementares/` (nada disso entra na base).
 
 ## 3. Regras do ETL (`scripts/etl_sinesp.py`)
 

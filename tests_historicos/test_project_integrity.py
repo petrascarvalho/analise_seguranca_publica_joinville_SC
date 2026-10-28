@@ -20,7 +20,7 @@ def test_pre_migration_backup_matches_inventory():
     backup_root = project_path("backup_pre_migracao_20261016")
     if not backup_root.is_dir():
         pytest.skip("Cópia local pré-migração está fora de clones e ignorada pelo Git")
-    inventory = project_path("documentacao", "auditoria", "inventario_pre_migracao.csv")
+    inventory = project_path("historico", "documentacao_anterior", "auditoria", "inventario_pre_migracao.csv")
     with inventory.open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == 82
@@ -55,7 +55,7 @@ def test_historical_sinesp_sources_have_official_provenance_evidence():
 
 
 def test_raw_sources_still_match_the_migration_integrity_map():
-    mapping = project_path("documentacao", "auditoria", "inventario_sha256_pre_reorganizacao.csv")
+    mapping = project_path("historico", "documentacao_anterior", "auditoria", "inventario_sha256_pre_reorganizacao.csv")
     with mapping.open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == 158
@@ -67,15 +67,17 @@ def test_raw_sources_still_match_the_migration_integrity_map():
     }
     archive_root = project_path("backup_pre_migracao_20261016", "ajustes_academicos_finais_20261016", "readmes_arquivados")
     archived_matches = 0
-    # Documentos realocados na Etapa 21 (reorganização da documentação); a existência continua obrigatória no novo caminho.
+    # Documentos realocados nas Etapas 21 e 23 (reorganização da documentação); a existência continua obrigatória no novo caminho.
     realocados_etapa21 = {
-        "documentacao/ESCOPO_PROJETO.md": "documentacao/analises/ESCOPO_PROJETO.md",
-        "documentacao/fontes/ORIGEM_SINESP.md": "documentacao/analises/fontes/ORIGEM_SINESP.md",
-        "documentacao/fontes/SINESP_JOINVILLE.md": "documentacao/analises/fontes/SINESP_JOINVILLE.md",
+        "documentacao/ESCOPO_PROJETO.md": "historico/documentacao_anterior/ESCOPO_PROJETO.md",
+        "documentacao/fontes/ORIGEM_SINESP.md": "historico/documentacao_anterior/fontes/ORIGEM_SINESP.md",
+        "documentacao/fontes/SINESP_JOINVILLE.md": "historico/documentacao_anterior/fontes/SINESP_JOINVILLE.md",
         "documentacao/fontes/SSP_SC.md": "historico/ssp_sc/documentacao/SSP_SC.md",
         "documentacao/fontes/CSV_COMPLEMENTARES.md": "historico/ssp_sc/documentacao/CSV_COMPLEMENTARES.md",
         "documentacao/auditoria/ssp_csv_extraction_etapa_1_1.md": "historico/ssp_sc/documentacao/ssp_csv_extraction_etapa_1_1.md",
         "documentacao/analises/relatorio_pipeline_analitico.md": "historico/documentacao_anterior/relatorio_pipeline_analitico.md",
+        "documentacao/auditoria/evidencia_grafia_violencia_domestica_2023.png": "historico/ssp_sc/evidencia_grafia_violencia_domestica_2023.png",
+        "documentacao/auditoria/inventario_pre_migracao.csv": "historico/documentacao_anterior/auditoria/inventario_pre_migracao.csv",
         **{
             f"documentacao/auditoria/{nome}": f"historico/documentacao_anterior/{nome}"
             for nome in (
@@ -84,9 +86,20 @@ def test_raw_sources_still_match_the_migration_integrity_map():
             )
         },
     }
+    # Saídas antigas locais (gráficos e tabelas do pipeline anterior) foram para historico/saidas_antigas/ na Etapa 23.
+    prefixos_etapa23 = {"documentacao/analises/graficos/": "historico/saidas_antigas/graficos/",
+                        "documentacao/analises/tabelas/": "historico/saidas_antigas/tabelas/"}
+
+    def caminho_atual(destino: str) -> str:
+        destino = realocados_etapa21.get(destino, destino)
+        for antigo, novo in prefixos_etapa23.items():
+            if destino.startswith(antigo):
+                return novo + destino[len(antigo):]
+        return destino
+
     for row in rows:
         destination = row["caminho_destino_planejado"]
-        source = project_path(*Path(realocados_etapa21.get(destination, destination)).parts)
+        source = project_path(*Path(caminho_atual(destination)).parts)
         if destination in archived_readmes:
             assert not source.exists()
             if archive_root.is_dir():
@@ -186,10 +199,10 @@ def test_eda_exports_csv_parquet_and_source_control_totals():
         parquet_frame = pd.read_parquet(parquet_path)
         assert len(csv_frame) == len(parquet_frame)
         assert list(csv_frame.columns) == list(parquet_frame.columns)
-    homicide = pd.read_csv(project_path("documentacao", "analises", "tabelas", "comparacao_ssp_homicidio_parcial.csv"))
+    homicide = pd.read_csv(project_path("historico", "saidas_antigas", "tabelas", "comparacao_ssp_homicidio_parcial.csv"))
     assert homicide["ano"].tolist() == [2023, 2024, 2025, 2026]
     assert homicide["vitimas_homicidio"].tolist() == [36, 20, 17, 22]
-    cross_source = pd.read_csv(project_path("documentacao", "analises", "tabelas", "comparacao_fontes_homicidio.csv"))
+    cross_source = pd.read_csv(project_path("historico", "saidas_antigas", "tabelas", "comparacao_fontes_homicidio.csv"))
     row_2025 = cross_source[cross_source["ano"] == 2025].iloc[0]
     assert row_2025["sinesp_vitimas_homicidio"] == 29
     assert row_2025["ssp_vitimas_homicidio_ano_completo"] == 32
@@ -197,10 +210,10 @@ def test_eda_exports_csv_parquet_and_source_control_totals():
     assert not row_2026["comparacao_anual_valida"]
     assert row_2026["sinesp_periodo"] == "janeiro–agosto"
     assert row_2026["ssp_periodo_parcial"] == "01/01 - 31/07"
-    city = pd.read_csv(project_path("documentacao", "analises", "tabelas", "estatisticas_prefeitura_furto_roubo.csv"))
+    city = pd.read_csv(project_path("historico", "saidas_antigas", "tabelas", "estatisticas_prefeitura_furto_roubo.csv"))
     robbery = city[city["indicador"] == "Roubo"].sort_values("ano")
     assert robbery["quantidade"].tolist() == [933, 593, 476]
-    for chart in project_path("documentacao", "analises", "graficos").glob("*.png"):
+    for chart in project_path("historico", "saidas_antigas", "graficos").glob("*.png"):
         assert chart.stat().st_size > 1000
 
 

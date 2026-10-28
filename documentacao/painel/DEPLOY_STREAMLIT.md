@@ -1,8 +1,7 @@
 # Deploy no Streamlit Community Cloud
 
-**Deploy realizado.** Aplicação publicada em <https://seguranca-publica-joinville-sinesp.streamlit.app/>. A página inicial abriu corretamente no navegador; as demais páginas,
-os gráficos e o uso em dispositivos móveis **ainda não foram revisados visualmente** (etapa posterior). Este documento registra a
-configuração usada e a conferência pós-deploy.
+**Deploy realizado.** Aplicação publicada em <https://seguranca-publica-joinville-sinesp.streamlit.app/>, reconstruída a partir da branch
+`main` a cada push. Este documento registra a configuração usada e a conferência pós-deploy.
 
 ## Configuração do app
 
@@ -18,11 +17,12 @@ configuração usada e a conferência pós-deploy.
 ## O que o app precisa no clone público
 
 * `dashboard/` (páginas, módulos e `dashboard/data_publica/` com 2 CSVs do Sinesp, o manifesto e o `LEIAME.md`);
-* `scripts/__init__.py` e `scripts/utils.py` (usados pela entrada);
+* `scripts/painel_streamlit.py` (entrada; não depende de outros módulos além de `dashboard/`);
+* `.streamlit/config.toml` (tema claro com as cores dos gráficos);
 * nenhuma pasta `dados/` (acervo bruto): o painel não a utiliza. Testes automatizados cobrem a execução em um clone sem ela.
 
 Caminhos são relativos ao arquivo (`Path(__file__)`), não há caminhos absolutos do Windows nem dependência do kernel Interactive.
-A entrada insere a raiz do projeto em `sys.path` para que `scripts` e `dashboard` sejam importáveis no deploy. O painel não acessa a rede.
+A entrada insere a raiz do projeto em `sys.path` para que o pacote `dashboard` seja importável no deploy. O painel não acessa a rede.
 
 ## Dependências
 
@@ -36,7 +36,7 @@ Pandas 3.0.6, Matplotlib 3.11.2, Python 3.12. As faixas de `requirements.txt` n�
 2. Em <https://share.streamlit.io>, *Create app* → repositório, branch e arquivo principal acima.
 3. Aguardar o build; abrir as três páginas (**Projeto**, **Indicadores Sinesp**, **Qualidade e metodologia**); conferir *Qualidade e
    metodologia* (SHA-256 dos arquivos = manifesto; última competência 2026-09; PRF 2026-08).
-4. A URL real está registrada no README (`## 15. Links de entrega`) e na documentação do escopo.
+4. A URL real está registrada no README (`## 15. Links de entrega`).
 
 ## Conferência pós-deploy
 
@@ -51,9 +51,8 @@ Se o build falhar, verificar `requirements.txt` (Python 3.12) antes de qualquer 
 
 ## Verificação visual
 
-Os testes automatizados (`AppTest`) e a inicialização do servidor não substituem a inspeção visual em desktop e celular. Ela deve ser
-feita manualmente no navegador, em todas as páginas, antes de divulgar o link; a validação em celular e o aperfeiçoamento dos
-gráficos estão pendentes.
+Os testes automatizados (`AppTest`) e as capturas locais em navegador sem interface (Chrome headless, desktop e tela estreita) não
+substituem a inspeção no aplicativo publicado e em um celular real, que deve ser feita manualmente antes de divulgar o link.
 
 ## Atualização dos dados depois do deploy
 

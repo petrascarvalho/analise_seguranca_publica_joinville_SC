@@ -21,7 +21,7 @@ páginas e os dados SSP/SC é `bad9723`.
 
 | Item | Onde |
 |---|---|
-| Etapas 11–14.2 do roteiro | `scripts/analise_seguranca_publica.py` (ainda presentes, como histórico; **não** fazem parte do painel nem dos dados ativos; o roteiro de referência da entrega é `scripts/analise_sinesp.py`) |
+| Etapas 11–14.2 do roteiro | `historico/scripts/analise_seguranca_publica.py` (ainda presentes, como histórico; **não** fazem parte do painel nem dos dados ativos; o roteiro de referência da entrega é `scripts/analise_sinesp.py`) |
 | Documentação da fonte e da extração | `historico/ssp_sc/documentacao/SSP_SC.md`, `historico/ssp_sc/documentacao/CSV_COMPLEMENTARES.md`, `historico/ssp_sc/documentacao/ssp_csv_extraction_etapa_1_1.md` |
 | Extração histórica | `historico/scripts/legacy/extrair_ssp_joinville.py`, `historico/scripts/extract.py`, `historico/ssp_sc/ssp_csv_data_viewer.ipynb` |
 | Página do dashboard | `dashboard/pages/violencia_domestica.py` (removida da navegação; recuperável no commit `bad9723`) |
@@ -46,7 +46,7 @@ Não use `git reset --hard` nem reescreva o histórico para isso; `git show` e `
 Na máquina de desenvolvimento existe uma cópia dos arquivos modificados ou removidos na Etapa 18 em
 `atualizacao/arquivo_historico_ssp_sc_bad9723/` (pasta ignorada pelo Git), além da versão anterior dos dados em
 `atualizacao/versoes/`. O acervo bruto (`dados/brutos/ssp_sc/`, PDFs e CSVs extraídos) e os inventários de hash permanecem intactos em `dados/` e
-`documentacao/auditoria/`. Esses itens locais não são necessários para recuperar o código, que está no Git.
+`historico/documentacao_anterior/auditoria/`. Esses itens locais não são necessários para recuperar o código, que está no Git.
 
 ## Se o escopo voltar a incluir a SSP/SC
 

@@ -997,7 +997,7 @@ metadados_preservados_etapa8 = metadados_sinesp_concatenado.copy(deep=True)
 
 # Confere hashes contra o inventário anterior, não apenas antes/depois desta sessão.
 inventario_hash_sinesp_etapa8 = pd.read_csv(
-    RAIZ_PROJETO / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv"
+    RAIZ_PROJETO / "historico/documentacao_anterior/auditoria/inventario_sha256_pre_reorganizacao.csv"
 )
 hashes_originais_etapa8 = {}
 epocas_originais_etapa8 = {}
@@ -2030,7 +2030,7 @@ mostrar_ssp11(inconsistencias_acumulados_ssp)
 
 # %%
 manifesto_ssp11 = pd_ssp11.read_csv(
-    raiz_ssp11 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv",
+    raiz_ssp11 / "historico/documentacao_anterior/auditoria/inventario_sha256_pre_reorganizacao.csv",
     dtype=str, keep_default_na=False,
 )
 linhas_integridade_ssp11 = []
@@ -2386,7 +2386,7 @@ if len(auditoria_celulas_domesticas_ssp12) != 216 or not auditoria_celulas_domes
     raise ValueError("Etapa 12: células não correspondem aos PDFs; interromper sem corrigir.")
 if auditoria_celulas_domesticas_ssp12.duplicated(["arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela", "coluna_csv"]).any():
     raise ValueError("Etapa 12: célula doméstica diagnosticada mais de uma vez; investigar sem deduplicar.")
-manifesto_ssp12 = pd_ssp12.read_csv(raiz_ssp12 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv", dtype=str, keep_default_na=False)
+manifesto_ssp12 = pd_ssp12.read_csv(raiz_ssp12 / "historico/documentacao_anterior/auditoria/inventario_sha256_pre_reorganizacao.csv", dtype=str, keep_default_na=False)
 integridade_auditoria_ssp12 = pd_ssp12.DataFrame([
     {"arquivo": p.name, "sha256_antes": digest, "sha256_depois": sha256_ssp12(p),
      "sha256_historico": manifesto_ssp12.loc[manifesto_ssp12.caminho_destino_planejado.eq(p.relative_to(raiz_ssp12).as_posix()), "sha256"].item()}
@@ -2495,7 +2495,7 @@ def sha256_ssp131(caminho):
 
 
 manifesto_ssp131 = pd_ssp131.read_csv(
-    raiz_ssp131 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv",
+    raiz_ssp131 / "historico/documentacao_anterior/auditoria/inventario_sha256_pre_reorganizacao.csv",
     dtype=str, keep_default_na=False)
 brutos_dom_ssp131 = {}
 paginas_pdf_ssp131 = {}
@@ -3436,7 +3436,7 @@ registrar_ssp133("Valores", "dimensão da base 216 × 5", (216, 5), base_ssp133.
 ligacao_ssp133 = base_ssp133[chaves_ssp133].merge(
     rastreio_ssp133[chaves_ssp133], on=chaves_ssp133, how="outer", validate="one_to_one", indicator=True)
 paginas_pdf_ssp133 = {rel: len(LeitorSSP133(pasta_pdf_ssp133 / (arq + ".pdf")).pages) for rel, arq in arquivos_ssp133.items()}
-manifesto_ssp133 = pd_ssp133.read_csv(raiz_ssp133 / "documentacao/auditoria/inventario_sha256_pre_reorganizacao.csv", dtype=str, keep_default_na=False)
+manifesto_ssp133 = pd_ssp133.read_csv(raiz_ssp133 / "historico/documentacao_anterior/auditoria/inventario_sha256_pre_reorganizacao.csv", dtype=str, keep_default_na=False)
 linhas_hash_ssp133 = []
 for relatorio_ssp133, arquivo_ssp133 in arquivos_ssp133.items():
     for caminho_ssp133, coluna_hash_ssp133 in ((pasta_pdf_ssp133 / (arquivo_ssp133 + ".pdf"), "sha256_pdf"), (pasta_csv_ssp133 / (arquivo_ssp133 + ".csv"), "sha256_csv")):

@@ -37,9 +37,9 @@ desktop.ini
 # Acervo e derivados: obtenção/restauração documentada no README acadêmico.
 # Redistribuição dos arquivos de dados ainda não foi autorizada/verificada.
 /dados/
-/documentacao/analises/graficos/
-/documentacao/analises/tabelas/
-/documentacao/auditoria/evidencia_grafia_violencia_domestica_2023.png
+# saídas antigas e evidência da SSP/SC: só locais, preservadas em historico/
+/historico/saidas_antigas/
+/historico/ssp_sc/evidencia_grafia_violencia_domestica_2023.png
 
 # Memória de continuidade externa; proteger também contra cópias acidentais.
 README_IA*.md

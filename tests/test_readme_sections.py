@@ -5,7 +5,10 @@ from src.pipeline.utils import project_path
 URL_STREAMLIT = "https://seguranca-publica-joinville-sinesp.streamlit.app/"
 DOCUMENTOS_ATIVOS = {
     "README.md": ("README.md",),
-    "ESCOPO_PROJETO.md": ("documentacao", "analises", "ESCOPO_PROJETO.md"),
+    "METODOLOGIA.md": ("documentacao", "analises", "METODOLOGIA.md"),
+    "ORIGEM_E_COBERTURA.md": ("documentacao", "analises", "ORIGEM_E_COBERTURA.md"),
+    "RESULTADOS.md": ("documentacao", "analises", "RESULTADOS.md"),
+    "USO_DO_PAINEL.md": ("documentacao", "painel", "USO_DO_PAINEL.md"),
     "ATUALIZACAO_DE_DADOS.md": ("documentacao", "analises", "ATUALIZACAO_DE_DADOS.md"),
     "DEPLOY_STREAMLIT.md": ("documentacao", "painel", "DEPLOY_STREAMLIT.md"),
     "LEIAME.md": ("dashboard", "data_publica", "LEIAME.md"),
@@ -80,7 +83,7 @@ def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_in
     assert re.search(r"\*\*\d+ testes aprovados\*\*", readme), "o README deve informar a contagem de testes da suíte ativa"
     for documento in ("analises/ATUALIZACAO_DE_DADOS.md", "painel/DEPLOY_STREAMLIT.md", "analises/METODOLOGIA.md", "painel/USO_DO_PAINEL.md"):
         assert project_path("documentacao", *documento.split("/")).is_file()
-    for documento in ("README.md", "documentacao/painel/DEPLOY_STREAMLIT.md", "documentacao/analises/ESCOPO_PROJETO.md"):
+    for documento in ("README.md", "documentacao/painel/DEPLOY_STREAMLIT.md", "documentacao/painel/USO_DO_PAINEL.md"):
         assert URL_STREAMLIT in _ler(*documento.split("/")), documento
     assert "streamlit.app" not in _ler("dashboard", "data_publica", "LEIAME.md")  # dados mínimos não dependem da URL
     regras = [l.strip() for l in project_path(".gitignore").read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]

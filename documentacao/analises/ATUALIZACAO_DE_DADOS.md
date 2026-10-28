@@ -8,7 +8,7 @@ não se atualiza sozinho: ele exibe uma *versão histórica validada* dos arquiv
 
 | Etapa | Automático (código) | Manual (responsável) |
 |---|---|---|
-| **A — Verificar** | Consulta metadados da fonte e classifica indícios (`python -m scripts.atualizacao_dados verificar`) | Decidir se vale preparar; repetir a verificação quando quiser |
+| **A — Verificar** | Consulta metadados da fonte e classifica indícios (`python -m src.pipeline.atualizacao_dados verificar`) | Decidir se vale preparar; repetir a verificação quando quiser |
 | **B — Preparar** | Lê os XLSX oficiais, executa o ETL, valida, compara e grava uma candidata isolada | Fornecer (ou pedir o download de) **todos** os XLSX; ler o relatório de validação |
 | **C — Aprovar** | Preserva a versão anterior, troca o diretório de forma segura e revalida | **Digitar a aprovação** (`--confirmo <id>`; `--aceitar-revisoes` apenas após análise de revisões) |
 | **Reverter** | Restaura uma versão preservada | Digitar a confirmação |
@@ -30,8 +30,8 @@ Para a preparação, salvar **todos** os anos (2020 em diante) em uma pasta; o c
 
 Dois mecanismos, ambos restritos ao Sinesp:
 
-* **Atualização (uso normal):** fluxo A → B → C abaixo (`scripts/atualizacao_dados.py`), que não depende do roteiro acadêmico.
-* **Geração inicial reprodutível:** `python -m scripts.gerar_dados_dashboard` extrai do roteiro as etapas Sinesp validadas (1–2 e 5–9),
+* **Atualização (uso normal):** fluxo A → B → C abaixo (`src/pipeline/atualizacao_dados.py`), que não depende do roteiro acadêmico.
+* **Geração inicial reprodutível:** `python -m historico.scripts.gerar_dados_dashboard` extrai do roteiro as etapas Sinesp validadas (1–2 e 5–9),
   executa-as em espaço de nomes isolado, confere valores conhecidos (900 observações até agosto/2026) e grava os CSVs e o manifesto.
   Ele reproduz a versão inicial auditada; para publicações novas, use o fluxo controlado. Antes de sobrescrever, a versão anterior é copiada
   para `atualizacao/versoes/`.
@@ -42,7 +42,7 @@ cobertura por série, unidades, SHA-256, fonte, licenças, método de obtenção
 ## A — Verificar (somente leitura)
 
 ```powershell
-python -m scripts.atualizacao_dados verificar
+python -m src.pipeline.atualizacao_dados verificar
 ```
 
 Grava `atualizacao/verificacoes/verificacao_<UTC>.json` (URL, identificador, data da consulta, evidência e classificação de cada
@@ -73,9 +73,9 @@ a partir de datas. Só o passo B, com o conteúdo, confirma nova competência ou
 
 ```powershell
 # com os XLSX oficiais colocados manualmente (TODOS os anos):
-python -m scripts.atualizacao_dados preparar --entradas-sinesp <pasta com bancovde-2020.xlsx ... bancovde-2026.xlsx> --relatorio-verificacao atualizacao/verificacoes/<arquivo>.json
+python -m src.pipeline.atualizacao_dados preparar --entradas-sinesp <pasta com bancovde-2020.xlsx ... bancovde-2026.xlsx> --relatorio-verificacao atualizacao/verificacoes/<arquivo>.json
 # ou, para tentar baixar os XLSX oficiais (pode falhar por bloqueio; não é contornado):
-python -m scripts.atualizacao_dados preparar --baixar-sinesp --relatorio-verificacao atualizacao/verificacoes/<arquivo>.json
+python -m src.pipeline.atualizacao_dados preparar --baixar-sinesp --relatorio-verificacao atualizacao/verificacoes/<arquivo>.json
 ```
 
 Cria `atualizacao/staging/<id>/` com `dados/` (CSVs + manifesto candidatos + `LEIAME.md`), `relatorio_validacao.json` e
@@ -96,12 +96,12 @@ deduplicação genérica. Com os originais auditados, a candidata é idêntica b
 Arquivos de anos anteriores **não** são assumidos como inalterados: todos devem ser fornecidos e são recomparados. Em caso de falha, a
 candidata parcial é removida e a ativa permanece intacta.
 
-Comparar versões: `python -m scripts.atualizacao_dados comparar <id>` (relatório + diferenças `novo`/`removido`/`alterado`).
+Comparar versões: `python -m src.pipeline.atualizacao_dados comparar <id>` (relatório + diferenças `novo`/`removido`/`alterado`).
 
 ## C — Aprovar e promover
 
 ```powershell
-python -m scripts.atualizacao_dados aprovar <id> --confirmo <id> --aprovado-por "<quem aprovou>"
+python -m src.pipeline.atualizacao_dados aprovar <id> --confirmo <id> --aprovado-por "<quem aprovou>"
 ```
 
 Só promove se a confirmação for **igual ao id**, a candidata não tiver erros, a versão ativa não tiver mudado desde a preparação e a
@@ -113,8 +113,8 @@ se aceitou revisões) e a cobertura. A data de aprovação é a do momento da pr
 ## Reverter
 
 ```powershell
-python -m scripts.atualizacao_dados versoes
-python -m scripts.atualizacao_dados reverter <versao> --confirmo <versao>
+python -m src.pipeline.atualizacao_dados versoes
+python -m src.pipeline.atualizacao_dados reverter <versao> --confirmo <versao>
 ```
 
 Restaura a versão preservada (também revalidada) e preserva a que foi substituída.
