@@ -49,7 +49,6 @@ from src.pipeline import versionamento_dados as vv  # noqa: E402
 
 BASE_ATUALIZACAO = RAIZ / "atualizacao"
 ATIVA_PADRAO = dp.DIRETORIO_DADOS
-ARQ_LEIAME = "LEIAME.md"
 _renomear = os.replace  # indireção para testes (simulação de falha na troca)
 
 
@@ -325,8 +324,6 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
 
     (destino / dp.ARQ_SINESP).write_bytes(sinesp_bytes)
     (destino / dp.ARQ_SINESP_CATALOGO).write_bytes(catalogo_bytes)
-    if (ativa / ARQ_LEIAME).is_file():
-        shutil.copy2(ativa / ARQ_LEIAME, destino / ARQ_LEIAME)
 
     fichas = []
     for nome in dp.ARQUIVOS_DE_DADOS:

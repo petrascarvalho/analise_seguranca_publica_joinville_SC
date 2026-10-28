@@ -1,3 +1,8 @@
+"""Garantias de integridade migradas dos nove testes históricos; veja README, seção 10.
+O arquivo externo é exigido somente pelos testes de material arquivado.
+"""
+
+import os
 import csv
 import hashlib
 from pathlib import Path
@@ -8,6 +13,16 @@ import pytest
 from src.pipeline.utils import project_path
 
 
+ARQUIVO = Path(os.environ.get("JOINVILLE_ARQUIVO_ETAPA26", Path.home() / "Desktop/readme.ia/arquivo_etapa26"))
+precisa_arquivo = pytest.mark.skipif(not ARQUIVO.is_dir(), reason="backup externo Etapa 26 ausente; configure JOINVILLE_ARQUIVO_ETAPA26")
+precisa_dados = pytest.mark.skipif(not project_path("dados", "brutos").is_dir(), reason="acervo local ausente (fora do Git)")
+
+
+def caminho_preservado(*partes):
+    local = project_path(*partes)
+    return local if local.is_file() else ARQUIVO.joinpath(*partes)
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -16,11 +31,12 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+@precisa_arquivo
 def test_pre_migration_backup_matches_inventory():
-    backup_root = project_path("backup_pre_migracao_20261016")
+    backup_root = ARQUIVO / "backup_pre_migracao_20261016"
     if not backup_root.is_dir():
         pytest.skip("Cópia local pré-migração está fora de clones e ignorada pelo Git")
-    inventory = project_path("historico", "documentacao_anterior", "auditoria", "inventario_pre_migracao.csv")
+    inventory = project_path("documentacao", "auditoria", "inventario_pre_migracao.csv")
     with inventory.open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == 82
@@ -31,6 +47,7 @@ def test_pre_migration_backup_matches_inventory():
         assert sha256(backup) == row["sha256_original"] == row["sha256_backup"]
 
 
+@precisa_dados
 def test_expected_source_files_are_in_new_layout():
     raw = project_path("dados", "brutos")
     assert len(list((raw / "ssp_sc" / "pdfs").glob("*.pdf"))) == 45
@@ -39,6 +56,7 @@ def test_expected_source_files_are_in_new_layout():
     assert len(list((raw / "sinesp" / "pendente_validacao_origem").glob("*.xlsx"))) == 3
 
 
+@precisa_dados
 def test_historical_sinesp_sources_have_official_provenance_evidence():
     audit = project_path("documentacao", "auditoria", "sinesp_origem_2020_2022.csv")
     with audit.open(encoding="utf-8-sig", newline="") as stream:
@@ -54,8 +72,9 @@ def test_historical_sinesp_sources_have_official_provenance_evidence():
         assert sha256(source) == row["sha256_local"]
 
 
+@precisa_arquivo
 def test_raw_sources_still_match_the_migration_integrity_map():
-    mapping = project_path("historico", "documentacao_anterior", "auditoria", "inventario_sha256_pre_reorganizacao.csv")
+    mapping = project_path("documentacao", "auditoria", "inventario_sha256_pre_reorganizacao.csv")
     with mapping.open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == 158
@@ -65,7 +84,7 @@ def test_raw_sources_still_match_the_migration_integrity_map():
         "documentacao/analises/graficos/README.md",
         "documentacao/analises/tabelas/README.md",
     }
-    archive_root = project_path("backup_pre_migracao_20261016", "ajustes_academicos_finais_20261016", "readmes_arquivados")
+    archive_root = ARQUIVO.joinpath("backup_pre_migracao_20261016", "ajustes_academicos_finais_20261016", "readmes_arquivados")
     archived_matches = 0
     # Documentos realocados nas Etapas 21 e 23 (reorganização da documentação); a existência continua obrigatória no novo caminho.
     realocados_etapa21 = {
@@ -99,7 +118,7 @@ def test_raw_sources_still_match_the_migration_integrity_map():
 
     for row in rows:
         destination = row["caminho_destino_planejado"]
-        source = project_path(*Path(caminho_atual(destination)).parts)
+        source = caminho_preservado(*Path(caminho_atual(destination)).parts)
         if destination in archived_readmes:
             assert not source.exists()
             if archive_root.is_dir():
@@ -124,6 +143,7 @@ def test_raw_sources_still_match_the_migration_integrity_map():
     assert archived_matches == (2 if archive_root.is_dir() else 0)
 
 
+@precisa_dados
 def test_ssp_outputs_keep_traceability_and_valid_pages():
     raw_pdfs = {path.name: path for path in project_path("dados", "brutos", "ssp_sc", "pdfs").glob("*.pdf")}
     csv_files = sorted(project_path("dados", "processados", "ssp_sc").glob("ssp_joinville_*.csv"))
@@ -149,6 +169,7 @@ def test_ssp_outputs_keep_traceability_and_valid_pages():
                 assert 1 <= int(page) <= page_counts[pdf_name]
 
 
+@precisa_dados
 def test_sinesp_processed_workbooks_have_expected_city_rows():
     from openpyxl import load_workbook
 
@@ -168,6 +189,7 @@ def test_sinesp_processed_workbooks_have_expected_city_rows():
             workbook.close()
 
 
+@precisa_dados
 def test_violence_domestica_normalized_labels_preserve_extracted_values():
     rows = []
     for path in sorted(project_path("dados", "processados", "ssp_sc").glob("ssp_joinville_*.csv")):
@@ -188,6 +210,7 @@ def test_violence_domestica_normalized_labels_preserve_extracted_values():
     assert max(key_counts.values()) == 1
 
 
+@precisa_arquivo
 def test_eda_exports_csv_parquet_and_source_control_totals():
     import pandas as pd
 
@@ -199,10 +222,10 @@ def test_eda_exports_csv_parquet_and_source_control_totals():
         parquet_frame = pd.read_parquet(parquet_path)
         assert len(csv_frame) == len(parquet_frame)
         assert list(csv_frame.columns) == list(parquet_frame.columns)
-    homicide = pd.read_csv(project_path("historico", "saidas_antigas", "tabelas", "comparacao_ssp_homicidio_parcial.csv"))
+    homicide = pd.read_csv(caminho_preservado("historico", "saidas_antigas", "tabelas", "comparacao_ssp_homicidio_parcial.csv"))
     assert homicide["ano"].tolist() == [2023, 2024, 2025, 2026]
     assert homicide["vitimas_homicidio"].tolist() == [36, 20, 17, 22]
-    cross_source = pd.read_csv(project_path("historico", "saidas_antigas", "tabelas", "comparacao_fontes_homicidio.csv"))
+    cross_source = pd.read_csv(caminho_preservado("historico", "saidas_antigas", "tabelas", "comparacao_fontes_homicidio.csv"))
     row_2025 = cross_source[cross_source["ano"] == 2025].iloc[0]
     assert row_2025["sinesp_vitimas_homicidio"] == 29
     assert row_2025["ssp_vitimas_homicidio_ano_completo"] == 32
@@ -210,10 +233,12 @@ def test_eda_exports_csv_parquet_and_source_control_totals():
     assert not row_2026["comparacao_anual_valida"]
     assert row_2026["sinesp_periodo"] == "janeiro–agosto"
     assert row_2026["ssp_periodo_parcial"] == "01/01 - 31/07"
-    city = pd.read_csv(project_path("historico", "saidas_antigas", "tabelas", "estatisticas_prefeitura_furto_roubo.csv"))
+    city = pd.read_csv(caminho_preservado("historico", "saidas_antigas", "tabelas", "estatisticas_prefeitura_furto_roubo.csv"))
     robbery = city[city["indicador"] == "Roubo"].sort_values("ano")
     assert robbery["quantidade"].tolist() == [933, 593, 476]
-    for chart in project_path("historico", "saidas_antigas", "graficos").glob("*.png"):
+    charts = list((ARQUIVO / "historico/saidas_antigas/graficos").glob("*.png"))
+    assert charts, "gráficos arquivados ausentes"
+    for chart in charts:
         assert chart.stat().st_size > 1000
 
 

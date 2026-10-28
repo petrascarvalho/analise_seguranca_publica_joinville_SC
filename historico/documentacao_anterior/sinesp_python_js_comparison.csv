@@ -1,5 +1,0 @@
-﻿year,legacy_rows,python_rows,legacy_fields,python_fields,all_cells_equal,difference,femicide_rows_legacy,femicide_rows_python,femicide_cells_equal
-2023,132,132,14,14,True,,24,24,True
-2024,132,132,14,14,True,,24,24,True
-2025,144,144,14,14,True,,24,24,True
-2026,96,96,14,14,True,,16,16,True

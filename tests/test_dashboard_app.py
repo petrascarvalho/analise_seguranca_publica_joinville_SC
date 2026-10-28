@@ -219,7 +219,7 @@ def test_funciona_em_clone_limpo_sem_dados_brutos_nem_ssp(tmp_path):
     _copiar_projeto_minimo(tmp_path)
     assert not (tmp_path / "dados").exists() and not (tmp_path / "atualizacao").exists()
     assert sorted(p.name for p in (tmp_path / "dashboard" / "data_publica").iterdir()) == sorted(
-        [dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO, "LEIAME.md"])
+        [dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO])
     resultado = _executar_no_clone(tmp_path, """
         from streamlit.testing.v1 import AppTest
         for pagina in ("home", "sinesp", "quality"):

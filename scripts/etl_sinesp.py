@@ -14,7 +14,7 @@ publicada no painel, e avisa que isso não reproduz a extração.
 O ETL grava somente em dados/processados/sinesp/. A base publicada no painel (dashboard/data_publica/) NUNCA é alterada
 por este roteiro: ela só muda pelo fluxo controlado verificar → preparar → aprovar (src/pipeline/atualizacao_dados.py).
 
-O trabalho anterior com SSP/SC e Prefeitura é histórico e fica em historico/scripts/analise_seguranca_publica.py (fora do escopo).
+O acervo da SSP/SC é tratado à parte, em src/pipeline/ssp_sc.py (em validação; não entra na base do painel).
 """
 
 # %% [markdown]

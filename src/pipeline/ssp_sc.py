@@ -1,30 +1,33 @@
-"""Acervo SSP/SC de Joinville: inventário, extração validada, auditoria e bases tratadas (sem publicar no painel).
+"""Acervo SSP/SC de Joinville: inventário, extração, auditoria e bases tratadas (investigação; não entra no painel).
+
+Fonte: SSP/SC, "Segurança em Números" — 42 boletins mensais e 3 relatórios de violência doméstica, em PDF, com todos os
+municípios de SC. Cada PDF tem um CSV extraído (``dados/brutos/ssp_sc/csv_extraidos/``) com a posição de cada célula:
+página, tabela e linha. O CSV localiza os valores; o PDF continua sendo o documento oficial.
 
 O que este módulo faz, em ordem:
-    1. Inventaria os 45 PDFs oficiais da SSP/SC e os 45 CSVs extraídos deles (SHA-256, tamanho, tipo de documento).
-    2. Executa, a partir desses arquivos, a extração já validada no roteiro histórico
-       (``historico/scripts/analise_seguranca_publica.py``, etapas 11 a 14.1). Ela lê os PDFs e os CSVs, localiza
-       Joinville, confere cabeçalhos de ano e mês e devolve as tabelas em memória. Nada é reescrito à mão aqui.
-    3. Monta duas bases tratadas, separadas porque têm unidade e granularidade diferentes:
-         • violência doméstica: 216 observações mensais (9 categorias × 24 meses, 2023–2024), unidade "Fato Comunicado";
-         • homicídios dos boletins: 294 valores publicados (todas as edições), em "ano completo" ou "período acumulado".
-    4. Anexa a cada valor de homicídio o seu grupo de republicação (JOIN muitos-para-um, com a cardinalidade conferida)
-       e marca os grupos divergentes. Nenhuma versão é escolhida.
-    5. Exporta tudo para ``dados/processados/ssp_sc/`` com nomes novos, sem sobrescrever os arquivos anteriores.
+    1. Inventaria os 45 PDFs e os 45 CSVs (SHA-256, tamanho, tipo de documento).
+    2. Violência doméstica: em cada relatório, lê o bloco de JOINVILLE (9 categorias) e junta as duas metades da tabela
+       (os primeiros meses ficam numa página e os demais na página pareada). Ano e meses vêm do cabeçalho impresso no PDF.
+       Resultado: 216 células mensais (9 categorias × 24 meses), unidade "Fato Comunicado".
+    3. Homicídios: em cada boletim, lê a linha de JOINVILLE da tabela municipal de vítimas de homicídio (3 anos completos e
+       4 acumulados do ano). Resultado: 294 valores publicados, um por edição.
+    4. Republicações: agrupa o mesmo número publicado em várias edições e marca os grupos com versões diferentes.
+       Nenhuma versão é escolhida.
+    5. Confere cada célula usada contra a tabela do próprio PDF e exporta para ``dados/processados/ssp_sc/``.
 
-Situação de validação: "Fato Comunicado" não tem definição nos PDFs; por isso a violência doméstica fica
-"em validação" e não é somada a vítimas nem a outras fontes. Os homicídios têm 41 grupos com versões divergentes.
+Situação: "Fato Comunicado" não tem definição nos PDFs, por isso a violência doméstica fica "em validação" e não é somada a
+vítimas nem a outras fontes. Os homicídios têm grupos com versões divergentes.
 
-Execução (a partir da raiz do projeto, com o acervo local em dados/brutos/ssp_sc/):
+Execução (na raiz do projeto, com o acervo local em dados/brutos/ssp_sc/):
     python -m src.pipeline.ssp_sc
 """
 
 from __future__ import annotations
 
-import contextlib
 import hashlib
-import io
 import json
+import re
+from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
@@ -33,18 +36,25 @@ from src.pipeline.utils import project_path
 
 PASTA_BRUTOS = project_path("dados", "brutos", "ssp_sc")
 PASTA_PROCESSADOS = project_path("dados", "processados", "ssp_sc")
-ROTEIRO_HISTORICO = project_path("historico", "scripts", "analise_seguranca_publica.py")
+PASTA_GRAFICOS = project_path("documentacao", "graficos", "analises")
 
 FONTE = "SSP/SC"
 UNIDADE_VD = "Fato Comunicado"
 SITUACAO_VD = "em validação: unidade 'Fato Comunicado' sem definição oficial nos PDFs"
-RELATORIOS_VD = {  # rótulo do relatório na extração -> arquivo PDF de origem
-    "1º semestre de 2023": "2025_06_VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf",
-    "2º semestre de 2023": "2025_06_VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf",
-    "2024": "2025_06_VIOLENCIA-DOMESTICA-2024-SC.pdf",
+MESES = ("jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez")
+# Rótulo publicado → categoria. As duas grafias das lesões ("0 Dolosa" no 1º semestre de 2023, "- Dolosa" depois) são a mesma
+# categoria (decisão documentada no README); nenhuma categoria é somada a outra.
+CATEGORIAS_VD = {
+    "Ameaça": "Ameaça", "Calúnia": "Calúnia", "Difamação": "Difamação", "Estupro": "Estupro", "Injúria": "Injúria",
+    "Injúria real": "Injúria real", "Vias de fato": "Vias de fato",
+    "Lesão corporal grave ou gravíssima 0 Dolosa": "Lesão corporal grave ou gravíssima dolosa",
+    "Lesão corporal grave ou gravíssima - Dolosa": "Lesão corporal grave ou gravíssima dolosa",
+    "Lesão corporal leve 0 Dolosa": "Lesão corporal leve dolosa",
+    "Lesão corporal leve - Dolosa": "Lesão corporal leve dolosa",
 }
 
 
+# ------------------------------------------------------------------------------------------------ leitura básica
 def sha256_arquivo(caminho: Path) -> str:
     """SHA-256 do arquivo, lido em blocos de 1 MB (a "impressão digital" que mostra se ele mudou)."""
     resumo = hashlib.sha256()
@@ -59,13 +69,47 @@ def acervo_disponivel() -> bool:
     return len(list((PASTA_BRUTOS / "pdfs").glob("*.pdf"))) == 45 and len(list((PASTA_BRUTOS / "csv_extraidos").glob("*.csv"))) == 45
 
 
-# ------------------------------------------------------------------------------------------------ 1. inventário
-def inventariar_acervo() -> pd.DataFrame:
-    """Uma linha por PDF oficial, com o CSV extraído correspondente.
+def ler_csv_extraido(nome_pdf: str) -> pd.DataFrame:
+    """CSV extraído de um PDF, tudo como texto: zeros, vazios e grafias ficam exatamente como foram extraídos."""
+    caminho = PASTA_BRUTOS / "csv_extraidos" / (Path(nome_pdf).stem + ".csv")
+    return pd.read_csv(caminho, sep=";", encoding="utf-8-sig", dtype=str, keep_default_na=False, na_filter=False)
 
-    Retorno: DataFrame com arquivo, tipo de documento, bytes, SHA-256 do PDF, nome e SHA-256 do CSV, linhas do CSV
-    e se o par PDF/CSV está completo. O CSV é um derivado do PDF e não o substitui.
-    """
+
+@lru_cache(maxsize=None)
+def texto_pagina(nome_pdf: str, pagina: int) -> str:
+    """Texto impresso numa página do PDF (pypdf), usado para ler ano, meses e período dos cabeçalhos."""
+    from pypdf import PdfReader
+
+    return PdfReader(PASTA_BRUTOS / "pdfs" / nome_pdf).pages[pagina - 1].extract_text() or ""
+
+
+@lru_cache(maxsize=None)
+def paginas_pdf(nome_pdf: str) -> int:
+    from pypdf import PdfReader
+
+    return len(PdfReader(PASTA_BRUTOS / "pdfs" / nome_pdf).pages)
+
+
+@lru_cache(maxsize=None)
+def _tabelas_da_pagina(nome_pdf: str, pagina: int) -> tuple:
+    import pdfplumber
+
+    with pdfplumber.open(PASTA_BRUTOS / "pdfs" / nome_pdf) as pdf:
+        return tuple(pdf.pages[pagina - 1].extract_tables())
+
+
+def linha_da_tabela_no_pdf(nome_pdf: str, pagina: int, tabela: int, linha: int) -> list[str]:
+    """Células de uma linha de tabela lidas diretamente do PDF (pdfplumber), para conferir o CSV extraído."""
+    return ["" if c is None else c for c in _tabelas_da_pagina(nome_pdf, pagina)[tabela - 1][linha - 1]]
+
+
+def _celulas(linha: pd.Series) -> list[str]:
+    return [linha[c] for c in linha.index if c.startswith("celula_")]
+
+
+# ------------------------------------------------------------------------------------------------- 1. inventário
+def inventariar_acervo() -> pd.DataFrame:
+    """Uma linha por PDF oficial, com o CSV extraído correspondente (o CSV é derivado do PDF e não o substitui)."""
     linhas = []
     for pdf in sorted((PASTA_BRUTOS / "pdfs").glob("*.pdf")):
         csv = PASTA_BRUTOS / "csv_extraidos" / (pdf.stem + ".csv")
@@ -78,62 +122,83 @@ def inventariar_acervo() -> pd.DataFrame:
             "par_completo": csv.exists(),
         })
     inventario = pd.DataFrame(linhas)
-    # Dois documentos diferentes nunca devem ter o mesmo conteúdo; se tiverem, é cópia duplicada.
-    inventario["pdf_duplicado"] = inventario["sha256_pdf"].duplicated(keep=False)
+    inventario["pdf_duplicado"] = inventario["sha256_pdf"].duplicated(keep=False)  # dois documentos com o mesmo conteúdo
     return inventario
 
 
-# ------------------------------------------------------------------------------------------- 2. extração validada
-def executar_extracao_validada() -> dict:
-    """Executa as etapas 11 a 14.1 do roteiro histórico e devolve as tabelas produzidas (em memória).
+# ------------------------------------------------------------------------------------------ 2. violência doméstica
+def extrair_violencia_domestica(verificacoes: list | None = None) -> pd.DataFrame:
+    """As 216 células mensais de violência doméstica de Joinville, com a localização de cada uma no PDF.
 
-    O roteiro lê os PDFs (pdfplumber/pypdf) e os CSVs extraídos, confere 68 verificações da violência doméstica e audita
-    as republicações dos boletins. Ele não grava arquivos. Leva cerca de 1 a 2 minutos.
-    Retorno: dicionário {nome da variável do roteiro: DataFrame}.
+    Em cada relatório (N páginas), a tabela é larga demais e foi impressa em duas metades: páginas 1 a N/2 com município,
+    categoria e os primeiros meses; páginas N/2+1 a N com os meses restantes, na mesma linha. Os meses de cada metade estão no
+    cabeçalho da primeira página da metade; o ano, no topo dessas páginas. Nada é preenchido: valor não numérico interrompe.
     """
-    import matplotlib
+    verificacoes = [] if verificacoes is None else verificacoes
+    registros = []
+    for pdf in sorted((PASTA_BRUTOS / "pdfs").glob("*VIOLENCIA-DOMESTICA*.pdf")):
+        nome, bruto = pdf.name, ler_csv_extraido(pdf.name)
+        metade = paginas_pdf(nome) // 2
+        topo_esq, topo_dir = texto_pagina(nome, 1), texto_pagina(nome, metade + 1)
+        ano = re.search(r"\b20\d{2}\b", topo_esq).group()
+        meses_esq = re.findall(r"\b(?:" + "|".join(MESES) + r")\b", topo_esq[:120])
+        meses_dir = re.findall(r"\b(?:" + "|".join(MESES) + r")\b", topo_dir[:80])
+        numeros = [MESES.index(m) + 1 for m in meses_esq + meses_dir]
+        verificacoes += [
+            (nome, "páginas em número par (duas metades)", paginas_pdf(nome) % 2 == 0),
+            (nome, "mesmo ano no topo das duas metades", re.search(r"\b20\d{2}\b", topo_dir).group() == ano),
+            (nome, "meses consecutivos no cabeçalho", numeros == list(range(numeros[0], numeros[0] + len(numeros)))),
+        ]
+        inicio = bruto.loc[bruto["celula_01"].eq("JOINVILLE")].iloc[0]
+        pagina_esq = int(inicio["pagina_pdf"])
+        pagina_dir = pagina_esq + metade
+        esquerda = bruto.loc[bruto["pagina_pdf"].eq(str(pagina_esq)) & bruto["tabela_pdf"].eq(inicio["tabela_pdf"])]
+        direita = bruto.loc[bruto["pagina_pdf"].eq(str(pagina_dir)) & bruto["tabela_pdf"].eq(inicio["tabela_pdf"])]
+        verificacoes.append((nome, "metades alinhadas linha a linha", esquerda["linha_tabela"].tolist() == direita["linha_tabela"].tolist()))
+        # Bloco de Joinville: da linha "JOINVILLE" até a próxima linha com outro município.
+        bloco = []
+        for _, linha in esquerda.loc[inicio.name:].iterrows():
+            if linha.name != inicio.name and linha["celula_01"] != "":
+                break
+            bloco.append(linha)
+        verificacoes.append((nome, "9 categorias no bloco de Joinville", len(bloco) == 9 and all(l["celula_02"] in CATEGORIAS_VD for l in bloco)))
+        for linha_esq in bloco:
+            linha_dir = direita.loc[direita["linha_tabela"].eq(linha_esq["linha_tabela"])].iloc[0]
+            for pagina, linha, meses, primeira in ((pagina_esq, linha_esq, meses_esq, 3), (pagina_dir, linha_dir, meses_dir, 1)):
+                # Conferência: a linha do CSV é igual à linha da tabela do PDF.
+                no_pdf = linha_da_tabela_no_pdf(nome, pagina, int(linha["tabela_pdf"]), int(linha["linha_tabela"]))
+                verificacoes.append((nome, f"CSV = PDF na p.{pagina}, linha {linha['linha_tabela']}", _celulas(linha)[:len(no_pdf)] == no_pdf))
+                for posicao, mes in enumerate(meses):
+                    coluna = f"celula_{posicao + primeira:02d}"
+                    texto = linha[coluna]
+                    if not (texto.isascii() and texto.isdigit()):
+                        raise ValueError(f"{nome}: valor não numérico na p.{pagina}, {coluna}: {texto!r}")
+                    registros.append({
+                        "ano": int(ano), "mes": MESES.index(mes) + 1, "categoria": CATEGORIAS_VD[linha_esq["celula_02"]],
+                        "rotulo_original": linha_esq["celula_02"], "fatos_comunicados": int(texto), "arquivo_pdf": nome,
+                        "pagina_pdf": str(pagina), "tabela_pdf": linha["tabela_pdf"],
+                        "linha_tabela": linha["linha_tabela"], "coluna_csv": coluna,
+                    })
+    vd = pd.DataFrame(registros)
+    meses_por_ano = vd.groupby("ano")["mes"].apply(lambda m: sorted(set(m)))
+    verificacoes += [
+        ("violência doméstica", "216 células (9 categorias × 24 meses)", len(vd) == 216 and vd["categoria"].nunique() == 9),
+        ("violência doméstica", "12 meses em cada ano", all(m == list(range(1, 13)) for m in meses_por_ano)),
+        ("violência doméstica", "nenhuma célula repetida", not vd.duplicated(subset=["ano", "mes", "categoria"]).any()),
+    ]
+    return vd
 
-    matplotlib.use("Agg")  # o roteiro importa o Matplotlib; sem janela gráfica
-    texto = ROTEIRO_HISTORICO.read_text(encoding="utf-8")
-    inicio = texto.index("# # ETAPA 11 — Inspeção dos dados brutos SSP/SC")
-    fim = texto.index("# # ETAPA 14.2 — Visualizações")  # os gráficos não são necessários aqui
-    espaco = {"__file__": str(ROTEIRO_HISTORICO), "__name__": "extracao_ssp_sc"}
-    with contextlib.redirect_stdout(io.StringIO()):  # as tabelas impressas pelo roteiro ficam fora do terminal
-        exec(compile(texto[inicio:fim], str(ROTEIRO_HISTORICO), "exec"), espaco)  # noqa: S102 — código do próprio projeto
-    nomes = ("df_violencia_domestica_joinville_ssp132", "rastreabilidade_violencia_domestica_ssp132", "resumo_validacoes_ssp133",
-             "evidencias_celulas_ssp", "matriz_republicacoes_ssp12", "edicoes_auditoria_ssp12")
-    return {nome: espaco[nome] for nome in nomes}
 
-
-# ------------------------------------------------------------------------------------- 3. violência doméstica
-def tratar_violencia_domestica(extracao: dict) -> pd.DataFrame:
-    """Base mensal de violência doméstica de Joinville no esquema comum do projeto (uma linha por categoria e mês).
-
-    Nada é somado, preenchido ou excluído: são as 216 células publicadas (9 categorias × 24 meses).
-    A unidade continua "Fato Comunicado" e a situação fica "em validação".
-    """
-    origem = extracao["rastreabilidade_violencia_domestica_ssp132"]  # onde está cada célula no PDF
-    valores = extracao["df_violencia_domestica_joinville_ssp132"]  # a mesma ordem de linhas, com o valor já convertido
-    # Conferência: as duas tabelas descrevem as mesmas células e o número convertido é o texto publicado.
-    if not origem.index.equals(valores.index) or not (origem["valor_textual_original"].astype(int) == valores["fatos_comunicados"]).all():
-        raise ValueError("Rastreabilidade e base de violência doméstica não correspondem célula a célula.")
-    origem = origem.assign(fatos_comunicados=valores["fatos_comunicados"])
+def tratar_violencia_domestica(vd: pd.DataFrame) -> pd.DataFrame:
+    """A extração no esquema comum do projeto (uma linha por categoria e mês), com a rastreabilidade de cada célula."""
+    hashes = {nome: sha256_arquivo(PASTA_BRUTOS / "pdfs" / nome) for nome in vd["arquivo_pdf"].unique()}
     base = pd.DataFrame({
-        "fonte": FONTE,
-        "municipio": "JOINVILLE",
-        "uf": "SC",
-        "serie_id": "ssp_vd|" + origem["categoria"],
-        "indicador": "Violência doméstica — " + origem["categoria"],
-        "indicador_original": origem["rotulo_original_categoria"],
-        "abrangencia": "município do fato",
-        "ano": origem["ano"].astype("Int64"),
-        "mes": origem["mes"].astype("Int64"),
-        "periodicidade": "mensal",
-        "unidade": UNIDADE_VD,
-        "valor": origem["fatos_comunicados"].astype("Int64"),
-        "arquivo_origem": origem["arquivo_pdf"],
-        "pagina_pdf": origem["pagina_pdf"].astype(str),
-        "sha256_origem": origem["sha256_pdf"],
+        "fonte": FONTE, "municipio": "JOINVILLE", "uf": "SC",
+        "serie_id": "ssp_vd|" + vd["categoria"], "indicador": "Violência doméstica — " + vd["categoria"],
+        "indicador_original": vd["rotulo_original"], "abrangencia": "município do fato",
+        "ano": vd["ano"].astype("Int64"), "mes": vd["mes"].astype("Int64"), "periodicidade": "mensal",
+        "unidade": UNIDADE_VD, "valor": vd["fatos_comunicados"].astype("Int64"),
+        "arquivo_origem": vd["arquivo_pdf"], "pagina_pdf": vd["pagina_pdf"], "sha256_origem": vd["arquivo_pdf"].map(hashes),
         "situacao_validacao": SITUACAO_VD,
     })
     base["periodo_inicio"] = pd.to_datetime(dict(year=base["ano"], month=base["mes"], day=1)).dt.strftime("%Y-%m-%d")
@@ -141,79 +206,215 @@ def tratar_violencia_domestica(extracao: dict) -> pd.DataFrame:
     return base.sort_values(["ano", "mes", "indicador"], ignore_index=True)
 
 
-# ---------------------------------------------------------------------------------------------- 4. homicídios
-def tratar_homicidios(extracao: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Todos os valores de homicídio publicados nos boletins, com o grupo de republicação de cada um.
+# --------------------------------------------------------------------------------------------------- 3. homicídios
+def edicao_do_boletim(nome_pdf: str) -> dict:
+    """Ano e período da edição, lidos na página 1 do boletim (ex.: '2024: 01/01 - 31/01'), nunca no nome do arquivo."""
+    texto = texto_pagina(nome_pdf, 1)
+    ano = re.search(r"\b20\d{2}\b", texto).group()
+    limite = re.search(r"PERÍODO\s*\((01/01\s*-\s*\d{2}/\d{2})\)", texto)
+    return {"ano_edicao": ano, "edicao": f"{ano}: {limite.group(1) if limite else 'pendente'}"}
 
-    Cada boletim mensal republica totais de anos completos e o acumulado do ano até o mês; o mesmo número aparece em
-    várias edições, às vezes com valores diferentes. Aqui cada valor publicado vira uma linha (294), e um JOIN
-    muitos-para-um traz do quadro de grupos (58) se aquele grupo é concordante ou divergente. Nenhuma versão é escolhida.
-    Retorno: (versões publicadas, grupos de republicação).
+
+def extrair_homicidios(verificacoes: list | None = None) -> pd.DataFrame:
+    """Todos os valores de vítimas de homicídio de Joinville publicados nos 42 boletins (um por coluna e edição).
+
+    A tabela municipal tem 7 colunas de ano: as 3 primeiras são totais de anos completos e as 4 últimas, o acumulado do ano
+    até a data indicada no texto da página ("NO PERÍODO (01/01 - dd/mm)"). Os anos são os publicados no cabeçalho; se não
+    acompanharem a edição, a linha é marcada como "cabeçalho suspeito" (não é corrigida).
     """
-    celulas = extracao["evidencias_celulas_ssp"]
-    hom = celulas.loc[celulas["indicador_original"].str.startswith("Nº de vítimas de homicídio")].copy()
-    grupos = extracao["matriz_republicacoes_ssp12"].copy()
+    verificacoes = [] if verificacoes is None else verificacoes
+    registros = []
+    for pdf in sorted((PASTA_BRUTOS / "pdfs").glob("*.pdf")):
+        if "VIOLENCIA-DOMESTICA" in pdf.name:
+            continue
+        nome, bruto = pdf.name, ler_csv_extraido(pdf.name)
+        edicao = edicao_do_boletim(nome)
+        celulas = [c for c in bruto.columns if c.startswith("celula_")]
+        tem_titulo = bruto[celulas].apply(lambda c: c.str.contains("VÍTIMAS DE HOMICÍDIO NOS MUNICÍPIOS", regex=False)).any(axis=1).any()
+        for _, linha in bruto.loc[bruto["celula_01"].eq("JOINVILLE")].iterrows():
+            pagina = int(linha["pagina_pdf"])
+            tabela = bruto.loc[bruto["pagina_pdf"].eq(linha["pagina_pdf"]) & bruto["tabela_pdf"].eq(linha["tabela_pdf"])]
+            cabecalho = tabela.loc[tabela["celula_01"].str.contains("MUNICÍPIO", regex=False)]
+            texto = texto_pagina(nome, pagina)
+            if not tem_titulo or cabecalho.empty or "VÍTIMAS POR ANO" not in texto:
+                continue  # outra tabela que cita Joinville (por exemplo, um ranking): não é a contagem municipal
+            cabecalho = cabecalho.iloc[0]
+            colunas_ano = [c for c in celulas if re.fullmatch(r"20\d{2}", cabecalho[c])]
+            limite = re.search(r"NO PERÍODO\s*\(([^)]+)\)", texto)
+            verificacoes.append((nome, "7 colunas de ano e período acumulado no texto", len(colunas_ano) == 7 and limite is not None))
+            anos = [cabecalho[c] for c in colunas_ano]
+            ano_ed = int(edicao["ano_edicao"])
+            esperados = [str(a) for a in range(ano_ed - 3, ano_ed)] + [str(a) for a in range(ano_ed - 3, ano_ed + 1)]
+            no_pdf = linha_da_tabela_no_pdf(nome, pagina, int(linha["tabela_pdf"]), int(linha["linha_tabela"]))
+            verificacoes.append((nome, f"CSV = PDF na p.{pagina}, linha {linha['linha_tabela']}", _celulas(linha)[:len(no_pdf)] == no_pdf))
+            for posicao, coluna in enumerate(colunas_ano):
+                anual = posicao < 3
+                registros.append({
+                    "indicador_original": "Nº de vítimas de homicídio", "periodo_tipo": "ano completo" if anual else "período acumulado",
+                    "ano_referencia": anos[posicao], "periodo_publicado": anos[posicao] if anual else limite.group(1),
+                    "valor_publicado": linha[coluna], "edicao": edicao["edicao"], "arquivo_pdf": nome, "pagina_pdf": str(pagina),
+                    "tabela_pdf": linha["tabela_pdf"], "linha_tabela": linha["linha_tabela"], "coluna_csv": coluna,
+                    "cabecalho_suspeito": anos != esperados,
+                })
+    hom = pd.DataFrame(registros)
+    verificacoes += [
+        ("homicídios", "valores inteiros literais", hom["valor_publicado"].str.fullmatch(r"\d+").all()),
+        ("homicídios", "uma edição por boletim (42)", hom["arquivo_pdf"].nunique() == 42),
+        ("homicídios", "294 células únicas (7 por boletim)", len(hom) == 294
+         and hom.groupby("arquivo_pdf").size().eq(7).all()
+         and not hom.duplicated(["arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela", "coluna_csv"]).any()),
+    ]
+    return hom
+
+
+def agrupar_republicacoes(hom: pd.DataFrame) -> pd.DataFrame:
+    """Grupos do mesmo número (tipo de período + ano + período) publicado em 2 ou mais edições, sem escolher uma versão.
+
+    Classificação: "Sem divergência de valor" quando todas as edições concordam; "Possível problema de cabeçalho" quando só a
+    edição com cabeçalho suspeito difere das demais; caso contrário, "Inconsistência ainda não explicada".
+    """
     chave = ["periodo_tipo", "ano_referencia", "periodo_publicado"]
-    hom["periodo_publicado"] = hom["periodo_referencia"]
-    # validate="many_to_one" interrompe o processo se um grupo aparecer duas vezes (o JOIN multiplicaria linhas).
+    grupos = []
+    for valores_chave, grupo in hom.groupby(chave, sort=True):
+        if len(grupo) < 2:
+            continue
+        divergente = grupo["valor_publicado"].nunique() > 1
+        suspeita = grupo["cabecalho_suspeito"].any()
+        if not divergente:
+            classe = "Sem divergência de valor"
+        elif suspeita and grupo.loc[~grupo["cabecalho_suspeito"], "valor_publicado"].nunique() == 1:
+            classe = "Possível problema de cabeçalho"
+        else:
+            classe = "Inconsistência ainda não explicada"
+        explicacoes = {
+            "Sem divergência de valor": "Republicações literais concordantes; não representam observações independentes.",
+            "Possível problema de cabeçalho": "Diferença restrita à edição jan/2025, cujo cabeçalho municipal não acompanha a edição; causa definitiva pendente.",
+            "Inconsistência ainda não explicada": "Não localizada nota documental que explique a mudança desta observação; não presumir revisão, erro ou mudança de cobertura.",
+        }
+        valores = [int(v) for v in grupo["valor_publicado"]]
+        grupos.append({
+            "grupo": f"G{len(grupos) + 1:02d}", "indicador": "Nº de vítimas de homicídio", "municipio": "JOINVILLE", "unidade": "vítimas",
+            **dict(zip(chave, valores_chave)), "quantidade_edicoes": len(grupo), "divergente": divergente,
+            "valores_publicados_distintos": tuple(sorted(set(grupo["valor_publicado"]), key=int)),
+            "amplitude_entre_versoes": max(valores) - min(valores), "classificacao": classe,
+            "inclui_edicao_com_cabecalho_suspeito": bool(suspeita),
+            "situacao": "pendente de validação" if divergente else "concordante, sem escolha definitiva",
+            "explicacao_documental": explicacoes[classe],
+        })
+    return pd.DataFrame(grupos)
+
+
+def tratar_homicidios(hom: pd.DataFrame, grupos: pd.DataFrame) -> pd.DataFrame:
+    """Uma linha por valor publicado (294), com o grupo de republicação anexado por JOIN muitos-para-um (cardinalidade conferida)."""
+    chave = ["periodo_tipo", "ano_referencia", "periodo_publicado"]
     unido = hom.merge(grupos[chave + ["grupo", "divergente", "situacao"]], on=chave, how="left", validate="many_to_one")
     if len(unido) != len(hom):
         raise ValueError("O JOIN com os grupos de republicação mudou a quantidade de linhas.")
-    versoes = pd.DataFrame({
-        "fonte": FONTE, "municipio": "JOINVILLE", "uf": "SC",
-        "indicador": "Vítimas de homicídio", "indicador_original": unido["indicador_original"],
-        "periodo_tipo": unido["periodo_tipo"], "ano_referencia": unido["ano_referencia"], "periodo_publicado": unido["periodo_publicado"],
-        "unidade": "vítimas", "valor_publicado": unido["valor_publicado"], "edicao": unido["edicao"],
-        "arquivo_origem": unido["arquivo_pdf"], "pagina_pdf": unido["pagina_pdf"].astype(str),
+    return pd.DataFrame({
+        "fonte": FONTE, "municipio": "JOINVILLE", "uf": "SC", "indicador": "Vítimas de homicídio",
+        "indicador_original": unido["indicador_original"], "periodo_tipo": unido["periodo_tipo"], "ano_referencia": unido["ano_referencia"],
+        "periodo_publicado": unido["periodo_publicado"], "unidade": "vítimas", "valor_publicado": unido["valor_publicado"],
+        "edicao": unido["edicao"], "arquivo_origem": unido["arquivo_pdf"], "pagina_pdf": unido["pagina_pdf"],
         "grupo_republicacao": unido["grupo"], "grupo_divergente": unido["divergente"],
         "situacao_validacao": unido["situacao"].fillna("publicado uma única vez, sem confirmação de versão definitiva"),
     })
-    return versoes, grupos
+
+
+# ---------------------------------------------------------------------------------------------------- 4. gráfico
+def figura_violencia_domestica(vd: pd.DataFrame):
+    """Fatos comunicados por categoria, 2023 × 2024 (barras horizontais lado a lado; cada categoria comparada só consigo mesma).
+
+    A soma é feita dentro de cada categoria e ano (12 meses publicados). Categorias não são somadas entre si.
+    """
+    from matplotlib.figure import Figure
+
+    tabela = vd.groupby(["categoria", "ano"])["fatos_comunicados"].sum().unstack("ano").sort_values(2024)
+    figura = Figure(figsize=(10, 6.4), dpi=120)
+    figura.subplots_adjust(left=0.34, right=0.95, top=0.80, bottom=0.17)
+    eixo = figura.add_subplot(111)
+    posicoes = range(len(tabela))
+    for deslocamento, ano, cor in ((-0.2, 2023, "#9FB7D3"), (0.2, 2024, "#2563A6")):
+        barras = eixo.barh([p + deslocamento for p in posicoes], tabela[ano], height=0.38, color=cor, label=str(ano))
+        eixo.bar_label(barras, labels=[f"{int(v):,}".replace(",", ".") for v in tabela[ano]], padding=3, fontsize=9)
+    eixo.set_yticks(list(posicoes), tabela.index)
+    eixo.set_xlabel("Fatos comunicados no ano (soma dos 12 meses publicados)", fontsize=10)
+    eixo.spines[["top", "right"]].set_visible(False)
+    eixo.grid(axis="x", color="#E3E8EF", linewidth=0.8)
+    eixo.set_axisbelow(True)
+    eixo.set_xlim(0, tabela.max().max() * 1.15)
+    eixo.legend(loc="lower right", frameon=False, fontsize=10)
+    figura.suptitle("Violência doméstica em Joinville/SC — fatos comunicados por categoria", x=0.04, y=0.97, ha="left", fontsize=14, fontweight="semibold")
+    figura.text(0.04, 0.905, "Anos completos de 2023 e 2024 · cada categoria é comparada só consigo mesma; categorias não são somadas", fontsize=10, color="#444444")
+    figura.text(0.04, 0.865, "Unidade: Fato Comunicado — definição em validação (não equivale a vítimas, pessoas ou ocorrências únicas)",
+                fontsize=10, color="#9A3412")
+    figura.text(0.04, 0.035, "Fonte: SSP/SC — Segurança em Números, relatórios de violência doméstica (1º e 2º semestres de 2023; 2024).\n"
+                "Análise exploratória; não integra o painel.", fontsize=8.5, color="#555555")
+    return figura
 
 
 # ------------------------------------------------------------------------------------------------ 5. exportação
-def exportar(pasta: Path = PASTA_PROCESSADOS) -> dict:
-    """Executa o fluxo completo e grava as bases tratadas em ``dados/processados/ssp_sc/`` (nomes novos; nada é sobrescrito).
-
-    Retorno: resumo com as contagens usadas no README e nos testes.
-    """
+def processar() -> dict:
+    """Executa o fluxo completo em memória e devolve as tabelas e o resumo (nada é gravado)."""
     if not acervo_disponivel():
         raise FileNotFoundError("Acervo SSP/SC incompleto: são esperados 45 PDFs e 45 CSVs em dados/brutos/ssp_sc/.")
-    hashes_antes = {p: sha256_arquivo(p) for p in sorted(PASTA_BRUTOS.rglob("*")) if p.is_file()}
+    verificacoes: list = []
     inventario = inventariar_acervo()
-    extracao = executar_extracao_validada()
-    vd = tratar_violencia_domestica(extracao)
-    versoes, grupos = tratar_homicidios(extracao)
-    validacoes = extracao["resumo_validacoes_ssp133"]
-
-    pasta.mkdir(parents=True, exist_ok=True)
-    arquivos = {
-        "inventario_acervo_ssp_sc.csv": inventario,
-        "violencia_domestica_joinville_tratada.csv": vd,
-        "homicidios_boletins_joinville_versoes.csv": versoes,
-        "homicidios_republicacoes_grupos.csv": grupos.astype({c: str for c in grupos.columns if grupos[c].dtype == object}),
-    }
-    for nome, tabela in arquivos.items():
-        tabela.to_csv(pasta / nome, index=False, encoding="utf-8", lineterminator="\n")
-
-    # Os originais não podem ter mudado durante a leitura.
-    if {p: sha256_arquivo(p) for p in hashes_antes} != hashes_antes:
-        raise RuntimeError("Um arquivo bruto da SSP/SC mudou durante o processamento.")
+    vd_extraida = extrair_violencia_domestica(verificacoes)
+    hom = extrair_homicidios(verificacoes)
+    grupos = agrupar_republicacoes(hom)
+    vd, versoes = tratar_violencia_domestica(vd_extraida), tratar_homicidios(hom, grupos)
+    tabela_verificacoes = pd.DataFrame(verificacoes, columns=["documento", "verificacao", "ok"])
+    if not tabela_verificacoes["ok"].all():
+        falhas = tabela_verificacoes.loc[~tabela_verificacoes["ok"]]
+        raise ValueError(f"Verificações da extração SSP/SC falharam:\n{falhas.to_string(index=False)}")
     resumo = {
-        "pdfs": int(len(inventario)), "csvs_extraidos": int(inventario["par_completo"].sum()),
-        "pdfs_duplicados": int(inventario["pdf_duplicado"].sum()),
+        "pdfs": int(len(inventario)), "csvs_extraidos": int(inventario["par_completo"].sum()), "pdfs_duplicados": int(inventario["pdf_duplicado"].sum()),
         "violencia_domestica": {"linhas": int(len(vd)), "categorias": int(vd["indicador"].nunique()),
                                 "meses": int(vd[["ano", "mes"]].drop_duplicates().shape[0]),
                                 "periodo": f"{vd['periodo_inicio'].min()} a {vd['periodo_fim'].max()}",
-                                "zeros_publicados": int(vd["valor"].eq(0).sum()), "ausentes": int(vd["valor"].isna().sum()),
-                                "verificacoes_aprovadas": f"{int(validacoes['ok'].sum())} de {len(validacoes)}",
-                                "relatorios": {r: int(vd['arquivo_origem'].eq(a).sum()) for r, a in RELATORIOS_VD.items()}},
+                                "zeros_publicados": int(vd["valor"].eq(0).sum()), "ausentes": int(vd["valor"].isna().sum())},
         "homicidios": {"valores_publicados": int(len(versoes)), "edicoes": int(versoes["edicao"].nunique()),
                        "grupos_republicados": int(len(grupos)), "grupos_divergentes": int(grupos["divergente"].sum()),
-                       "grupos_concordantes": int((~grupos["divergente"]).sum())},
-        "originais_inalterados": True,
-        "arquivos_gerados": sorted(arquivos),
+                       "grupos_concordantes": int((~grupos["divergente"]).sum()),
+                       "classificacao": grupos["classificacao"].value_counts().to_dict()},
+        "verificacoes_aprovadas": f"{int(tabela_verificacoes['ok'].sum())} de {len(tabela_verificacoes)}",
     }
+    coordenadas = ["arquivo_pdf", "pagina_pdf", "tabela_pdf", "linha_tabela", "coluna_csv"]
+    rastreabilidade = pd.concat([
+        vd_extraida[coordenadas].assign(conjunto="violência doméstica", valor_publicado=vd_extraida["fatos_comunicados"].astype(str)),
+        hom[coordenadas].assign(conjunto="homicídios", valor_publicado=hom["valor_publicado"]),
+    ], ignore_index=True)
+    rastreabilidade["sha256_pdf"] = rastreabilidade["arquivo_pdf"].map(inventario.set_index("arquivo_pdf")["sha256_pdf"])
+    return {"inventario": inventario, "vd_extraida": vd_extraida, "vd": vd, "versoes": versoes, "grupos": grupos,
+            "rastreabilidade": rastreabilidade,
+            "verificacoes": tabela_verificacoes, "resumo": resumo}
+
+
+def exportar(pasta: Path = PASTA_PROCESSADOS, pasta_graficos: Path | None = PASTA_GRAFICOS) -> dict:
+    """Grava as bases tratadas em ``dados/processados/ssp_sc/`` e o gráfico em ``documentacao/graficos/analises/``.
+
+    Os arquivos brutos são conferidos por SHA-256 antes e depois. Retorno: o resumo usado no README e nos testes.
+    """
+    hashes_antes = {p: sha256_arquivo(p) for p in sorted(PASTA_BRUTOS.rglob("*")) if p.is_file()}
+    resultado = processar()
+    pasta.mkdir(parents=True, exist_ok=True)
+    grupos = resultado["grupos"].astype({"valores_publicados_distintos": str})
+    arquivos = {
+        "inventario_acervo_ssp_sc.csv": resultado["inventario"],
+        "violencia_domestica_joinville_tratada.csv": resultado["vd"],
+        "homicidios_boletins_joinville_versoes.csv": resultado["versoes"],
+        "homicidios_republicacoes_grupos.csv": grupos,
+        "verificacoes_extracao_ssp_sc.csv": resultado["verificacoes"],
+        "rastreabilidade_celulas_ssp_sc.csv": resultado["rastreabilidade"],
+    }
+    for nome, tabela in arquivos.items():
+        tabela.to_csv(pasta / nome, index=False, encoding="utf-8", lineterminator="\n")
+    if pasta_graficos is not None:
+        pasta_graficos.mkdir(parents=True, exist_ok=True)
+        figura_violencia_domestica(resultado["vd_extraida"]).savefig(pasta_graficos / "ssp_sc_violencia_domestica_2023_2024.png")
+    if {p: sha256_arquivo(p) for p in hashes_antes} != hashes_antes:
+        raise RuntimeError("Um arquivo bruto da SSP/SC mudou durante o processamento.")
+    resumo = {**resultado["resumo"], "originais_inalterados": True, "arquivos_gerados": sorted(arquivos)}
     (pasta / "relatorio_auditoria_ssp_sc.json").write_text(json.dumps(resumo, ensure_ascii=False, indent=2), encoding="utf-8")
     return resumo
 

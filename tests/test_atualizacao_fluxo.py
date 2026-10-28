@@ -267,7 +267,7 @@ def test_relatorio_de_verificacao_e_registrado_como_consulta_sem_alterar_os_dado
 
 def test_candidata_so_contem_arquivos_sinesp(ambiente):
     candidato = _preparar(ambiente)
-    assert sorted(p.name for p in (candidato.diretorio / "dados").iterdir()) == sorted([dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO, "LEIAME.md"])
+    assert sorted(p.name for p in (candidato.diretorio / "dados").iterdir()) == sorted([dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO])
 
 
 # ------------------------------------------------------------------------------------ download oficial
@@ -342,7 +342,7 @@ def test_promocao_preserva_a_versao_anterior_e_registra_a_aprovacao(ambiente):
     assert ativo["aprovacao"]["aprovado_por"] == "teste" and ativo["aprovacao"]["candidata"] == candidato.id
     assert ativo["cobertura"]["sinesp"]["ultima_competencia"] == "2026-10"
     assert dp.verificar_integridade(ambiente["ativa"])["integro"].all() and len(dp.carregar_sinesp(ambiente["ativa"])) == 923
-    assert (ambiente["ativa"] / "LEIAME.md").is_file()
+    assert sorted(p.name for p in ambiente["ativa"].iterdir()) == sorted([dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO])
     assert not ambiente["ativa"].with_name("data_publica.antigo").exists() and not ambiente["ativa"].with_name("data_publica.novo").exists()
     assert (candidato.diretorio / "promovida.json").is_file()
     with pytest.raises(au.ErroAtualizacao, match="já foi promovida"):

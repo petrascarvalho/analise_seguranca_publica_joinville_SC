@@ -172,7 +172,7 @@ def _tamanho_remoto(cliente: Cliente, url: str) -> tuple[int | None, Resposta]:
 def _referencia(manifesto: dict, chave: str) -> dict:
     origem = manifesto.get("origem_dos_dados", {})
     if chave not in origem or not origem[chave]:
-        raise ErroReferencia(f"O manifesto não registra '{chave}'; gere o manifesto atual (historico.scripts.gerar_dados_dashboard) antes de verificar.")
+        raise ErroReferencia(f"O manifesto não registra '{chave}'; prepare e aprove uma versão atual com `python -m src.pipeline.atualizacao_dados preparar` antes de verificar.")
     return origem[chave]
 
 

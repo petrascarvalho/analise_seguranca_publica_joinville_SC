@@ -73,7 +73,7 @@ def _tabela_readme_decimal(titulo: str) -> dict:
 # ------------------------------------------------------------------ integridade dos arquivos mínimos
 def test_arquivos_de_dados_ativos_sao_apenas_os_do_sinesp():
     assert dp.ARQUIVOS_DE_DADOS == ("sinesp_joinville_mensal.csv", "sinesp_catalogo_indicadores.csv")
-    permitidos = set(dp.ARQUIVOS_DE_DADOS) | {dp.ARQ_MANIFESTO, "LEIAME.md"}
+    permitidos = set(dp.ARQUIVOS_DE_DADOS) | {dp.ARQ_MANIFESTO}
     presentes = {p.name for p in dp.DIRETORIO_DADOS.iterdir() if p.is_file()}
     assert presentes == permitidos, presentes ^ permitidos  # sem CSVs de outras fontes, PDFs, XLSX ou brutos
     assert not any("ssp" in nome.lower() or "domestic" in nome.lower() for nome in presentes)

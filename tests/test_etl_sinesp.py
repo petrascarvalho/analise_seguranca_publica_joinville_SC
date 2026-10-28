@@ -59,7 +59,7 @@ def test_etl_e_sinesp_only_e_so_exporta_para_dados_processados():
     assert escritas and all("PASTA_PROCESSADOS" in "".join(e) for e in escritas)  # todas as gravações vão para dados/processados
     assert "dp.DIRETORIO_DADOS.resolve()" in codigo  # trava contra gravar sobre a base publicada
     assert "from dashboard import calculos, graficos" in codigo
-    assert "analise_seguranca_publica" in texto.split('"""')[1]  # o roteiro histórico não é o principal
+    assert "src/pipeline/ssp_sc.py" in texto.split('"""')[1]  # fontes têm roteiros separados
 
 
 def test_etl_executa_em_modo_demonstracao_sem_os_xlsx(tmp_path):

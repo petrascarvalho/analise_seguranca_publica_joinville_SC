@@ -9,7 +9,8 @@ from dashboard import dados_publicos as dp
 from src.pipeline.utils import project_path
 
 ANOS = list(range(2020, 2027))
-PROTOTIPO = project_path("historico", "indicadores_complementares", "indicadores_complementares_joinville.csv")
+PROTOTIPO = project_path("dados", "processados", "complementares", "indicadores_complementares_joinville.csv")  # acervo local, fora do Git
+precisa_prototipo = pytest.mark.skipif(not PROTOTIPO.is_file(), reason="protótipo complementar local ausente (fora do Git)")
 
 
 @pytest.fixture(scope="module")
@@ -117,9 +118,10 @@ def test_sinesp_continua_com_os_11_eventos_911_observacoes_e_manifesto_integro(s
     assert sinesp.shape == (911, 6) and sinesp["evento"].nunique() == 11
     assert not any(t in " ".join(sinesp["evento"].unique()).lower() for t in ("furto", "estupro", "tráfico", "trafico"))
     assert dp.verificar_integridade()["integro"].all() and dp.carregar_manifesto()["versao"] == "20261027T114400Z"
-    assert sorted(p.name for p in dp.DIRETORIO_DADOS.iterdir()) == sorted([dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO, "LEIAME.md"])  # nada complementar nos dados do painel
+    assert sorted(p.name for p in dp.DIRETORIO_DADOS.iterdir()) == sorted([dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO, dp.ARQ_MANIFESTO])  # nada complementar nos dados do painel
 
 
+@precisa_prototipo
 def test_prototipo_complementar_e_separado_explicita_fonte_e_nao_valida_divergentes():
     quadro = pd.read_csv(PROTOTIPO, dtype=str, keep_default_na=False)
     assert list(quadro.columns) == ["fonte", "publicador", "data_publicacao", "municipio", "ano", "indicador", "unidade", "valor", "url_evidencia", "situacao", "observacao"]
@@ -141,9 +143,9 @@ def test_prototipo_complementar_e_separado_explicita_fonte_e_nao_valida_divergen
 
 
 def test_documentacao_das_fontes_complementares_registra_matriz_e_divergencia():
-    texto = project_path("historico", "indicadores_complementares", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
-    for esperado in ("11 eventos", "8.865", "1.351", "933", "361", "divergente", "Estupro", "Tráfico de drogas", "NL", "não foram convertidas variações percentuais",
-                     "Nada deste documento foi incorporado ao dashboard", "https://dados.sc.gov.br/", "joinville-cidade-em-dados"):
+    texto = project_path("README.md").read_text(encoding="utf-8")  # a investigação está consolidada no README (seção 4.4)
+    for esperado in ("11 eventos", "8.865", "1.351", "933", "361", "divergente", "Estupro", "Tráfico de drogas", "não foram convertidas variações percentuais",
+                     "nada disso foi incorporado ao painel", "https://dados.sc.gov.br/", "joinville-cidade-em-dados"):
         assert esperado.lower() in texto.lower(), esperado
 
 
@@ -197,11 +199,15 @@ def test_perfil_mensal_em_barras_usa_mediana_e_so_anos_completos(sinesp):
     assert graficos.figura_sazonalidade_sinesp(sinesp, "Mandado de prisão cumprido", "Polícia Federal", ANOS) is None  # 1 ano completo: sem figura
 
 
-def test_documentacao_registra_o_relatorio_da_ssp_e_a_minuta_de_solicitacao():
-    texto = project_path("historico", "indicadores_complementares", "INDICADORES_COMPLEMENTARES_JOINVILLE.md").read_text(encoding="utf-8")
+def test_documentacao_registra_o_relatorio_da_ssp_e_o_pedido_de_esclarecimento():
+    texto = project_path("README.md").read_text(encoding="utf-8")
     for esperado in ("061/2024/GEAC/DINE/SSP/SC", "15/03/2024", "https://portalelegis.alesc.sc.gov.br/documentos/z1LZ8", "669", "Tabela 03", "Tabela 04",
-                     "possível inconsistência editorial", "não usar 669 como total de furtos", "Minuta de solicitação", "SEPROT", "2020 a 2026"):
+                     "possível inconsistência editorial", "não usar 669 como total de furtos", "SEPROT", "2020 a 2026"):
         assert esperado.lower() in texto.lower(), esperado
+
+
+@precisa_prototipo
+def test_prototipo_registra_669_so_como_roubo_divergente():
     quadro = pd.read_csv(PROTOTIPO, dtype=str, keep_default_na=False)
     assert "669" in set(quadro["valor"]) and quadro.loc[quadro["valor"] == "669", "situacao"].eq("divergente").all()
     assert quadro.loc[quadro["valor"] == "669", "indicador"].eq("Roubos (ocorrências)").all()  # 669 só como roubo, nunca como furto

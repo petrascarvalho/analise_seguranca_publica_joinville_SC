@@ -3,10 +3,9 @@ import re
 from src.pipeline.utils import project_path
 
 URL_STREAMLIT = "https://seguranca-publica-joinville-sinesp.streamlit.app/"
-# Etapa 24: a documentação acadêmica fica num único README; o LEIAME descreve o pacote de dados publicado.
+# Etapa 26: pacote público e histórico documentados no README único.
 DOCUMENTOS_ATIVOS = {
     "README.md": ("README.md",),
-    "LEIAME.md": ("dashboard", "data_publica", "LEIAME.md"),
 }
 
 
@@ -30,21 +29,21 @@ def test_readme_has_all_16_academic_items_and_real_results():
 def test_etl_e_notebook_sao_os_roteiros_principais_e_o_antigo_e_historico():
     etl = _ler("scripts", "etl_sinesp.py")
     assert "# %%" in etl and "ETAPA 01" in etl and "ETAPA 18" in etl
-    assert project_path("notebooks", "analise_sinesp.ipynb").is_file()
+    assert project_path("notebooks", "analise_seguranca_publica_joinville.ipynb").is_file()
     assert not project_path("scripts", "analise_sinesp.py").exists()  # renomeado para etl_sinesp.py
-    assert project_path("historico", "scripts", "analise_seguranca_publica.py").is_file()  # roteiro antigo preservado (histórico SSP/SC)
+    assert project_path("src", "pipeline", "ssp_sc.py").is_file()  # extração autônoma
     assert sorted(p.name for p in project_path("scripts").glob("*.py")) == ["etl_sinesp.py", "painel_streamlit.py"]  # só os dois pontos principais
     readme = _ler("README.md")
     assert "scripts/etl_sinesp.py" in readme and "-m scripts.etl_sinesp" in readme
-    assert "notebooks/analise_sinesp.ipynb" in readme and "dados/processados/sinesp" in readme
+    assert "notebooks/analise_seguranca_publica_joinville.ipynb" in readme and "dados/processados/sinesp" in readme
     assert r".\.venv\Scripts\python.exe" in readme  # comandos testados no Windows
-    assert "histórico" in readme.split("historico/scripts/analise_seguranca_publica.py", 1)[1][:400].lower()
+    assert "git show 5702724:<caminho>" in readme and "arquivo_etapa26" in readme
 
 
 def test_readme_separa_o_sinesp_validado_do_acervo_ssp_em_validacao():
     readme = _ler("README.md")
     for esperado in (
-        "fonte única", "Sinesp/MJSP", "Joinville/SC", "SSP/SC e Prefeitura/SEPROT", "fora do escopo", "historico/ssp_sc/LEIAME.md", "bad9723",
+        "fonte única", "Sinesp/MJSP", "Joinville/SC", "SSP/SC e Prefeitura/SEPROT", "fora do escopo", "bad9723",
         "Indicadores Sinesp", "Qualidade e metodologia", "três páginas",
         # Etapa 24: SSP/SC preservada e em validação, fora do painel; nada apresentado como definitivo
         "em validação", "Fato Comunicado", "não tem definição oficial", "41 têm versões diferentes", "src/pipeline/ssp_sc.py",
@@ -75,15 +74,15 @@ def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_in
     for expected in (
         "python -m src.pipeline.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
         "--aceitar-revisoes", "scripts/painel_streamlit.py", "não pôde ser confirmado", "CC BY-ND",
-        "Deploy realizado", "-m pytest tests -q", "-m pytest tests_historicos -q",
+        "Deploy realizado", "-m pytest tests -q", "tests/test_integridade_acervo.py",
         "20261027T114400Z",
     ):
         assert expected in readme, expected
     assert re.search(r"\*\*\d+ testes aprovados\*\*", readme), "o README deve informar a contagem de testes da suíte ativa"
     assert URL_STREAMLIT in readme
-    for imagem in re.findall(r"\((documentacao/painel/imagens/[^)]+)\)", readme):  # imagens citadas existem
+    for imagem in re.findall(r"\((documentacao/graficos/[^)]+)\)", readme):  # imagens citadas existem
         assert project_path(*imagem.split("/")).is_file(), imagem
-    assert "streamlit.app" not in _ler("dashboard", "data_publica", "LEIAME.md")  # dados mínimos não dependem da URL
+    assert not project_path("dashboard", "data_publica", "LEIAME.md").exists()
     regras = [l.strip() for l in project_path(".gitignore").read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]
     assert "/atualizacao/" in regras and "/dados/" in regras  # entradas/candidatas locais e acervo bruto ficam fora do Git
     assert "README_IA*.md" in regras
@@ -98,19 +97,28 @@ def test_documentos_ativos_nao_apresentam_outras_fontes_como_parte_do_produto():
             if nome == "README.md" and proibido in ("violencia_domestica.py",):
                 continue  # o README cita o arquivo removido somente na seção de histórico
             assert proibido not in texto, (nome, proibido)
-    leiame = _ler(*DOCUMENTOS_ATIVOS["LEIAME.md"])  # dados mínimos: SSP/SC e Prefeitura só como histórico fora do escopo
-    assert leiame.count("SSP/SC") == 1 and "fora do escopo" in leiame
 
 
 def test_dados_publicos_e_documentacao_citam_o_mesmo_estado_dos_dados():
     from dashboard import dados_publicos as dp
 
     manifesto = dp.carregar_manifesto()
-    leiame = _ler("dashboard", "data_publica", "LEIAME.md")
     readme = _ler("README.md")
-    for texto in (leiame, readme):
-        assert manifesto["versao"] in texto
-    assert manifesto["aprovacao"]["aprovado_em_utc"] in leiame
-    assert "911 × 6" in leiame and "12 × 12" in leiame
-    assert "2020-01 a 2026-09" in leiame and "2026-08" in leiame
-    assert project_path("historico", "ssp_sc", "LEIAME.md").is_file()
+    assert manifesto["versao"] in readme
+    assert manifesto["aprovacao"]["aprovado_em_utc"] in readme
+    assert "911 × 6" in readme and "12 × 12" in readme
+    assert "2020-01 a 2026-09" in readme and "2026-08" in readme
+
+
+def test_links_relativos_do_readme_e_notebook_existem():
+    import json
+    from urllib.parse import unquote
+
+    notebook = project_path("notebooks", "analise_seguranca_publica_joinville.ipynb")
+    texto_nb = "\n".join("".join(c["source"]) for c in json.loads(notebook.read_text(encoding="utf-8"))["cells"] if c["cell_type"] == "markdown")
+    for raiz, texto in ((project_path(), _ler("README.md")), (notebook.parent, texto_nb)):
+        for destino in re.findall(r"\]\(([^)]+)\)", texto):
+            if "://" in destino or destino.startswith("#"):
+                continue
+            caminho = unquote(destino.split("#", 1)[0])
+            assert (raiz / caminho).is_file(), destino
