@@ -261,7 +261,7 @@ Cada fonte é tratada separadamente e convertida para um esquema comum: `fonte`,
 
 ### 5.4 Notebook — [`notebooks/analise_seguranca_publica_joinville.ipynb`](notebooks/analise_seguranca_publica_joinville.ipynb)
 
-Roteiro didático: fonte, leitura bruta ilustrada com 2026, tratamento, duplicidades, ausências e zeros, cobertura, estatísticas, quatro gráficos Sinesp, conclusões e limitações. Reutiliza as funções validadas do ETL e do painel. A seção 14 executa a rotina SSP/SC em memória, apresenta conferências, estatísticas por categoria e a figura exploratória de violência doméstica; a seção 15 reúne os limites e próximos passos. As fontes mantêm unidades separadas.
+Roteiro sequencial de 16 etapas de código, explicadas por comentários `#` e com resultados em `print()`/`display()` (estilo do Mini_Projeto_SUS): leitura e conferência da base aprovada (SHA-256 do manifesto), leitura bruta ilustrada com 2026, tratamento, duplicidades, ausências e zeros, cobertura, estatísticas, totais anuais e períodos equivalentes, outliers (IQR), quatro gráficos Sinesp, conclusões e limitações. Reutiliza as funções validadas do ETL e do painel. As etapas 12 a 15 executam a rotina SSP/SC em memória, em fonte separada: conferências, estatísticas por categoria, figura exploratória de violência doméstica e rastreabilidade das republicações. As fontes mantêm unidades separadas.
 
 Execução integral em kernel real da `.venv`, com figuras renderizadas; o arquivo versionado fica sem outputs. A seção SSP/SC informa explicitamente quando o acervo está ausente. O ETL completo dos sete XLSX continua em `scripts/etl_sinesp.py`.
 

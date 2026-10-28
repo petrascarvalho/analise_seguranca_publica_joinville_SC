@@ -1,4 +1,4 @@
-"""Notebook ``notebooks/analise_seguranca_publica_joinville.ipynb``: estrutura didática, sem saídas gravadas e execução de todas as células de código, em ordem."""
+"""Notebook ``notebooks/analise_seguranca_publica_joinville.ipynb``: roteiro de 16 etapas comentadas com ``#``, sem saídas gravadas e com execução de todas as células de código, em ordem."""
 
 import json
 import sys
@@ -10,26 +10,27 @@ from jupyter_client import KernelManager
 from src.pipeline.utils import project_path
 
 NOTEBOOK = project_path("notebooks", "analise_seguranca_publica_joinville.ipynb")
-SECOES = ["1. Fonte oficial", "2. Bibliotecas", "3. Diretórios", "4. Leitura dos arquivos", "5. Inspeção bruta", "6. Tratamento",
-          "7. Verificação de duplicidades", "8. Valores ausentes e zeros", "9. Recorte Joinville", "10. Estatísticas", "11. Gráficos e interpretações",
-          "12. Conclusões", "13. Limitações", "14. Exploração separada", "15. Síntese"]
+ETAPAS = ["Bibliotecas e pastas", "Leitura da base Sinesp aprovada", "XLSX oficial de 2026", "Tratamento", "Verificação de duplicidades",
+          "Valores ausentes e zeros", "Recorte de Joinville", "Estatísticas descritivas", "Totais anuais e períodos equivalentes",
+          "Outliers pelo método IQR", "Gráficos do Sinesp", "SSP/SC (fonte SEPARADA)", "SSP/SC: estatísticas por categoria",
+          "SSP/SC: gráfico", "SSP/SC: rastreabilidade", "Conclusões e limitações"]
 
 
 def _celulas():
     return json.loads(NOTEBOOK.read_text(encoding="utf-8"))["cells"]
 
 
-def test_notebook_tem_introducao_e_as_secoes_da_analise_sem_saidas_gravadas():
+def test_notebook_tem_16_etapas_comentadas_no_codigo_sem_saidas_gravadas():
     celulas = _celulas()
-    titulos = [linha for c in celulas if c["cell_type"] == "markdown" for linha in "".join(c["source"]).splitlines() if linha.startswith("#")]
-    assert titulos[0].startswith("# Análise da segurança pública de Joinville/SC")  # introdução
-    for secao in SECOES:
-        assert any(t.startswith(f"## {secao}") for t in titulos), secao
     codigo = [c for c in celulas if c["cell_type"] == "code"]
-    assert len(codigo) >= 15 and all(not c["outputs"] and c["execution_count"] is None for c in codigo)  # saídas não vão para o Git
-    texto = "".join("".join(c["source"]) for c in celulas)
+    assert len(codigo) == 16 and all(not c["outputs"] and c["execution_count"] is None for c in codigo)  # saídas não vão para o Git
+    assert "".join(celulas[0]["source"]).startswith("# Análise da segurança pública de Joinville/SC")  # título curto; o resto é código comentado
+    for numero, nome in enumerate(ETAPAS, start=1):  # cada célula de código abre com o comentário "# ETAPA n — nome"
+        assert "".join(codigo[numero - 1]["source"]).lstrip().startswith(f"# ETAPA {numero} — {nome}"), (numero, nome)
+    assert sum(c["cell_type"] == "markdown" for c in celulas) == 1  # sem textos Markdown longos entre os comandos
+    texto = "".join("".join(c["source"]) for c in codigo)
     assert "MODO DEMONSTRAÇÃO" in texto and "dashboard import calculos, graficos" in texto  # reutiliza os cálculos validados
-    for proibido in ("fillna(", "drop_duplicates("):  # ausência nunca vira zero; nenhuma linha é apagada
+    for proibido in ("fillna(", "drop_duplicates(", "class ", "@"):  # ausência nunca vira zero; nenhuma linha é apagada; sem classes/decorators
         assert proibido not in texto, proibido
 
 
