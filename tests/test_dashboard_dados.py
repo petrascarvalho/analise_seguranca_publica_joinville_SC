@@ -41,13 +41,23 @@ def catalogo():
     return dp.carregar_catalogo_sinesp()
 
 
+def _compacta(linha: str) -> str:
+    """Tira os espaços de alinhamento das tabelas Markdown (``| A    | B |`` e ``|A|B|`` valem o mesmo)."""
+    return re.sub(r"\s*\|\s*", "|", linha.strip())
+
+
+def _e_separador(linha: str) -> bool:
+    """Linha de separação do cabeçalho (``|---|---:|`` ou ``| --- | ---: |``)."""
+    return re.fullmatch(r"\|[\s:|-]+", linha.strip()) is not None
+
+
 def _tabela_readme(titulo: str) -> dict:
     """Lê do README a primeira tabela depois do título; devolve {rótulo: [valores por ano 2020..2026 ou None]}."""
     linhas = README.read_text(encoding="utf-8").splitlines()
-    inicio = next(i for i, linha in enumerate(linhas) if linha.startswith(titulo))
+    inicio = next(i for i, linha in enumerate(linhas) if _compacta(linha).startswith(_compacta(titulo)))
     tabela = {}
     for linha in linhas[inicio:]:
-        if linha.startswith("|") and not linha.startswith("|---") and "Indicador / abrangência" not in linha:
+        if linha.startswith("|") and not _e_separador(linha) and "Indicador / abrangência" not in linha:
             celulas = [c.strip() for c in linha.strip("|").split("|")]
             tabela[celulas[0]] = [None if c == "—" else int(c.replace(".", "")) for c in celulas[1:]]
         elif tabela and not linha.startswith("|"):
@@ -58,10 +68,10 @@ def _tabela_readme(titulo: str) -> dict:
 def _tabela_readme_decimal(titulo: str) -> dict:
     """Tabela de estatísticas do README: {rótulo: (meses, soma, média, mediana, mín., máx., desvio)} com vírgula decimal."""
     linhas = README.read_text(encoding="utf-8").splitlines()
-    inicio = next(i for i, linha in enumerate(linhas) if linha.startswith(titulo))
+    inicio = next(i for i, linha in enumerate(linhas) if _compacta(linha).startswith(_compacta(titulo)))
     tabela = {}
     for linha in linhas[inicio:]:
-        if linha.startswith("|") and not linha.startswith("|---") and "Indicador / abrangência" not in linha:
+        if linha.startswith("|") and not _e_separador(linha) and "Indicador / abrangência" not in linha:
             c = [x.strip() for x in linha.strip("|").split("|")]
             numero = lambda t: float(t.replace(".", "").replace(",", "."))
             tabela[c[0]] = (int(c[1]), int(c[2]), numero(c[3]), numero(c[4]), int(c[5]), int(c[6]), numero(c[7]))
@@ -178,7 +188,7 @@ def test_totais_anuais_e_janeiro_agosto_iguais_as_tabelas_do_readme(sinesp):
     inicio = next(i for i, l in enumerate(linhas) if l.startswith("#### Comparações equivalentes: janeiro–agosto"))
     tabela = {}
     for linha in linhas[inicio:]:
-        if linha.startswith("|") and not linha.startswith("|---") and "Indicador / abrangência" not in linha:
+        if linha.startswith("|") and not _e_separador(linha) and "Indicador / abrangência" not in linha:
             celulas = [c.strip() for c in linha.strip("|").split("|")]
             tabela[celulas[0]] = [None if c == "—" else int(c) for c in celulas[1:]]
         elif tabela and not linha.startswith("|"):

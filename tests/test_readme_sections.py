@@ -53,7 +53,8 @@ def test_readme_separa_o_sinesp_validado_do_acervo_ssp_em_validacao():
     for proibido in ("quatro páginas", "4 páginas", "Violência doméstica SSP/SC**:", "várias fontes", "múltiplas fontes"):
         assert proibido not in readme, proibido
     # Pendências de entrega continuam pendentes; nenhum link inventado; Trello dispensado.
-    assert f"Aplicação Streamlit publicada: <{URL_STREAMLIT}>" in readme and "Aplicação Streamlit publicada: pendente" not in readme
+    publicada = (f"Aplicação Streamlit publicada: <{URL_STREAMLIT}>", f"Aplicação Streamlit publicada: [{URL_STREAMLIT}]({URL_STREAMLIT})")  # os dois links Markdown valem
+    assert any(texto in readme for texto in publicada) and "Aplicação Streamlit publicada: pendente" not in readme
     assert "revisão visual" in readme and "dispositivos móveis" in readme  # deploy feito; revisão visual e celular não afirmados
     assert "Trello" in readme and "dispensad" in readme
     for pendente in ("Repositório oficial da turma: pendente", "Vídeo", "AVA"):
