@@ -59,7 +59,7 @@ def test_figuras_filtraveis_usam_cores_por_ano_e_eixo_em_zero(sinesp):
     assert [b.get_height() for b in setembro.axes[0].patches] == esperado and esperado[-1] == 25  # janeiro–setembro: 2026 já comparável
     mensal = graficos.figura_mensal_sinesp(sinesp, "Tentativa de homicídio", "Estadual", [2025, 2026])
     assert [len([b for b in mensal.axes[0].patches if b.get_gid() == f"mensal_{a}"]) for a in (2025, 2026)] == [12, 9]  # 2026 tem 9 meses (até setembro)
-    assert graficos.cor_ano(2023) == "#2563A6" and graficos.cor_ano(2024) == "#D97706"
+    assert graficos.cor_ano(2023) == "#104D9B" and graficos.cor_ano(2024) == "#D97706"  # azul da interface; anos continuam distintos
     assert graficos.cor_ano(2031) == graficos.cor_ano(2031) and graficos.cor_ano(2031).startswith("#")  # ano futuro: cor de reserva estável
     assert graficos.figura_periodo_sinesp(sinesp, "Mandado de prisão cumprido", "Polícia Federal", [2020, 2021]) is None
     prf = graficos.figura_mensal_sinesp(sinesp, "Mortes no trânsito", "Polícia Rodoviária Federal", [2026])

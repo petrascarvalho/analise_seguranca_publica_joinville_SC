@@ -23,13 +23,13 @@ from dashboard.formatacao import ABREV_MESES, fmt_dec, fmt_int
 
 # Cores consistentes: cada ano tem sempre a mesma cor em todas as figuras do painel.
 COR_ANO = {
-    2020: "#7A5195", 2021: "#188977", 2022: "#8C8C8C", 2023: "#2563A6", 2024: "#D97706", 2025: "#C0392B", 2026: "#1B1B1B",
+    2020: "#7A5195", 2021: "#188977", 2022: "#8C8C8C", 2023: "#104D9B", 2024: "#D97706", 2025: "#C0392B", 2026: "#1B1B1B",
 }
 COR_EVENTO = {
-    "Homicídio doloso": "#2563A6", "Tentativa de homicídio": "#188977",
+    "Homicídio doloso": "#104D9B", "Tentativa de homicídio": "#188977",
     "Feminicídio": "#7A5195", "Tentativa de feminicídio": "#D97706",
 }
-COR_CINZA_TEXTO = "#333333"
+COR_CINZA_TEXTO = "#20354F"
 _PALETA_RESERVA = ("#0B7285", "#9C36B5", "#E67700", "#5F3DC4", "#2B8A3E")
 
 
@@ -72,7 +72,7 @@ def _milhar(valor, _posicao=None) -> str:
 def _estilo_eixo(eixo, *, grade_y=True):
     eixo.set_axisbelow(True)
     if grade_y:
-        eixo.grid(axis="y", color="#DDDDDD", linewidth=0.8)
+        eixo.grid(axis="y", color="#D9E5F2", linewidth=0.8)
     eixo.spines[["top", "right"]].set_visible(False)
     eixo.yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
     eixo.yaxis.set_major_formatter(FuncFormatter(_milhar))
@@ -376,7 +376,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
         figura = Figure(figsize=(10, 0.55 * len(valores) + 3.2), dpi=120)
         eixo = figura.add_axes([0.42, 0.18, 0.54, 0.62])
     posicoes = list(range(len(valores)))[::-1]
-    cores = ["#D97706" if destaque and (r.evento, r.abrangencia) == tuple(destaque) else "#2563A6" for r in ranking.itertuples()]
+    cores = ["#D97706" if destaque and (r.evento, r.abrangencia) == tuple(destaque) else "#104D9B" for r in ranking.itertuples()]
     barras = eixo.barh(posicoes, valores, color=cores, height=0.62)
     for barra in barras:
         barra.set_gid("ranking")
@@ -385,7 +385,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
     eixo.set_xlim(0, max(valores) * 1.18 if max(valores) else 1)
     eixo.xaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
     eixo.xaxis.set_major_formatter(FuncFormatter(_milhar))
-    eixo.grid(axis="x", color="#DDDDDD", linewidth=0.8)
+    eixo.grid(axis="x", color="#D9E5F2", linewidth=0.8)
     eixo.set_axisbelow(True)
     eixo.spines[["top", "right"]].set_visible(False)
     nota = f"{FONTE_SINESP} | Unidade: {unidade} | Ordenação dentro de uma única unidade; nenhum total entre indicadores." + (" Barra laranja: série selecionada." if destaque else "")
@@ -538,7 +538,7 @@ def figura_media_movel_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
                                     max(maximo * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Ano (cada marca = janeiro)")
     x = _x_mensal(tabela)
     mensal, = eixo.plot(x, _valores_float(tabela["valor"]), color="#9A9A9A", linewidth=1.2, marker="o", markersize=3.5, label="Valor mensal")
-    movel, = eixo.plot(x, _valores_float(tabela["media_movel"]), color="#2563A6", linewidth=2.8, label="Média móvel de 12 meses")
+    movel, = eixo.plot(x, _valores_float(tabela["media_movel"]), color="#2879C7", linewidth=2.8, label="Média móvel de 12 meses")
     mensal.set_gid("serie_mensal")
     movel.set_gid("media_movel")
     _eixo_anos(eixo, tabela)
@@ -674,7 +674,7 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                                     "faixa própria — zero é observação, não ausência. O maior valor observado está na última faixa; faixas vazias são mantidas.",
                                     max(float(tabela["n_meses"].max()) * 1.25, 1), _rodape(abrangencia, unidade), "Número de meses",
                                     xlabel=f"Faixa do valor mensal ({unidade.split(' (')[0]})")
-    barras = eixo.bar(range(len(tabela)), [int(n) for n in tabela["n_meses"]], color="#2563A6", width=0.8)
+    barras = eixo.bar(range(len(tabela)), [int(n) for n in tabela["n_meses"]], color="#104D9B", width=0.8)
     for barra, inicio in zip(barras, tabela["inicio"]):
         barra.set_gid("frequencia")
         if int(inicio) == 0:
@@ -707,14 +707,14 @@ def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                                     max(float(perfil["maximo"].max()) * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
     meses = perfil["mes"].astype(int).tolist()
     medianas = perfil["mediana"].astype("float64").tolist()
-    barras = eixo.bar(meses, medianas, width=0.7, color="#2563A6", label="Mediana do mês" if esta_compacto() else f"Mediana do mês ({anos_texto})")
+    barras = eixo.bar(meses, medianas, width=0.7, color="#104D9B", label="Mediana do mês" if esta_compacto() else f"Mediana do mês ({anos_texto})")
     for barra in barras:
         barra.set_gid("mediana_mensal")
-    faixa = eixo.vlines(meses, perfil["minimo"].astype("float64").tolist(), perfil["maximo"].astype("float64").tolist(), color="#333333", linewidth=1.2, label="Mínimo a máximo")
+    faixa = eixo.vlines(meses, perfil["minimo"].astype("float64").tolist(), perfil["maximo"].astype("float64").tolist(), color="#20354F", linewidth=1.2, label="Mínimo a máximo")
     faixa.set_gid("faixa_min_max")
     if not esta_compacto():
         eixo.bar_label(barras, labels=[fmt_int(m) if float(m).is_integer() else fmt_dec(m, 1) for m in medianas], label_type="center", color="white", fontweight="bold", fontsize=9,
-                      bbox={"boxstyle": "square,pad=0.15", "facecolor": "#2563A6", "edgecolor": "none"})  # dentro da barra: o traço mínimo–máximo não cobre o número
+                      bbox={"boxstyle": "square,pad=0.15", "facecolor": "#104D9B", "edgecolor": "none"})  # dentro da barra: o traço mínimo–máximo não cobre o número
     _eixo_meses(eixo)
     _legenda(eixo, 2)
     _aviso_sem_variacao(eixo, perfil["maximo"].tolist() + perfil["minimo"].tolist())
@@ -744,9 +744,9 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     pontos, = eixo.plot(x, _valores_float(serie["valor"]), color="#7A7A7A", linewidth=1, marker="o", markersize=4, label="Valor mensal")
     pontos.set_gid("pontos")
     if d["interpretavel"]:
-        faixa = eixo.axhspan(d["q1"], d["q3"], color="#2563A6", alpha=0.12, label="Q1 a Q3" if esta_compacto() else f"Q1 a Q3 ({_dec1(d['q1'])} a {_dec1(d['q3'])}; IQR = {_dec1(d['iqr'])})")
+        faixa = eixo.axhspan(d["q1"], d["q3"], color="#104D9B", alpha=0.12, label="Q1 a Q3" if esta_compacto() else f"Q1 a Q3 ({_dec1(d['q1'])} a {_dec1(d['q3'])}; IQR = {_dec1(d['iqr'])})")
         faixa.set_gid("faixa_q1_q3")
-        mediana = eixo.axhline(d["mediana"], color="#2563A6", linestyle=":", linewidth=1.6, label="Mediana" if esta_compacto() else f"Mediana ({_dec1(d['mediana'])})")
+        mediana = eixo.axhline(d["mediana"], color="#104D9B", linestyle=":", linewidth=1.6, label="Mediana" if esta_compacto() else f"Mediana ({_dec1(d['mediana'])})")
         mediana.set_gid("mediana")
         superior = eixo.axhline(d["limite_superior"], color="#C0392B", linestyle="--", linewidth=1.6, label="Limite superior" if esta_compacto() else f"Limite superior ({_dec1(d['limite_superior'])})")
         superior.set_gid("limite_superior")

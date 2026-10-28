@@ -80,6 +80,28 @@ def test_projeto_apresenta_fonte_unica_periodo_real_destaques_e_um_grafico():
 
 
 # ------------------------------------------------------------------------------------------- Sinesp
+def test_filtros_laterais_dependentes_e_restauracao_preservam_modo_compacto():
+    app = _pagina("sinesp")
+    assert [s.label for s in app.sidebar.selectbox] == ["Categoria", "Indicador", "Abrangência"]
+    assert [s.label for s in app.sidebar.select_slider] == ["Período (anos)", "Meses"]
+    app.selectbox(key="indicador").select("Mandado de prisão cumprido").run()
+    app.selectbox(key="abrangencia").select("Polícia Federal").run()
+    app.selectbox(key="categoria").select("criminal").run()
+    _sem_erros(app)
+    assert app.selectbox(key="indicador").value == "Homicídio doloso"
+    assert app.selectbox(key="abrangencia").value == "Estadual"
+    app.select_slider(key="periodo_anos").set_value((2025, 2026)).run()
+    app.select_slider(key="periodo_meses").set_value((1, 3)).run()
+    app.toggle(key="modo_compacto").set_value(True).run()
+    next(b for b in app.sidebar.button if b.label == "Restaurar filtros").click().run()
+    _sem_erros(app)
+    assert app.selectbox(key="categoria").value == "Todas"
+    assert app.select_slider(key="periodo_anos").value == (2020, 2026)
+    assert app.select_slider(key="periodo_meses").value == (1, 12)
+    assert app.toggle(key="modo_compacto").value is True
+    assert [m.value for m in app.metric] == ["29", "25", "81 de 81"]
+
+
 def test_sinesp_valores_padrao_e_filtros():
     app = _pagina("sinesp")
     _sem_erros(app)

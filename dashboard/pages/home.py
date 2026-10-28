@@ -19,19 +19,16 @@ cobertura = manifesto.get("cobertura", {}).get("sinesp", {})
 parcial = cobertura.get("ano_parcial")
 
 # --------------------------------------------------------------------------------------------- 1. título e descrição
-st.title("Segurança Pública de Joinville/SC")
-st.markdown(
-    "Indicadores oficiais do **Sinesp/MJSP** para Joinville: evolução mensal e anual, comparações entre períodos de mesma duração e "
-    "estatísticas descritivas, sempre com fonte, unidade e limites explícitos."
-)
+ui.cabecalho("Segurança Pública de Joinville/SC",
+             "Indicadores do Sinesp/MJSP: evolução e comparações entre períodos de mesma duração.")
 
 # --------------------------------------------------------------------------------------------- 2. fonte e período
-with st.container(border=True):
-    f1, f2, f3, f4 = st.columns(4)
-    f1.metric("Período", "2020–2026", help=f"{periodo}. Cada série vai até a sua última competência.")
-    f2.metric("Observações mensais", fmt_int(len(sinesp)), help="Linhas da série mensal (indicador × abrangência × competência)")
-    f3.metric("Séries", len(catalogo), help="Combinações indicador × abrangência (Estadual, Polícia Federal, PRF)")
-    f4.metric("Última competência", cobertura.get("ultima_competencia", "—"))
+with st.container():
+    f1, f2, f3, f4 = ui.cartoes(4)
+    ui.kpi(f1, "Período", "2020–2026", help=f"{periodo}. Cada série vai até a sua última competência.")
+    ui.kpi(f2, "Observações mensais", fmt_int(len(sinesp)), help="Linhas da série mensal (indicador × abrangência × competência)")
+    ui.kpi(f3, "Séries", len(catalogo), help="Combinações indicador × abrangência (Estadual, Polícia Federal, PRF)")
+    ui.kpi(f4, "Última competência", cobertura.get("ultima_competencia", "—"))
     st.caption(f"Fonte: MJSP / Sinesp VDE, recorte exato Joinville/SC — única fonte deste painel. Período disponível: **{periodo}**"
                f"{f' ({parcial} é parcial: só é comparado com o mesmo período dos anos anteriores)' if parcial else ''}.")
 
@@ -64,7 +61,7 @@ def _destaques() -> list[dict]:
     return cartoes
 
 
-for coluna, cartao in zip(st.columns(3), _destaques()):
+for coluna, cartao in zip(ui.cartoes(3, borda=False), _destaques()):
     ui.cartao_indicador(coluna, **cartao)
 st.caption("Diferenças entre períodos de igual duração, sem cor de \"bom\" ou \"ruim\". São contagens publicadas, não explicações: nenhuma causa é afirmada.")
 

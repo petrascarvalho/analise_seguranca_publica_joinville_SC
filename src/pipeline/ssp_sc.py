@@ -36,7 +36,7 @@ from src.pipeline.utils import project_path
 
 PASTA_BRUTOS = project_path("dados", "brutos", "ssp_sc")
 PASTA_PROCESSADOS = project_path("dados", "processados", "ssp_sc")
-PASTA_GRAFICOS = project_path("documentacao", "graficos", "analises")
+PASTA_GRAFICOS = project_path("documentacao", "graficos", "painel")
 
 FONTE = "SSP/SC"
 UNIDADE_VD = "Fato Comunicado"
@@ -391,7 +391,7 @@ def processar() -> dict:
 
 
 def exportar(pasta: Path = PASTA_PROCESSADOS, pasta_graficos: Path | None = PASTA_GRAFICOS) -> dict:
-    """Grava as bases tratadas em ``dados/processados/ssp_sc/`` e o gráfico em ``documentacao/graficos/analises/``.
+    """Grava as bases tratadas em ``dados/processados/ssp_sc/`` e o gráfico em ``documentacao/graficos/painel/``.
 
     Os arquivos brutos são conferidos por SHA-256 antes e depois. Retorno: o resumo usado no README e nos testes.
     """
@@ -411,7 +411,7 @@ def exportar(pasta: Path = PASTA_PROCESSADOS, pasta_graficos: Path | None = PAST
         tabela.to_csv(pasta / nome, index=False, encoding="utf-8", lineterminator="\n")
     if pasta_graficos is not None:
         pasta_graficos.mkdir(parents=True, exist_ok=True)
-        figura_violencia_domestica(resultado["vd_extraida"]).savefig(pasta_graficos / "ssp_sc_violencia_domestica_2023_2024.png")
+        figura_violencia_domestica(resultado["vd_extraida"]).savefig(pasta_graficos / "07-sspsc_violencia_domestica_2023_2024.png")
     if {p: sha256_arquivo(p) for p in hashes_antes} != hashes_antes:
         raise RuntimeError("Um arquivo bruto da SSP/SC mudou durante o processamento.")
     resumo = {**resultado["resumo"], "originais_inalterados": True, "arquivos_gerados": sorted(arquivos)}

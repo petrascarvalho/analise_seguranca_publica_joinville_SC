@@ -394,7 +394,7 @@ Fatos comunicados por categoria em Joinville, segundo os relatórios da SSP/SC. 
 | Lesão corporal grave ou gravíssima dolosa | 19 | 10 | −9 | 1,2 |
 | Injúria real | 2 | 6 | +4 | 0,3 |
 
-![Violência doméstica SSP/SC — análise exploratória, unidade em validação](documentacao/graficos/analises/ssp_sc_violencia_domestica_2023_2024.png)
+![Violência doméstica SSP/SC — análise exploratória, unidade em validação](documentacao/graficos/painel/07-sspsc_violencia_domestica_2023_2024.png)
 
 **Leitura permitida:** comparação de cada categoria consigo mesma entre 2023 e 2024 na unidade publicada. **Não permitida:** somar categorias (um mesmo fato pode envolver mais de uma), tratar "Fato Comunicado" como vítima, pessoa ou ocorrência única, comparar com o Sinesp, ou apresentar os números como definitivos.
 
@@ -433,7 +433,9 @@ O painel tem **três páginas** e usa somente `dashboard/data_publica/` (Sinesp)
 | **Indicadores Sinesp** | Filtros (Categoria → Indicador → Abrangência; Período → Meses), resumo em cartões e cinco abas: Evolução, Comparações, Padrões e tendência, Estatística e outliers, Indicadores e interpretação |
 | **Qualidade e metodologia** | Resumo no topo (arquivos íntegros, versão, última competência, ausentes) e abas com integridade, cobertura, métodos, limitações, atualização e licenças |
 
-O filtro de meses vale para o resumo e as análises mensais; totais anuais, média móvel, acumulado e perfil mensal usam sempre os 12 meses e mostram o aviso "Análise de ano completo". A seta dos cartões acompanha o sinal da diferença. Só a aba aberta é calculada (a página abre em cerca de 3 s em vez de 7 s). Cada gráfico tem a tabela com os valores usados. A chave **Visualização compacta (celular)** gera figuras estreitas com os mesmos números. Capturas: [Projeto](documentacao/graficos/painel/01_projeto_desktop.png), [Qualidade e metodologia](documentacao/graficos/painel/03_qualidade_desktop.png), [tela estreita](documentacao/graficos/painel/04_projeto_tela_estreita.png) e modo compacto ([série mensal](documentacao/graficos/painel/05_modo_compacto_prf_mensal.png), [mapa de calor](documentacao/graficos/painel/06_modo_compacto_mapa_calor.png)).
+**Interface da Etapa 28:** cabeçalho com a bandeira municipal e paleta azul e branca; cartões que quebram de linha. Os filtros ficam na barra lateral, inspirados no Projeto_ZP (`app_v2.py`), agrupados em Série, Período e Visualização, com atualização imediata. Categoria restringe os indicadores; indicador restringe as abrangências. Uma escolha válida é preservada; uma incompatível é substituída por uma opção disponível. O botão **Restaurar filtros** retorna à série e ao período iniciais, mantendo o modo compacto. Em telas pequenas, abra a barra lateral pelo controle do Streamlit para acessar os filtros. A inspeção visual deste redesenho em 1440, 768 e 390 px e suas novas capturas estão pendentes de revisão manual: o controle seguro do Chrome ficou indisponível.
+
+O filtro de meses vale para o resumo e as análises mensais; totais anuais, média móvel, acumulado e perfil mensal usam sempre os 12 meses e mostram o aviso "Análise de ano completo". A seta dos cartões acompanha o sinal da diferença. Só a aba aberta é calculada (a página abre em cerca de 3 s em vez de 7 s). Cada gráfico tem a tabela com os valores usados. A chave **Visualização compacta (celular)** gera figuras estreitas com os mesmos números. Capturas históricas da Etapa 25 (anteriores ao redesenho da Etapa 28): [Projeto](documentacao/graficos/painel/01_projeto_desktop.png), [Qualidade e metodologia](documentacao/graficos/painel/03_qualidade_desktop.png), [tela estreita](documentacao/graficos/painel/04_projeto_tela_estreita.png) e modo compacto ([série mensal](documentacao/graficos/painel/05_modo_compacto_prf_mensal.png), [mapa de calor](documentacao/graficos/painel/06_modo_compacto_mapa_calor.png)).
 
 **Publicação:** Aplicação Streamlit publicada: <https://seguranca-publica-joinville-sinesp.streamlit.app/>. **Deploy realizado** no Streamlit Community Cloud (repositório `petrascarvalho/analise_seguranca_publica_joinville_SC`, branch `main`, arquivo `scripts/painel_streamlit.py`, Python 3.12, sem segredos, tema em `.streamlit/config.toml`). O aplicativo reflete o último commit enviado ao GitHub. A navegação e os gráficos foram conferidos no Chrome local (desktop e 390 px emulados); a revisão visual no aplicativo publicado e em dispositivos móveis reais ainda está pendente.
 
@@ -523,8 +525,7 @@ Seguranca Publica Joinville/
 ├── documentacao/
 │   ├── auditoria/              procedência Sinesp e inventários SHA-256
 │   └── graficos/
-│       ├── analises/           figura exploratória SSP/SC
-│       └── painel/             seis capturas Streamlit
+│       └── painel/             seis capturas Streamlit + figura exploratória SSP/SC (07)
 ├── dados/                       (local, fora do Git) brutos/ e processados/ de cada fonte
 └── tests/                      suíte ativa e garantias históricas migradas
 ```
@@ -545,6 +546,9 @@ Não use operações destrutivas para consultar versões anteriores. A pasta res
 - Próximos passos: confirmar com a SSP/SC a definição de "Fato Comunicado" e a versão definitiva dos homicídios; só então avaliar a publicação no painel. Também: confirmar o uso dos dados com o MJSP e definir a licença do código.
 
 ## 14. Créditos e referências
+
+- **Bandeira municipal:** arquivo local [bandeira de Joinville](dashboard/assets/bandeira_joinville.svg), sem alteração do desenho. Fonte: [Wikimedia Commons — Bandeira de Joinville.svg](https://commons.wikimedia.org/wiki/File:Bandeira_de_Joinville.svg), autoria creditada a Great Brightstar e Prefeitura de Joinville, versão de 06/10/2020; indicado na fonte como domínio público (PD Brazil Government). A fonte ressalva que regras de uso de símbolos oficiais são independentes dos direitos autorais. Uso aqui como identificação territorial em trabalho acadêmico. A [publicação municipal Joinville Cidade em Dados 2015](https://www.joinville.sc.gov.br/wp-content/uploads/2016/01/joinville-cidade-em-dados-2015.pdf) registra a oficialização pela Lei Municipal nº 617, de 14/06/1963. Consulta em 28/10/2026.
+- **Identidade da interface:** azul principal `#104D9B`, secundário `#2879C7`, azul suave `#EAF3FC`, branco `#FFFFFF` e texto `#20354F`. São escolhas de interface, não códigos oficiais da bandeira. As séries anuais mantêm cores distintas e estáveis para permitir comparação.
 
 - Ministério da Justiça e Segurança Pública — Sinesp VDE, base de dados e notas metodológicas dos gestores estaduais.
 - Secretaria de Estado da Segurança Pública de Santa Catarina — Segurança em Números (boletins mensais e relatórios de violência doméstica).

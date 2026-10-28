@@ -2,12 +2,47 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import streamlit as st
 
 from dashboard import dados_publicos as dp
 from dashboard import graficos
 from dashboard.formatacao import NOMES_MESES
+
+
+def cabecalho(titulo: str, descricao: str) -> None:
+    """Identidade municipal local, sem rede e sem alterar a arte da bandeira."""
+    # Streamlit 1.66 trunca o Markdown interno das métricas. Permitir quebra
+    # preserva os deltas completos (incluindo o período comparado) em cartões estreitos.
+    st.html("""<style>
+        [data-testid="stMetricDelta"] { max-width: 100%; height: auto; }
+        [data-testid="stMetricDelta"] p, [data-testid="stMetricValue"] p {
+            white-space: normal !important; overflow: visible !important;
+            text-overflow: clip !important; overflow-wrap: anywhere;
+        }
+    </style>""")
+    with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
+        st.image(str(Path(__file__).parent / "assets" / "bandeira_joinville.svg"),
+                 width=104, alt="Bandeira de Joinville: campo azul, losango branco e brasão municipal")
+        with st.container():
+            st.title(titulo)
+            st.caption(descricao)
+
+
+def cartoes(quantidade: int, *, borda: bool = True):
+    """Cartões nativos que quebram de linha sem reduzir os rótulos a colunas estreitas."""
+    with st.container(horizontal=True, gap="small"):
+        return [st.container(width=240, height="stretch", border=borda) for _ in range(quantidade)]
+
+
+def selecao_dependente(local, rotulo: str, opcoes: list, *, chave: str, padrao=None, **kwargs):
+    """Conserva uma escolha válida; troca apenas quando o filtro anterior a exclui."""
+    inicial = padrao if padrao in opcoes else opcoes[0]
+    if chave in st.session_state and st.session_state[chave] not in opcoes:
+        st.session_state[chave] = inicial
+    return local.selectbox(rotulo, opcoes, key=chave, index=opcoes.index(inicial), **kwargs)
 
 _TEXTO_CLASSIFICACAO = {
     "nenhuma_novidade_identificada": "nenhuma novidade identificada",

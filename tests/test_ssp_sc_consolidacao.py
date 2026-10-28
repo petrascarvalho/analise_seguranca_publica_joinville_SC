@@ -27,7 +27,7 @@ def processado(tmp_path_factory):
         "grupos": pd.read_csv(pasta / "homicidios_republicacoes_grupos.csv"),
         "verificacoes": pd.read_csv(pasta / "verificacoes_extracao_ssp_sc.csv"),
         "rastreabilidade": pd.read_csv(pasta / "rastreabilidade_celulas_ssp_sc.csv", dtype=str, keep_default_na=False),
-        "grafico": pasta / "ssp_sc_violencia_domestica_2023_2024.png",
+        "grafico": pasta / "07-sspsc_violencia_domestica_2023_2024.png",
     }
 
 

@@ -12,11 +12,8 @@ from dashboard import dados_publicos as dp  # noqa: E402
 from dashboard import ui  # noqa: E402
 from dashboard.formatacao import fmt_int  # noqa: E402
 
-st.title("Qualidade dos dados e metodologia")
-st.write(
-    "Fonte única **Sinesp/MJSP, Joinville/SC**. Aqui se confere se os arquivos do painel são os aprovados, o que cada série cobre, como os dados "
-    "foram tratados e o que não pode ser concluído. As linhas são observações mensais agregadas, não ocorrências individuais."
-)
+ui.cabecalho("Qualidade dos dados e metodologia",
+             "Sinesp/MJSP · Joinville/SC. Integridade, cobertura e limites dos dados publicados.")
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 manifesto = ui.carregar_manifesto()
@@ -28,8 +25,8 @@ if integridade["integro"].all():
 
 # Resumo da qualidade: os números que respondem "posso confiar nestes dados?" antes dos detalhes técnicos.
 cob_sinesp = cobertura.get("sinesp", {})
-with st.container(border=True):
-    q1, q2, q3, q4 = st.columns(4)
+with st.container():
+    q1, q2, q3, q4 = ui.cartoes(4)
     ui.kpi(q1, "Arquivos íntegros (SHA-256)", f"{int(integridade['integro'].sum())} de {len(integridade)}")
     versao = str(manifesto.get("versao", "—"))
     ui.kpi(q2, "Versão dos dados (data)", f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 else versao, help=f"Identificador completo: {versao}")

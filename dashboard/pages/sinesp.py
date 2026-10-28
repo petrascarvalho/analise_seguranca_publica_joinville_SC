@@ -25,7 +25,7 @@ import streamlit as st  # noqa: E402
 from dashboard import calculos, graficos, ui  # noqa: E402
 from dashboard.formatacao import ABREV_MESES, NOMES_MESES, fmt_dec, fmt_dif, fmt_int, fmt_pct  # noqa: E402
 
-st.title("Indicadores Sinesp — Joinville/SC")
+ui.cabecalho("Indicadores Sinesp — Joinville/SC", "Explore uma série por vez. Filtros na barra lateral; resultados nas abas abaixo.")
 sinesp, catalogo = ui.carregar_dados_consistentes()
 _ini, _fim = sinesp.assign(c=sinesp["ano"] * 100 + sinesp["mes"])["c"].agg(["min", "max"])
 st.caption(f"Fonte: MJSP / Sinesp VDE. Município de Joinville/SC, {NOMES_MESES[int(_ini) % 100 - 1]}/{int(_ini) // 100} a {NOMES_MESES[int(_fim) % 100 - 1]}/{int(_fim) // 100}. "
@@ -33,25 +33,40 @@ st.caption(f"Fonte: MJSP / Sinesp VDE. Município de Joinville/SC, {NOMES_MESES[
 
 # ------------------------------------------------------------------------------------------ filtros
 catalogo = catalogo.assign(categoria=catalogo["natureza"].str.split(":").str[0].str.strip())
-# Linha 1 dos filtros: Categoria → Indicador → Abrangência. A categoria (natureza do indicador) filtra a lista de indicadores, e o indicador
-# define as abrangências disponíveis. Cada st.selectbox mostra uma lista suspensa e devolve a opção escolhida; a "key" identifica o
-# controle e mantém a escolha entre as interações.
-caixa_filtros = st.container(border=True)  # filtros num bloco com borda; conteúdo e chaves não mudam
-caixa_filtros.markdown("##### Filtros")
-f1, f2, f3 = caixa_filtros.columns([1.4, 2.4, 1.6])
+# Organização vertical inspirada no Projeto_ZP/app_v2.py. A atualização imediata
+# mantém Categoria → Indicador → Abrangência coerentes a cada interação.
+caixa_filtros = st.sidebar
+caixa_filtros.header("Filtros")
+caixa_filtros.caption("Os resultados são atualizados ao selecionar.")
+caixa_filtros.markdown("**Série**")
+f1 = f2 = f3 = caixa_filtros
 categorias = ["Todas"] + sorted(catalogo["categoria"].unique())
 categoria = f1.selectbox("Categoria", categorias, key="categoria", help="Natureza do indicador no catálogo (criminal, atividade policial, complementar). Filtra a lista de indicadores.")
 eventos = sorted(catalogo.loc[catalogo["categoria"].eq(categoria) | (categoria == "Todas"), "evento"].unique())
-evento = f2.selectbox("Indicador", eventos, key="indicador", index=eventos.index("Homicídio doloso") if "Homicídio doloso" in eventos else 0)
+evento = ui.selecao_dependente(f2, "Indicador", eventos, chave="indicador", padrao="Homicídio doloso")
 abrangencias = catalogo.loc[catalogo["evento"].eq(evento), "abrangencia"].tolist()
-abrangencia = f3.selectbox("Abrangência", abrangencias, key="abrangencia", help="Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
+abrangencia = ui.selecao_dependente(f3, "Abrangência", abrangencias, chave="abrangencia", help="Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
 anos_disponiveis = sorted(int(a) for a in sinesp["ano"].unique())
-g1, g2 = caixa_filtros.columns(2)  # linha 2: anos e meses
-ano_ini, ano_fim = g1.select_slider("Período (anos)", options=anos_disponiveis, value=(anos_disponiveis[0], anos_disponiveis[-1]))
+caixa_filtros.divider()
+caixa_filtros.markdown("**Período**")
+g1 = g2 = caixa_filtros
+ano_ini, ano_fim = g1.select_slider("Período (anos)", options=anos_disponiveis, value=(anos_disponiveis[0], anos_disponiveis[-1]), key="periodo_anos")
 anos_sel = list(range(ano_ini, ano_fim + 1))
-mes_ini, mes_fim = g2.select_slider("Meses", options=list(range(1, 13)), value=(1, 12), format_func=lambda m: ABREV_MESES[m - 1],
+mes_ini, mes_fim = g2.select_slider("Meses", options=list(range(1, 13)), value=(1, 12), key="periodo_meses", format_func=lambda m: ABREV_MESES[m - 1],
                                     help="Vale para o resumo, o mapa de calor, a evolução mensal, as estatísticas, o boxplot, a distribuição e os outliers. "
                                          "Totais anuais, comparações de anos completos, média móvel, acumulado e sazonalidade usam sempre os 12 meses.")
+caixa_filtros.caption("Meses filtram as análises mensais. Anos completos e acumulados usam os 12 meses.")
+
+
+def restaurar_filtros():
+    st.session_state.update(categoria="Todas", indicador="Homicídio doloso", abrangencia="Estadual",
+                            periodo_anos=(anos_disponiveis[0], anos_disponiveis[-1]), periodo_meses=(1, 12))
+
+
+caixa_filtros.button("Restaurar filtros", on_click=restaurar_filtros, width="stretch", type="primary",
+                     help="Retorna à série e ao período iniciais; mantém a preferência de visualização.")
+caixa_filtros.divider()
+caixa_filtros.markdown("**Visualização**")
 caixa_filtros.toggle("Visualização compacta (celular)", key="modo_compacto",
                      help="Gráficos mais estreitos, com fontes maiores, menos marcas nos eixos e os textos explicativos abaixo da imagem. A aplicação não detecta o tamanho "
                           "da tela: ative em telas pequenas. Os números e as tabelas são os mesmos nos dois modos.")
@@ -97,7 +112,7 @@ if filtro_meses:
 
 # ------------------------------------------------------------------------------------- indicadores
 st.subheader("Resumo")
-k1, k2, k3 = st.container(border=True).columns(3)  # os três números do recorte, num bloco destacado
+k1, k2, k3 = ui.cartoes(3)
 soma_meses = calculos.soma_no_periodo(serie, mes_ini, mes_fim)
 soma_meses = soma_meses.loc[soma_meses["ano"].isin(anos_sel) & soma_meses["soma"].notna()]
 if filtro_meses:  # com filtro de meses, o KPI principal é a soma desses meses no último ano em que todos foram publicados
