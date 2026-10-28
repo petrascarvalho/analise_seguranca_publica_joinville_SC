@@ -466,7 +466,7 @@ python -m src.pipeline.atualizacao_dados reverter <versao> --confirmo <versao>
 
 A última atualização (27/10/2026) trouxe setembro/2026: 11 competências novas, nenhuma revisão histórica, promovida sem `--aceitar-revisoes`. O gov.br não tem API pública e bloqueia `HEAD`; a verificação é indício, não prova.
 
-**Testes:** **274 testes aprovados**, nenhum ignorado, em 28/10/2026 (408,41 s), na suíte unificada `tests/`. Inclui integridade e manifesto, totais do README, filtros, página única Streamlit com quatro seções, gráficos, modo compacto, estatísticas, atualização controlada, ETL, notebook em kernel real e SSP/SC. Execute com `-ra` para ver explicitamente eventuais testes não executados por falta de acervo; nesta validação local o acervo está disponível. O ETL completo foi executado com destino isolado e reproduziu a base aprovada. Os 147 arquivos de dados existentes no início da retomada, incluindo o pacote público, mantiveram exatamente os mesmos hashes. A reprodução SSP/SC foi comparada em destino isolado para preservar inclusive as saídas anteriores. O notebook executou 22 células de código e cinco figuras, inspecionadas visualmente. As três páginas, navegação e filtros passaram no AppTest; servidor local com HTTP 200. A nova revisão visual interativa no Chrome ficou pendente porque o acesso ao aplicativo expirou na ferramenta; as capturas preservadas são da Etapa 25.
+**Testes:** **275 testes aprovados**, nenhum ignorado, em 28/10/2026 (418,63 s), na suíte unificada `tests/`. Inclui integridade e manifesto, totais do README, filtros, página única Streamlit com quatro seções, gráficos, modo compacto, estatísticas, atualização controlada, ETL, notebook em kernel real e SSP/SC. Execute com `-ra` para ver explicitamente eventuais testes não executados por falta de acervo; nesta validação local o acervo está disponível. O ETL completo foi executado com destino isolado e reproduziu a base aprovada. Os 147 arquivos de dados existentes no início da retomada, incluindo o pacote público, mantiveram exatamente os mesmos hashes. A reprodução SSP/SC foi comparada em destino isolado para preservar inclusive as saídas anteriores. O notebook executou 22 células de código e cinco figuras, inspecionadas visualmente. As três páginas, navegação e filtros passaram no AppTest; servidor local com HTTP 200. A nova revisão visual interativa no Chrome ficou pendente porque o acesso ao aplicativo expirou na ferramenta; as capturas preservadas são da Etapa 25.
 
 **Migração dos 12 testes históricos (referência anterior: **240 testes aprovados** ativos + 12 históricos):**
 
@@ -505,7 +505,8 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m src.pipeline.ssp_sc
 .\.venv\Scripts\python.exe -m src.pipeline.consolidacao
 
-:: 4. Painel (abre em http://localhost:8501)
+:: 4. Painel (abre em http://localhost:8501). Se o código mudar com o servidor aberto, pare (Ctrl+C) e execute de novo:
+::    um servidor iniciado antes da alteração pode manter módulos antigos na memória
 .\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py
 
 :: 5. Testes

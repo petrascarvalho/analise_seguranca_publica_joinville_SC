@@ -37,6 +37,25 @@ TITULO = "DADOS DA SEGURANÇA PÚBLICA DE JOINVILLE/SC"
 # Configuração da página: precisa ser o primeiro comando do Streamlit. O título aparece na aba do navegador.
 st.set_page_config(page_title=TITULO, page_icon="🛡️", layout="wide")
 
+
+
+@st.cache_resource
+def horarios_dos_arquivos() -> dict:
+    """Um dicionário que dura enquanto o servidor estiver aberto: guarda o horário de modificação de cada arquivo de dashboard/."""
+    return {}
+
+
+# Servidor aberto durante uma alteração do código: o Python guarda na memória os módulos já importados. Sem este cuidado, a página
+# nova pode misturar este arquivo (novo) com um módulo antigo, e aparece um erro como "módulo 'dashboard.ui' não possui atributo ...".
+# Se algum arquivo de dashboard/ mudou desde a execução anterior, tiramos todos os módulos "dashboard" da memória; eles são importados de novo abaixo.
+horarios = horarios_dos_arquivos()
+atuais = {str(arquivo): arquivo.stat().st_mtime for arquivo in (_RAIZ / "dashboard").rglob("*.py")}
+if horarios and atuais != horarios:
+    for nome in [nome for nome in sys.modules if nome == "dashboard" or nome.startswith("dashboard.")]:
+        del sys.modules[nome]
+horarios.clear()
+horarios.update(atuais)
+
 from dashboard import ui  # noqa: E402
 
 ui.aplicar_estilo()

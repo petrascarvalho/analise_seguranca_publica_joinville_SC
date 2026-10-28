@@ -37,18 +37,20 @@ ui.secao("Indicadores Sinesp — Joinville/SC", "indicadores",
 catalogo = catalogo.assign(serie=catalogo["evento"] + " — " + catalogo["abrangencia"])
 series = sorted(catalogo["serie"])
 SERIE_PADRAO = "Homicídio doloso — Estadual"
-anos_padrao = sorted(int(a) for a in sinesp.loc[sinesp["evento"].eq("Homicídio doloso"), "ano"].unique())
 
 
 def restaurar_filtros():
     """Volta ao indicador, ao período e aos meses iniciais (a preferência de visualização compacta é mantida)."""
-    st.session_state.update(serie=SERIE_PADRAO, periodo_anos=(anos_padrao[0], anos_padrao[-1]), periodo_meses=(1, 12))
+    st.session_state["serie"] = SERIE_PADRAO
+    for chave in ("periodo_anos", "periodo_meses"):
+        st.session_state.pop(chave, None)  # sem a escolha guardada, cada controle recomeça com o seu valor inicial (todo o período, 12 meses)
 
 
 with st.container(border=True):
     st.markdown("**Filtros** — os resultados são atualizados ao selecionar.")
     f1, f2, f3 = st.columns([2.2, 1.5, 1.5])
-    serie_escolhida = f1.selectbox("Indicador", series, key="serie", index=series.index(SERIE_PADRAO),
+    st.session_state.setdefault("serie", SERIE_PADRAO)  # indicador inicial (sem "index=", para não conflitar com o botão Restaurar filtros)
+    serie_escolhida = f1.selectbox("Indicador", series, key="serie",
                                    help="Cada opção é um indicador com a sua abrangência. Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
     ficha = catalogo.loc[catalogo["serie"].eq(serie_escolhida)].iloc[0]
     evento, abrangencia = ficha["evento"], ficha["abrangencia"]

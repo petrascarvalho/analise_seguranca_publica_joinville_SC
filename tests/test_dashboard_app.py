@@ -308,6 +308,29 @@ def test_integridade_divergente_e_sinalizada_na_pagina_de_qualidade(tmp_path):
     assert resultado.returncode == 0 and "OK" in resultado.stdout, resultado.stdout[-500:] + resultado.stderr[-1500:]
 
 
+def test_servidor_aberto_durante_alteracao_do_codigo_nao_mistura_modulo_antigo_com_arquivo_novo(tmp_path):
+    """Erro real da Etapa 31: servidor ligado, ui.py e a entrada mudam, e a sessão nova falhava com
+    "módulo 'dashboard.ui' não possui atributo ...", porque o módulo antigo continuava na memória. O ponto de entrada recarrega os módulos."""
+    _copiar_projeto_minimo(tmp_path)
+    resultado = _executar_no_clone(tmp_path, """
+        import os
+        import pathlib
+        from streamlit.testing.v1 import AppTest
+        entrada, ui = pathlib.Path("scripts/painel_streamlit.py"), pathlib.Path("dashboard/ui.py")
+        primeira = AppTest.from_file(str(entrada), default_timeout=180).run()
+        assert not primeira.exception and not primeira.error
+        ui.write_text(ui.read_text(encoding="utf-8") + '\\n\\ndef marcador_novo():\\n    st.caption("marcador-novo")\\n', encoding="utf-8")
+        entrada.write_text(entrada.read_text(encoding="utf-8") + '\\nui.marcador_novo()\\n', encoding="utf-8")
+        for arquivo in (ui, entrada):  # garante horário de modificação diferente, mesmo em disco com relógio grosso
+            os.utime(arquivo, (arquivo.stat().st_atime + 10, arquivo.stat().st_mtime + 10))
+        segunda = AppTest.from_file(str(entrada), default_timeout=180).run()
+        assert not segunda.exception, [e.value for e in segunda.exception]
+        assert any(c.value == "marcador-novo" for c in segunda.caption)
+        print("OK")
+    """)
+    assert resultado.returncode == 0 and "OK" in resultado.stdout, resultado.stdout[-500:] + resultado.stderr[-1500:]
+
+
 # ------------------------------------------------------------------ versão dos dados e atualização
 def test_paginas_mostram_versao_fonte_ultima_competencia_e_como_se_atualiza():
     manifesto = dp.carregar_manifesto()
