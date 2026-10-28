@@ -29,6 +29,28 @@ def direcao_da_seta(diferenca) -> str:
     return "up" if int(diferenca) > 0 else "down"
 
 
+def cartao_indicador(coluna, *, indicador: str, detalhe: str, rotulo: str, valor: str, delta: str | None, diferenca, base: str, ajuda: str | None = None) -> None:
+    """Cartão com borda: indicador em destaque, abrangência/unidade/período numa linha, o número (st.metric) e a base de comparação.
+
+    O texto fica em markdown (quebra linha em telas estreitas, nunca é cortado); o rótulo do st.metric fica oculto para não repetir.
+    A seta segue o sinal da diferença e a cor é neutra (``delta_color="off"``): alta não é tratada como boa nem como ruim.
+    """
+    with coluna.container(border=True):
+        st.markdown(f"**{indicador}**")
+        st.caption(detalhe, help=ajuda)
+        st.metric(rotulo, valor, delta=delta, delta_color="off", delta_arrow=direcao_da_seta(diferenca), label_visibility="collapsed")
+        st.caption(base)
+
+
+def kpi(coluna, rotulo: str, valor, **opcoes) -> None:
+    """Número de destaque com o rótulo em texto comum acima (quebra linha em telas estreitas em vez de ser cortado com "…").
+
+    O rótulo continua no ``st.metric`` (oculto) para leitores de tela e testes; ``opcoes`` são as mesmas do ``st.metric``.
+    """
+    coluna.caption(rotulo, help=opcoes.pop("help", None))  # o ícone de ajuda fica junto do rótulo visível
+    coluna.metric(rotulo, valor, label_visibility="collapsed", **opcoes)
+
+
 def link_pagina(arquivo: str, rotulo: str, icone: str) -> None:
     """Link para outra página do painel (caminho relativo ao arquivo de entrada, scripts/painel_streamlit.py). Fora da navegação principal (ex.: página aberta sozinha), mostra só o nome da página."""
     try:
@@ -127,6 +149,8 @@ def mostrar_figura(figura, legenda: str | None = None, tabela=None):
     """
     if modo_compacto():
         graficos.ajustar_compacto(figura)  # sem espaço em branco abaixo de gráficos sem legenda
+    else:
+        graficos.ajustar_completo(figura)  # sem espaço vazio no topo quando não há legenda acima do gráfico
     st.pyplot(figura, clear_figure=False, width="stretch")
     if legenda:
         st.caption(legenda)

@@ -152,6 +152,25 @@ def ajustar_compacto(figura):
     return figura
 
 
+def ajustar_completo(figura):
+    """Tira o espaço vazio do topo das figuras do modo COMPLETO que não têm legenda nem aviso acima do eixo.
+
+    A figura reserva espaço para uma legenda acima do gráfico; quando ela não existe, o eixo sobe até perto do subtítulo.
+    Só a posição do eixo muda (valores, textos e cores ficam iguais). Idempotente; ignora figuras compactas e com mais de um eixo.
+    """
+    if getattr(figura, "sinesp_ajustada", False) or getattr(figura, "sinesp_compacta", False) or len(figura.axes) != 1:
+        return figura
+    figura.sinesp_ajustada = True
+    eixo = figura.axes[0]
+    legenda = eixo.get_legend()
+    acima = legenda is not None and legenda.get_bbox_to_anchor().transformed(eixo.transAxes.inverted()).y0 >= 0.99
+    aviso_acima = any(t.get_transform() == eixo.transAxes and t.get_position()[1] > 1 for t in eixo.texts)
+    posicao = eixo.get_position()
+    if not acima and not aviso_acima and posicao.y1 < 0.85:
+        eixo.set_position([posicao.x0, posicao.y0, posicao.width, 0.85 - posicao.y0])
+    return figura
+
+
 def _legenda(eixo, ncol: int, handles=None, **desktop):
     """Legenda acima do gráfico (desktop) ou abaixo dele, em até 2 colunas (compacto). ``handles`` fixa a ordem das entradas."""
     extra = {"handles": handles} if handles is not None else {}

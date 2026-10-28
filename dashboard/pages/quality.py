@@ -14,8 +14,8 @@ from dashboard.formatacao import fmt_int  # noqa: E402
 
 st.title("Qualidade dos dados e metodologia")
 st.write(
-    "Fonte única **Sinesp/MJSP, Joinville/SC**. Esta página mostra se os arquivos do painel conferem com o manifesto, o que cada série cobre, "
-    "como os dados foram tratados e o que não pode ser concluído a partir deles. As linhas são observações mensais agregadas, não ocorrências individuais."
+    "Fonte única **Sinesp/MJSP, Joinville/SC**. Aqui se confere se os arquivos do painel são os aprovados, o que cada série cobre, como os dados "
+    "foram tratados e o que não pode ser concluído. As linhas são observações mensais agregadas, não ocorrências individuais."
 )
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
@@ -25,6 +25,18 @@ cobertura = manifesto.get("cobertura", {})
 
 if integridade["integro"].all():
     st.success(f"Integridade confirmada: os {len(integridade)} arquivos de dados coincidem com o manifesto (versão {manifesto.get('versao', '—')}).")
+
+# Resumo da qualidade: os números que respondem "posso confiar nestes dados?" antes dos detalhes técnicos.
+cob_sinesp = cobertura.get("sinesp", {})
+with st.container(border=True):
+    q1, q2, q3, q4 = st.columns(4)
+    ui.kpi(q1, "Arquivos íntegros (SHA-256)", f"{int(integridade['integro'].sum())} de {len(integridade)}")
+    versao = str(manifesto.get("versao", "—"))
+    ui.kpi(q2, "Versão dos dados (data)", f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 else versao, help=f"Identificador completo: {versao}")
+    ui.kpi(q3, "Última competência", cob_sinesp.get("ultima_competencia", "—"),
+           help=f"Cobertura {cob_sinesp.get('primeira_competencia', '—')} a {cob_sinesp.get('ultima_competencia', '—')}. A PRF termina antes das demais; mandados da PF só a partir de 2025.")
+    ui.kpi(q4, "Valores ausentes", fmt_int(int(sinesp["valor"].isna().sum())), help="Ausência nunca é convertida em zero; zeros publicados são mantidos.")
+    st.caption("Unidades: **vítimas** e **mandados cumpridos** (nunca somadas). Fonte: MJSP / Sinesp VDE. Os XLSX originais não são distribuídos.")
 
 abas = st.tabs(["Integridade e versão", "Fonte e cobertura", "Métodos e limitações", "Atualização e licenças"])
 

@@ -37,7 +37,7 @@ def _texto(app: AppTest) -> str:
 def test_entrada_carrega_com_navegacao_das_tres_paginas():
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=120).run()
     _sem_erros(app)
-    assert [t.value for t in app.title] == ["Segurança Pública de Joinville/SC — Indicadores Sinesp/MJSP"]  # página padrão: Projeto
+    assert [t.value for t in app.title] == ["Segurança Pública de Joinville/SC"]  # página padrão: Projeto
     texto = project_path("scripts", "painel_streamlit.py").read_text(encoding="utf-8")
     for pagina in ("home.py", "sinesp.py", "quality.py"):
         assert f'_RAIZ / "dashboard" / "pages" / "{pagina}"' in texto
@@ -60,18 +60,23 @@ def test_projeto_apresenta_fonte_unica_periodo_real_destaques_e_um_grafico():
     assert "deploy" not in texto and "streamlit.app" not in texto  # a página não trata de publicação
     assert "janeiro/2020 a setembro/2026" in texto and "2026 é parcial" in texto
     assert "única fonte deste painel" in texto and "Mortes no trânsito (Polícia Rodoviária Federal) até 2026-08" in texto
-    # destaques calculados da base (homicídio 2025, homicídio e tentativa em janeiro–setembro de 2026) e números da base
-    assert [m.value for m in app.metric] == ["29", "25", "77", "911", "12", "2026-09"]
-    assert "−7 vs 2024" in app.metric[0].delta and "+4 vs janeiro–setembro de 2025" in app.metric[1].delta
-    assert "+34 vs janeiro–setembro de 2025" in app.metric[2].delta
-    direcoes = [Metric.MetricDirection.Name(m.proto.direction) for m in app.metric[:3]]
+    # fonte e período (4 números da base) e os destaques calculados (homicídio 2025, homicídio e tentativa em janeiro–setembro de 2026)
+    assert [m.value for m in app.metric] == ["2020–2026", "911", "12", "2026-09", "29", "25", "77"]
+    destaques = app.metric[4:]
+    assert "−7 vs 2024" in destaques[0].delta and "+4 vs janeiro–setembro de 2025" in destaques[1].delta
+    assert "+34 vs janeiro–setembro de 2025" in destaques[2].delta
+    direcoes = [Metric.MetricDirection.Name(m.proto.direction) for m in destaques]
     assert direcoes == ["DOWN", "UP", "UP"]  # a seta acompanha o sinal da diferença
+    # cada cartão identifica indicador, abrangência, unidade, período e base de comparação em texto que não é cortado
+    legendas = " ".join(c.value for c in app.caption)
+    for trecho in ("Estadual · vítimas · ano completo de 2025", "Estadual · vítimas · janeiro–setembro de 2026 (ano parcial)",
+                   "Comparado com o ano completo de 2024.", "Comparado com janeiro–setembro de 2025 (mesma duração)."):
+        assert trecho in legendas, trecho
     for ausente in ("SSP", "Prefeitura", "violência doméstica", "Fato Comunicado"):
         assert ausente not in texto, ausente
-    assert [s.value for s in app.subheader] == [
-        "Pergunta analítica", "Indicadores de destaque", "Evolução do homicídio doloso", "Explore", "Sobre os dados", "Limites da leitura"]
+    assert [s.value for s in app.subheader] == ["Indicadores de destaque", "Evolução do homicídio doloso", "Principais achados", "Explore as análises"]
     assert sum(1 for e in app.expander if e.label == "Valores usados neste gráfico (tabela)") == 1  # um único gráfico, com a tabela de apoio
-    assert "Principais achados descritivos" in [e.label for e in app.expander]
+    assert "Pergunta, unidades e limites da leitura" in [e.label for e in app.expander]
 
 
 # ------------------------------------------------------------------------------------------- Sinesp
@@ -321,7 +326,7 @@ def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(t
         assert any("2026 contém apenas janeiro a setembro" in i.value for i in sinesp.info), [i.value for i in sinesp.info]
         assert "Janeiro–setembro de 2026" in sinesp.metric[1].label, sinesp.metric[1].label
         home = AppTest.from_file("dashboard/pages/home.py", default_timeout=120).run()
-        assert any("outubro/2026" in m.value for m in home.markdown)
+        assert any("outubro/2026" in m.value for m in list(home.markdown) + list(home.caption))  # período lido do manifesto
         quality = AppTest.from_file("dashboard/pages/quality.py", default_timeout=120).run()
         assert any("2026-10" in m.value for m in quality.markdown)
         print("OK")
