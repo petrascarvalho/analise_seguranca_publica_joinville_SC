@@ -7,8 +7,8 @@ from pathlib import Path
 import pandas as pd
 from openpyxl import load_workbook
 
-from scripts.transform import CITY_CRIME_URL, CITY_CRIME_VALUES, YEARS
-from scripts.utils import project_path
+from src.pipeline.transform import CITY_CRIME_URL, CITY_CRIME_VALUES, YEARS
+from src.pipeline.utils import project_path
 
 
 SINESP_URL = (

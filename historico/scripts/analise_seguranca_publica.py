@@ -22,7 +22,7 @@ import sys
 
 import pandas as pd
 import pdfplumber
-from scripts import transform
+from src.pipeline import transform
 
 # Mantém os acentos legíveis no terminal quando o fluxo não está no Interactive Window.
 if hasattr(sys.stdout, "reconfigure"):
@@ -34,13 +34,13 @@ print(f"Pandas: {pd.__version__}")
 # %% [markdown]
 # # ETAPA 2 — Definição dos diretórios
 # Objetivo: localizar as fontes a partir da pasta do projeto aberta no VS Code.
-# Procedimento: em execução como módulo, usa a pasta acima de scripts/; no
+# Procedimento: em execução como módulo, usa a raiz do projeto (dois níveis acima de historico/scripts/); no
 # Interactive Window, usa a pasta de trabalho (abra a raiz do projeto no VS Code).
 # Validação: os caminhos são exibidos junto com seu estado de disponibilidade.
 
 # %%
 RAIZ_PROJETO = (
-    Path(__file__).resolve().parents[1] if "__file__" in globals() else Path.cwd()
+    Path(__file__).resolve().parents[2] if "__file__" in globals() else Path.cwd()
 )
 PASTA_SINESP = RAIZ_PROJETO / "dados" / "brutos" / "sinesp"
 ARQUIVO_SINESP_2023 = PASTA_SINESP / "bancovde-2023.xlsx"
@@ -1634,7 +1634,7 @@ import pdfplumber as pdf_ssp11
 from pypdf import PdfReader as LeitorSSP11
 from IPython.display import display as mostrar_ssp11
 
-raiz_ssp11 = CaminhoSSP11(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP11.cwd()
+raiz_ssp11 = CaminhoSSP11(__file__).resolve().parents[2] if "__file__" in globals() else CaminhoSSP11.cwd()
 pasta_pdf_ssp11 = raiz_ssp11 / "dados/brutos/ssp_sc/pdfs"
 pasta_csv_ssp11 = raiz_ssp11 / "dados/brutos/ssp_sc/csv_extraidos"
 arquivos_pdf_ssp11 = sorted(pasta_pdf_ssp11.rglob("*.pdf"))
@@ -2076,7 +2076,7 @@ import pdfplumber as pdf_ssp12
 from pypdf import PdfReader as LeitorSSP12
 from IPython.display import display as mostrar_ssp12
 
-raiz_ssp12 = CaminhoSSP12(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP12.cwd()
+raiz_ssp12 = CaminhoSSP12(__file__).resolve().parents[2] if "__file__" in globals() else CaminhoSSP12.cwd()
 pasta_ssp12 = raiz_ssp12 / "dados/brutos/ssp_sc"
 pdfs_ssp12 = sorted((pasta_ssp12 / "pdfs").rglob("*.pdf"))
 csvs_ssp12 = sorted((pasta_ssp12 / "csv_extraidos").rglob("*.csv"))
@@ -2432,7 +2432,7 @@ import pandas as pd_ssp131
 import pdfplumber as pdf_ssp131
 from IPython.display import display as mostrar_ssp131
 
-raiz_ssp131 = CaminhoSSP131(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP131.cwd()
+raiz_ssp131 = CaminhoSSP131(__file__).resolve().parents[2] if "__file__" in globals() else CaminhoSSP131.cwd()
 pasta_pdf_ssp131 = raiz_ssp131 / "dados/brutos/ssp_sc/pdfs"
 pasta_csv_ssp131 = raiz_ssp131 / "dados/brutos/ssp_sc/csv_extraidos"
 
@@ -3068,7 +3068,7 @@ ausentes_ssp133 = [nome for nome in necessarios_ssp133 if nome not in globals()]
 if ausentes_ssp133:
     raise NameError(f"Etapa 13.3: execute antes a Etapa 13.2. Ausentes: {ausentes_ssp133}")
 
-raiz_ssp133 = CaminhoSSP133(__file__).resolve().parents[1] if "__file__" in globals() else CaminhoSSP133.cwd()
+raiz_ssp133 = CaminhoSSP133(__file__).resolve().parents[2] if "__file__" in globals() else CaminhoSSP133.cwd()
 pasta_pdf_ssp133 = raiz_ssp133 / "dados/brutos/ssp_sc/pdfs"
 pasta_csv_ssp133 = raiz_ssp133 / "dados/brutos/ssp_sc/csv_extraidos"
 base_ssp133 = df_violencia_domestica_joinville_ssp132

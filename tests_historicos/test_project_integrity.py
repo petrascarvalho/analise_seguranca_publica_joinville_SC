@@ -5,7 +5,7 @@ from pathlib import Path
 from pypdf import PdfReader
 import pytest
 
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 
 def sha256(path: Path) -> str:

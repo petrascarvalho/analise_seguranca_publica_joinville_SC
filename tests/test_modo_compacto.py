@@ -12,7 +12,7 @@ from streamlit.testing.v1 import AppTest
 
 from dashboard import calculos, graficos
 from dashboard import dados_publicos as dp
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 from test_estatistica_visual import SERIES_REAIS, _caixas_dos_textos
 
 ANOS = list(range(2020, 2027))

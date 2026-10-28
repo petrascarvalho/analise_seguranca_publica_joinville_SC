@@ -50,7 +50,7 @@ def _ler_texto(nome: str, diretorio: Path) -> pd.DataFrame:
     if not caminho.is_file():
         raise ErroDados(
             f"Arquivo de dados não encontrado: {nome}. Restaure dashboard/data_publica/ ou gere os dados com "
-            "`python -m scripts.atualizacao_dados` (requer os XLSX oficiais do Sinesp)."
+            "`python -m src.pipeline.atualizacao_dados` (requer os XLSX oficiais do Sinesp)."
         )
     try:
         return pd.read_csv(caminho, dtype=str, keep_default_na=False, na_filter=False, encoding="utf-8")

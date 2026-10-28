@@ -1,6 +1,6 @@
 import re
 
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 URL_STREAMLIT = "https://seguranca-publica-joinville-sinesp.streamlit.app/"
 DOCUMENTOS_ATIVOS = {
@@ -33,12 +33,13 @@ def test_etl_e_notebook_sao_os_roteiros_principais_e_o_antigo_e_historico():
     assert "# %%" in etl and "ETAPA 01" in etl and "ETAPA 18" in etl
     assert project_path("notebooks", "analise_sinesp.ipynb").is_file()
     assert not project_path("scripts", "analise_sinesp.py").exists()  # renomeado para etl_sinesp.py
-    assert project_path("scripts", "analise_seguranca_publica.py").is_file()  # roteiro antigo preservado (histórico SSP/SC)
+    assert project_path("historico", "scripts", "analise_seguranca_publica.py").is_file()  # roteiro antigo preservado (histórico SSP/SC)
+    assert sorted(p.name for p in project_path("scripts").glob("*.py")) == ["etl_sinesp.py", "painel_streamlit.py"]  # só os dois pontos principais
     readme = _ler("README.md")
     assert "scripts/etl_sinesp.py" in readme and "-m scripts.etl_sinesp" in readme
     assert "notebooks/analise_sinesp.ipynb" in readme and "dados/processados/sinesp" in readme
     assert r".\.venv\Scripts\python.exe" in readme  # comandos testados no Windows
-    assert "histórico" in readme.split("scripts/analise_seguranca_publica.py", 1)[1][:400].lower()
+    assert "histórico" in readme.split("historico/scripts/analise_seguranca_publica.py", 1)[1][:400].lower()
 
 
 def test_readme_declara_fonte_unica_sinesp_e_trata_ssp_e_prefeitura_como_historico():
@@ -61,7 +62,7 @@ def test_readme_declara_fonte_unica_sinesp_e_trata_ssp_e_prefeitura_como_histori
 def test_navegacao_documentada_tem_tres_paginas_e_sem_pagina_ssp():
     app = _ler("scripts", "painel_streamlit.py")
     for page in ("home.py", "sinesp.py", "quality.py"):
-        assert f'project_path("dashboard", "pages", "{page}")' in app
+        assert f'_RAIZ / "dashboard" / "pages" / "{page}"' in app
         assert project_path("dashboard", "pages", page).is_file()
     assert app.count("st.Page(") == 3 and "st.navigation(" in app
     assert not project_path("dashboard", "pages", "violencia_domestica.py").exists()
@@ -70,7 +71,7 @@ def test_navegacao_documentada_tem_tres_paginas_e_sem_pagina_ssp():
 def test_readme_documenta_atualizacao_controlada_licencas_testes_e_deploy_sem_inventar_url():
     readme = _ler("README.md")
     for expected in (
-        "python -m scripts.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
+        "python -m src.pipeline.atualizacao_dados verificar", "aprovar <id> --confirmo <id>", "Não há atualização automática operacional",
         "documentacao/analises/ATUALIZACAO_DE_DADOS.md", "documentacao/painel/DEPLOY_STREAMLIT.md", "não pôde ser confirmado", "CC BY-ND",
         "Deploy realizado", "-m pytest tests -q", "-m pytest tests_historicos -q",
         "20261027T114400Z",

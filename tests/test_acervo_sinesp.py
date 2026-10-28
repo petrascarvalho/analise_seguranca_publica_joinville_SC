@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 
 from dashboard import dados_publicos as dp
-from scripts import atualizacao_dados as au
-from scripts.utils import project_path
+from src.pipeline import atualizacao_dados as au
+from src.pipeline.utils import project_path
 
 ARQUIVOS_AUDITADOS = {
     2020: ("pendente_validacao_origem",), 2021: ("pendente_validacao_origem",), 2022: ("pendente_validacao_origem",),

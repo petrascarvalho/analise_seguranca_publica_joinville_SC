@@ -20,23 +20,22 @@ import sys
 from pathlib import Path
 
 # A raiz do projeto precisa estar no caminho de importação quando o Streamlit executa este arquivo
-# (por exemplo, em um deploy) para que os pacotes ``scripts`` e ``dashboard`` sejam encontrados.
+# (por exemplo, em um deploy) para que o pacote ``dashboard`` seja encontrado.
 _RAIZ = Path(__file__).resolve().parents[1]
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
 
 import streamlit as st  # noqa: E402
 
-from scripts.utils import project_path  # noqa: E402
 
 # Configuração da página: precisa ser o primeiro comando do Streamlit.
 st.set_page_config(page_title="Segurança Pública de Joinville", page_icon="🛡️", layout="wide")
 
 # As três páginas do painel. url_path define o endereço (ex.: /sinesp) e default=True indica a página inicial.
 pages = [
-    st.Page(str(project_path("dashboard", "pages", "home.py")), title="Projeto", icon="🛡️", url_path="projeto", default=True),
-    st.Page(str(project_path("dashboard", "pages", "sinesp.py")), title="Indicadores Sinesp", icon="📊", url_path="sinesp"),
-    st.Page(str(project_path("dashboard", "pages", "quality.py")), title="Qualidade e metodologia", icon="🔎", url_path="qualidade"),
+    st.Page(str(_RAIZ / "dashboard" / "pages" / "home.py"), title="Projeto", icon="🛡️", url_path="projeto", default=True),
+    st.Page(str(_RAIZ / "dashboard" / "pages" / "sinesp.py"), title="Indicadores Sinesp", icon="📊", url_path="sinesp"),
+    st.Page(str(_RAIZ / "dashboard" / "pages" / "quality.py"), title="Qualidade e metodologia", icon="🔎", url_path="qualidade"),
 ]
 # Menu lateral com as páginas; run() executa a página que o usuário escolheu.
 navigation = st.navigation(pages, position="sidebar")

@@ -1,6 +1,6 @@
 """Atualização controlada dos dados mínimos do dashboard, em três operações separadas.
 
-A — VERIFICAR   consulta as fontes e relata possíveis novidades (``scripts.fontes_oficiais``); NÃO altera dados.
+A — VERIFICAR   consulta as fontes e relata possíveis novidades (``src.pipeline.fontes_oficiais``); NÃO altera dados.
 B — PREPARAR    monta uma versão CANDIDATA isolada em ``atualizacao/staging/<id>/`` a partir dos originais oficiais
                 baixados/colocados manualmente, executa o ETL e valida; NÃO altera os dados ativos.
 C — APROVAR     promove a candidata à versão ativa somente com aprovação explícita (``--confirmo <id>``), depois de
@@ -12,12 +12,12 @@ valores históricos exigem ``--aceitar-revisoes``. A fonte única é o Sinesp/MJ
 
 Uso (a partir da raiz do projeto)::
 
-    python -m scripts.atualizacao_dados verificar
-    python -m scripts.atualizacao_dados preparar --entradas-sinesp dados/brutos/sinesp
-    python -m scripts.atualizacao_dados comparar <id>
-    python -m scripts.atualizacao_dados aprovar <id> --confirmo <id> [--aceitar-revisoes]
-    python -m scripts.atualizacao_dados versoes
-    python -m scripts.atualizacao_dados reverter <versao> --confirmo <versao>
+    python -m src.pipeline.atualizacao_dados verificar
+    python -m src.pipeline.atualizacao_dados preparar --entradas-sinesp dados/brutos/sinesp
+    python -m src.pipeline.atualizacao_dados comparar <id>
+    python -m src.pipeline.atualizacao_dados aprovar <id> --confirmo <id> [--aceitar-revisoes]
+    python -m src.pipeline.atualizacao_dados versoes
+    python -m src.pipeline.atualizacao_dados reverter <versao> --confirmo <versao>
 """
 
 from __future__ import annotations
@@ -38,14 +38,14 @@ from zipfile import ZipFile
 
 import pandas as pd
 
-RAIZ = Path(__file__).resolve().parents[1]
+RAIZ = Path(__file__).resolve().parents[2]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
 from dashboard import dados_publicos as dp  # noqa: E402
-from scripts import fontes_oficiais as fo  # noqa: E402
-from scripts import transform  # noqa: E402
-from scripts import versionamento_dados as vv  # noqa: E402
+from src.pipeline import fontes_oficiais as fo  # noqa: E402
+from src.pipeline import transform  # noqa: E402
+from src.pipeline import versionamento_dados as vv  # noqa: E402
 
 BASE_ATUALIZACAO = RAIZ / "atualizacao"
 ATIVA_PADRAO = dp.DIRETORIO_DADOS
@@ -352,7 +352,7 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
     except dp.ErroDados as erro:
         validacao.erros.append(f"Validação estrutural reprovada: {erro}")
     manifesto = vv.montar_manifesto(
-        versao=id_candidata, versao_anterior=manifesto_ativo.get("versao"), gerado_em=agora, gerador="scripts/atualizacao_dados.py (preparar)",
+        versao=id_candidata, versao_anterior=manifesto_ativo.get("versao"), gerado_em=agora, gerador="src/pipeline/atualizacao_dados.py (preparar)",
         roteiro_sha256=manifesto_ativo.get("roteiro_sha256"),
         validacao={"status": validacao.status, "erros": validacao.erros, "avisos": validacao.avisos, "informacoes": validacao.informacoes,
                    "descricao": "Candidata preparada e validada; pendente de aprovação."},

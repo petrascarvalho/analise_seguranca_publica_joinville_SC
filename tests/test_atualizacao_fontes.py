@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import pytest
 
 from dashboard import dados_publicos as dp
-from scripts import fontes_oficiais as fo
+from src.pipeline import fontes_oficiais as fo
 
 AGORA = datetime(2026, 10, 27, 12, 0, 0, tzinfo=timezone.utc)
 

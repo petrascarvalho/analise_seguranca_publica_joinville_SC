@@ -2,7 +2,7 @@
 
 Procedimento (separado do roteiro e do Streamlit):
 
-1. Extrai, por marcadores de texto, as células das etapas validadas de ``scripts/analise_seguranca_publica.py``
+1. Extrai, por marcadores de texto, as células das etapas validadas de ``historico/scripts/analise_seguranca_publica.py``
    (Sinesp: etapas 1–2 e 5–9) e as executa em um espaço de nomes isolado. O roteiro NÃO é importado nem modificado,
    e as etapas históricas de outras fontes (SSP/SC, Prefeitura) NÃO são executadas.
 2. Confere valores conhecidos (900 observações; homicídio doloso anual e janeiro–agosto, conforme o README) antes de gravar.
@@ -12,11 +12,11 @@ Requer os XLSX oficiais do Sinesp em ``dados/brutos/sinesp/`` (que não são cop
 preservada (campo vazio) e nunca convertida em zero. Nenhum valor é digitado.
 
 Este gerador reproduz a versão inicial (competências até 2026-08, auditada). Para novas publicações oficiais use o fluxo
-controlado ``python -m scripts.atualizacao_dados`` (verificar → preparar → aprovar), que não depende do roteiro.
+controlado ``python -m src.pipeline.atualizacao_dados`` (verificar → preparar → aprovar), que não depende do roteiro.
 
 Uso (a partir da raiz do projeto)::
 
-    python -m scripts.gerar_dados_dashboard [--saida DIRETORIO] [--sobrescrever]
+    python -m historico.scripts.gerar_dados_dashboard [--saida DIRETORIO] [--sobrescrever]
 """
 
 from __future__ import annotations
@@ -32,14 +32,14 @@ from pathlib import Path
 
 import pandas as pd
 
-RAIZ = Path(__file__).resolve().parents[1]
+RAIZ = Path(__file__).resolve().parents[2]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
 from dashboard import dados_publicos as dp  # noqa: E402
-from scripts import versionamento_dados as vv  # noqa: E402
+from src.pipeline import versionamento_dados as vv  # noqa: E402
 
-ROTEIRO = RAIZ / "scripts" / "analise_seguranca_publica.py"
+ROTEIRO = RAIZ / "historico" / "scripts" / "analise_seguranca_publica.py"
 
 # Valores já documentados no README acadêmico (conferência; não são usados como dados).
 HOMICIDIO_ANUAL_2020_2025 = [62, 62, 49, 55, 36, 29]
@@ -146,7 +146,7 @@ def gravar(saidas: dict[str, pd.DataFrame], origem: dict, destino: Path, sobresc
         fichas.append({"arquivo": nome, "linhas": int(len(quadro)), "colunas": int(quadro.shape[1]), "esquema": list(quadro.columns),
                        "bytes": len(conteudo), "sha256": dp.sha256_normalizado(conteudo)})
     manifesto = vv.montar_manifesto(
-        versao=versao, versao_anterior=id_anterior, gerado_em=agora, gerador="scripts/gerar_dados_dashboard.py",
+        versao=versao, versao_anterior=id_anterior, gerado_em=agora, gerador="historico/scripts/gerar_dados_dashboard.py",
         roteiro_sha256=dp.sha256_normalizado(ROTEIRO.read_bytes()),
         validacao={"status": "validado", "descricao": "Gerado a partir da base analítica Sinesp validada do roteiro (Etapas 5–9) e conferido contra valores conhecidos.",
                    "verificacoes": ["900 observações Sinesp e 12 séries", "homicídio doloso anual 2020–2025 e janeiro–agosto 2020–2026 iguais ao README"]},
@@ -165,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
     analisador.add_argument("--saida", type=Path, default=dp.DIRETORIO_DADOS, help="diretório de saída (padrão: dashboard/data_publica)")
     analisador.add_argument("--sobrescrever", action="store_true", help="substitui arquivos existentes que diferirem do gerado")
     analisador.add_argument("--relatorio-verificacao", type=Path, default=None,
-                            help="JSON da operação 'verificar' (scripts.atualizacao_dados) a registrar no manifesto como consulta à fonte")
+                            help="JSON da operação 'verificar' (src.pipeline.atualizacao_dados) a registrar no manifesto como consulta à fonte")
     argumentos = analisador.parse_args(argv)
     saidas, origem = construir_dados()
     consulta = json.loads(argumentos.relatorio_verificacao.read_text(encoding="utf-8")) if argumentos.relatorio_verificacao else None

@@ -108,7 +108,7 @@ CRITERIOS = [
     "Não inclui outras fontes, XLSX nacionais, dados pessoais ou informações protegidas.",
 ]
 METODO_DE_OBTENCAO = (
-    "Download manual (ou assistido por `python -m scripts.atualizacao_dados preparar --baixar-sinesp`) dos XLSX anuais `bancovde-ANO.xlsx` da página oficial da "
+    "Download manual (ou assistido por `python -m src.pipeline.atualizacao_dados preparar --baixar-sinesp`) dos XLSX anuais `bancovde-ANO.xlsx` da página oficial da "
     "base VDE do MJSP; filtro exato UF = SC e município = JOINVILLE; ETL em Python/Pandas com validações; os XLSX não são redistribuídos."
 )
 REGRAS_ETL = [

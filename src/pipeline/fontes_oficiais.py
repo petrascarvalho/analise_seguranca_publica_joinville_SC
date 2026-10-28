@@ -33,7 +33,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Protocol
 
-from scripts import versionamento_dados as vv
+from src.pipeline import versionamento_dados as vv
 
 USER_AGENT = "analise-seguranca-publica-joinville/1.0 (projeto academico SENAI/LAB365; verificacao de metadados)"
 URL_SINESP_PAGINA = vv.FONTES_BASE[0]["url"]
@@ -172,7 +172,7 @@ def _tamanho_remoto(cliente: Cliente, url: str) -> tuple[int | None, Resposta]:
 def _referencia(manifesto: dict, chave: str) -> dict:
     origem = manifesto.get("origem_dos_dados", {})
     if chave not in origem or not origem[chave]:
-        raise ErroReferencia(f"O manifesto não registra '{chave}'; gere o manifesto atual (scripts.gerar_dados_dashboard) antes de verificar.")
+        raise ErroReferencia(f"O manifesto não registra '{chave}'; gere o manifesto atual (historico.scripts.gerar_dados_dashboard) antes de verificar.")
     return origem[chave]
 
 

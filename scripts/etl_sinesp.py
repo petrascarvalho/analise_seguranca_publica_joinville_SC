@@ -12,9 +12,9 @@ Os XLSX ficam em dados/brutos/sinesp/ (fora do Git). Sem eles, o roteiro roda em
 publicada no painel, e avisa que isso não reproduz a extração.
 
 O ETL grava somente em dados/processados/sinesp/. A base publicada no painel (dashboard/data_publica/) NUNCA é alterada
-por este roteiro: ela só muda pelo fluxo controlado verificar → preparar → aprovar (scripts/atualizacao_dados.py).
+por este roteiro: ela só muda pelo fluxo controlado verificar → preparar → aprovar (src/pipeline/atualizacao_dados.py).
 
-O trabalho anterior com SSP/SC e Prefeitura é histórico e fica em scripts/analise_seguranca_publica.py (fora do escopo).
+O trabalho anterior com SSP/SC e Prefeitura é histórico e fica em historico/scripts/analise_seguranca_publica.py (fora do escopo).
 """
 
 # %% [markdown]
@@ -23,7 +23,7 @@ O trabalho anterior com SSP/SC e Prefeitura é histórico e fica em scripts/anal
 # - `pandas` organiza os dados em tabelas (DataFrames) e faz somas, agrupamentos e estatísticas.
 # - `hashlib` calcula o SHA-256, uma "impressão digital" do arquivo que mostra se ele mudou.
 # - `pathlib.Path` monta caminhos de pastas que funcionam em Windows e Linux.
-# - Os módulos `dashboard.*` e `scripts.*` são do próprio projeto: as mesmas funções validadas que o painel usa.
+# - Os módulos `dashboard.*` e `src.*` são do próprio projeto: as mesmas funções validadas que o painel usa.
 #
 # **Resultado esperado:** a versão do pandas impressa, sem erros de importação.
 
@@ -39,9 +39,9 @@ import pandas as pd
 
 from dashboard import calculos, graficos
 from dashboard import dados_publicos as dp
-from scripts import atualizacao_dados as au
-from scripts import versionamento_dados as vv
-from scripts.utils import project_path
+from src.pipeline import atualizacao_dados as au
+from src.pipeline import versionamento_dados as vv
+from src.pipeline.utils import project_path
 
 # Faz o terminal do Windows mostrar acentos corretamente.
 if hasattr(sys.stdout, "reconfigure"):

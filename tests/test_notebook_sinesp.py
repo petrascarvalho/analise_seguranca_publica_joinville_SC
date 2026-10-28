@@ -6,7 +6,7 @@ import subprocess
 import sys
 import textwrap
 
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 NOTEBOOK = project_path("notebooks", "analise_sinesp.ipynb")
 SECOES = ["1. Fonte oficial", "2. Bibliotecas", "3. Diretórios", "4. Leitura dos arquivos", "5. Inspeção bruta", "6. Tratamento",

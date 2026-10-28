@@ -12,7 +12,7 @@ Saída em ``revisao_visual/`` (pasta local, ignorada pelo Git), com um índice `
 
 Uso (a partir da raiz do projeto)::
 
-    python -m scripts.gerar_revisao_visual [--saida revisao_visual]
+    python -m ferramentas.gerar_revisao_visual [--saida revisao_visual]
 """
 
 from __future__ import annotations
@@ -168,7 +168,7 @@ def escrever_indice(saida: Path, registros: list[dict]) -> None:
     gerados = sum(1 for r in registros if r["arquivo"])
     linhas = [
         "# Revisão visual — modo compacto (Etapa 20.2)", "",
-        "Imagens geradas por `python -m scripts.gerar_revisao_visual` a partir dos dados publicados (nenhum dado fictício). Pasta local, ignorada pelo Git.", "",
+        "Imagens geradas por `python -m ferramentas.gerar_revisao_visual` a partir dos dados publicados (nenhum dado fictício). Pasta local, ignorada pelo Git.", "",
         "> **Simulação por imagens.** Cada PNG monta o gráfico em uma tela com a largura do dispositivo (desktop 1366, celular 390 e celular 350). "
         "Mostra tamanhos, cortes e legibilidade, mas **não é uma validação real da interface**: falta o teste em navegador e em celular de verdade.", "",
         "## Seleção para aprovação (`selecao_aprovacao/`)", "", "| Arquivo | O que demonstra |", "|---|---|",

@@ -14,7 +14,7 @@ import pytest
 from streamlit.testing.v1 import AppTest
 
 from dashboard import dados_publicos as dp
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 PAGINAS = ("home", "sinesp", "quality")
 
@@ -39,7 +39,7 @@ def test_entrada_carrega_com_navegacao_das_tres_paginas():
     assert [t.value for t in app.title] == ["Segurança Pública de Joinville/SC — Indicadores Sinesp/MJSP"]  # página padrão: Projeto
     texto = project_path("scripts", "painel_streamlit.py").read_text(encoding="utf-8")
     for pagina in ("home.py", "sinesp.py", "quality.py"):
-        assert f'project_path("dashboard", "pages", "{pagina}")' in texto
+        assert f'_RAIZ / "dashboard" / "pages" / "{pagina}"' in texto
         assert project_path("dashboard", "pages", pagina).is_file()
     for url in ('url_path="projeto"', 'url_path="sinesp"', 'url_path="qualidade"'):
         assert url in texto
@@ -173,8 +173,7 @@ def _copiar_projeto_minimo(destino, *, com_dados: bool = True):
     raiz = project_path()
     shutil.copytree(raiz / "dashboard", destino / "dashboard", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     (destino / "scripts").mkdir()
-    for nome in ("__init__.py", "utils.py", "painel_streamlit.py"):
-        shutil.copy(raiz / "scripts" / nome, destino / "scripts" / nome)
+    shutil.copy(raiz / "scripts" / "painel_streamlit.py", destino / "scripts" / "painel_streamlit.py")  # a entrada só precisa do pacote dashboard
     if not com_dados:
         shutil.rmtree(destino / "dashboard" / "data_publica")
 
@@ -269,7 +268,7 @@ def test_paginas_mostram_versao_fonte_ultima_competencia_e_como_se_atualiza():
 def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(tmp_path):
     """Dados de uma atualização (candidata) com 2026-10 e a PRF em 2026-09: cobertura por série, sem mês fixo no código."""
     from test_atualizacao_fluxo import _com_proxima_competencia, _entradas  # fixtures sintéticas
-    from scripts import atualizacao_dados as au
+    from src.pipeline import atualizacao_dados as au
 
     ativa = tmp_path / "ativa"
     shutil.copytree(dp.DIRETORIO_DADOS, ativa)

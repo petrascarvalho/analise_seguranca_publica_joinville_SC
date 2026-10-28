@@ -8,8 +8,8 @@ from pathlib import Path
 import pdfplumber
 from pypdf import PdfReader
 
-from scripts.utils import project_path
-from scripts.transform import normalize_ssp_indicator
+from src.pipeline.utils import project_path
+from src.pipeline.transform import normalize_ssp_indicator
 
 
 RAW_DIR = project_path("dados", "brutos", "ssp_sc", "pdfs")

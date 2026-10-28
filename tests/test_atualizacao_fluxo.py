@@ -13,9 +13,9 @@ import pytest
 from openpyxl import Workbook
 
 from dashboard import dados_publicos as dp
-from scripts import atualizacao_dados as au
-from scripts import transform
-from scripts import versionamento_dados as vv
+from src.pipeline import atualizacao_dados as au
+from src.pipeline import transform
+from src.pipeline import versionamento_dados as vv
 
 
 # ---------------------------------------------------------------------------------------- fixtures

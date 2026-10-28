@@ -62,7 +62,7 @@ def exigir(carregar):
         return carregar()
     except dp.ErroDados as erro:
         st.error(f"**Dados indisponíveis ou inválidos.** {erro}")
-        st.info("Nenhum valor foi preenchido ou estimado. Restaure `dashboard/data_publica/` ou gere uma versão com `python -m scripts.atualizacao_dados` "
+        st.info("Nenhum valor foi preenchido ou estimado. Restaure `dashboard/data_publica/` ou gere uma versão com `python -m src.pipeline.atualizacao_dados` "
                 "(requer os XLSX oficiais do Sinesp).")
         st.stop()
 

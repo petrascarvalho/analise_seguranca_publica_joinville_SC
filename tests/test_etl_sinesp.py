@@ -14,7 +14,7 @@ import sys
 import pytest
 
 from dashboard import dados_publicos as dp
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 ETL = project_path("scripts", "etl_sinesp.py")
 ETAPAS = ["Importação das bibliotecas", "Configuração dos diretórios e caminhos", "Localização dos arquivos originais", "Leitura dos XLSX",

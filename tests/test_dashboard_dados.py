@@ -9,7 +9,7 @@ import pytest
 
 from dashboard import calculos
 from dashboard import dados_publicos as dp
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 README = project_path("README.md")
 
@@ -392,12 +392,11 @@ def test_hash_normalizado_ignora_fim_de_linha_do_checkout():
 
 # ---------------------------------------------------------------------------- independência do acervo
 def test_codigo_ativo_nao_depende_do_acervo_do_roteiro_nem_de_outras_fontes():
-    codigos = list(project_path("dashboard").rglob("*.py")) + [project_path("scripts", p) for p in (
-        "painel_streamlit.py", "gerar_dados_dashboard.py", "fontes_oficiais.py", "atualizacao_dados.py", "versionamento_dados.py")]
+    codigos = list(project_path("dashboard").rglob("*.py")) + [project_path("scripts", "painel_streamlit.py")] + [
+        project_path("src", "pipeline", p) for p in ("fontes_oficiais.py", "atualizacao_dados.py", "versionamento_dados.py")]
     for caminho in codigos:
         texto = caminho.read_text(encoding="utf-8")
         assert not re.search(r"\b[A-Za-z]:[\\/]", texto), caminho  # nenhum caminho absoluto de Windows
         assert "dados/processados" not in texto and "dados/brutos/ssp" not in texto and "scripts.analysis" not in texto, caminho
         assert not re.search(r"ssp_sc|violencia_domestica|fatos_comunicados|Fato Comunicado|SEPROT|seprot", texto), caminho
-        if caminho.name != "gerar_dados_dashboard.py":  # só o gerador de reprodução extrai blocos do roteiro, por marcadores de texto
-            assert "analise_seguranca_publica" not in texto, caminho
+        assert "analise_seguranca_publica" not in texto, caminho

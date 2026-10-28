@@ -74,7 +74,7 @@ Script em células `# %%` (VS Code: *Run Cell* / *Run All Cells*) ou executado d
 
 Sem os XLSX, o ETL entra em **modo demonstração**: usa a base publicada (dado derivado, não bruto), avisa que isso não reproduz a extração e não exporta nada. A série estudada pode ser trocada pelas variáveis `SINESP_EVENTO_ESTUDO` e `SINESP_ABRANGENCIA_ESTUDO`.
 
-O roteiro anterior, [scripts/analise_seguranca_publica.py](scripts/analise_seguranca_publica.py), é **histórico**: reúne as primeiras etapas Sinesp (1–10) e o trabalho da SSP/SC (11–14.2). Continua em `scripts/` porque o gerador da versão inicial dos dados e os testes históricos dependem dele; não é necessário para reproduzir a entrega.
+O roteiro anterior, [historico/scripts/analise_seguranca_publica.py](historico/scripts/analise_seguranca_publica.py), é **histórico**: reúne as primeiras etapas Sinesp (1–10) e o trabalho da SSP/SC (11–14.2). Continua em `scripts/` porque o gerador da versão inicial dos dados e os testes históricos dependem dele; não é necessário para reproduzir a entrega.
 
 ### Notebook: `notebooks/analise_sinesp.ipynb`
 
@@ -86,7 +86,7 @@ Filtro exato `SC`/`JOINVILLE`. Datas pelo sistema Excel 1900 (origem `1899-12-30
 
 Estatísticas: a soma anual só é calculada quando todos os meses têm valor; a variação percentual só existe com base positiva (a diferença absoluta é sempre informada); desvio-padrão descritivo com `ddof=0`. Anos parciais nunca são comparados com anos completos: compara-se janeiro até a última competência equivalente, **por série** (a PRF termina em agosto, as demais em setembro). Detalhes em [documentacao/analises/METODOLOGIA.md](documentacao/analises/METODOLOGIA.md).
 
-A **atualização dos dados do painel não depende do ETL acadêmico**: usa `scripts/atualizacao_dados.py`, que aplica as mesmas regras e reproduz byte a byte os dados ativos. Os dois caminhos são conferidos contra os mesmos CSVs publicados.
+A **atualização dos dados do painel não depende do ETL acadêmico**: usa `src/pipeline/atualizacao_dados.py`, que aplica as mesmas regras e reproduz byte a byte os dados ativos. Os dois caminhos são conferidos contra os mesmos CSVs publicados.
 
 ## 6. Bibliotecas e tecnologias
 
@@ -97,7 +97,7 @@ Ambiente local conferido: Python **3.12.14**, Pandas **3.0.6**, Matplotlib **3.1
 | `pandas` | Leitura, transformação, validação e tabelas |
 | `matplotlib` | Todos os gráficos (ETL, notebook e painel) |
 | `streamlit` | Painel interativo |
-| `lxml` | Leitura do XML interno das planilhas do Sinesp (`scripts/transform.py`) |
+| `lxml` | Leitura do XML interno das planilhas do Sinesp (`src/pipeline/transform.py`) |
 | `openpyxl` | Testes (XLSX sintéticos) e módulos históricos |
 | `pytest` | Testes automatizados |
 | `ipykernel` | Execução do notebook e das células `# %%` no VS Code (instalar à parte) |
@@ -265,11 +265,11 @@ Os arquivos são versionados para que o painel funcione em um clone limpo. A bas
 Fluxo manual documentado em [documentacao/analises/ATUALIZACAO_DE_DADOS.md](documentacao/analises/ATUALIZACAO_DE_DADOS.md). Com a `.venv` ativada (`.\.venv\Scripts\Activate.ps1`):
 
 ```powershell
-python -m scripts.atualizacao_dados verificar                       # A: consulta a fonte (não altera dados)
-python -m scripts.atualizacao_dados preparar --entradas-sinesp <pasta com os XLSX 2020 a 2026>   # B: candidata isolada
-python -m scripts.atualizacao_dados comparar <id>                   # relatório e diferenças
-python -m scripts.atualizacao_dados aprovar <id> --confirmo <id>    # C: promove (preserva a versão anterior)
-python -m scripts.atualizacao_dados reverter <versao> --confirmo <versao>
+python -m src.pipeline.atualizacao_dados verificar                       # A: consulta a fonte (não altera dados)
+python -m src.pipeline.atualizacao_dados preparar --entradas-sinesp <pasta com os XLSX 2020 a 2026>   # B: candidata isolada
+python -m src.pipeline.atualizacao_dados comparar <id>                   # relatório e diferenças
+python -m src.pipeline.atualizacao_dados aprovar <id> --confirmo <id>    # C: promove (preserva a versão anterior)
+python -m src.pipeline.atualizacao_dados reverter <versao> --confirmo <versao>
 ```
 
 **Automático:** consulta de metadados, ETL da candidata, validações, comparação com a versão ativa, backup, troca segura e reversão. **Manual:** fornecer os XLSX, ler o relatório, aprovar (`--confirmo`; `--aceitar-revisoes` só depois de analisar revisões históricas), commit, push e deploy. **Não há atualização automática operacional** (nada roda em agendamento) e o painel nunca baixa dados. O gov.br não tem API pública e bloqueia `HEAD`; a verificação é indício, não prova.
@@ -334,14 +334,9 @@ dados/                             acervo local, fora do Git
 scripts/
   etl_sinesp.py                    ETL acadêmico principal: 18 etapas em células # %%
   painel_streamlit.py              entrada do painel (st.navigation com 3 páginas)
-  transform.py                     leitura das planilhas do Sinesp (XML) e transformações
-  utils.py                         resolução de caminhos a partir da raiz do projeto
-  atualizacao_dados.py             preparar / aprovar / reverter (atualização controlada)
-  fontes_oficiais.py               verificar: consulta metadados da fonte (somente leitura)
-  versionamento_dados.py           manifesto versionado e licenças
-  gerar_dados_dashboard.py         geração inicial reprodutível de dashboard/data_publica/
-  gerar_revisao_visual.py          imagens de revisão (simulação de telas)
-  analise_seguranca_publica.py     roteiro antigo: Sinesp 1–10 e SSP/SC (histórico)
+src/pipeline/                      módulos auxiliares: leitura dos XLSX (transform.py), caminhos (utils.py),
+                                   atualização controlada, verificação da fonte e manifesto versionado
+ferramentas/gerar_revisao_visual.py  imagens de revisão (simulação de telas)
 notebooks/
   analise_sinesp.ipynb             notebook de análise, sem saídas gravadas
 dashboard/
@@ -358,7 +353,7 @@ tests/                             suíte ativa
 tests_historicos/                  suíte histórica (acervo local e roteiro antigo)
 historico/                         material preservado fora do produto (ver historico/LEIAME.md)
   ssp_sc/                          trabalho com SSP/SC e Prefeitura/SEPROT
-  scripts/                         módulos de fase anterior (extract.py, analysis.py, legacy/)
+  scripts/                         roteiro antigo, gerador inicial dos dados e módulos de fase anterior
   documentacao_anterior/           relatórios de migração, reorganização e pipeline antigo
 ```
 

@@ -12,7 +12,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.cell import WriteOnlyCell
 from lxml import etree
 
-from scripts.utils import project_path
+from src.pipeline.utils import project_path
 
 
 HEADERS = [
