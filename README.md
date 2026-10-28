@@ -394,7 +394,7 @@ Fatos comunicados por categoria em Joinville, segundo os relatórios da SSP/SC. 
 | Lesão corporal grave ou gravíssima dolosa | 19 | 10 | −9 | 1,2 |
 | Injúria real | 2 | 6 | +4 | 0,3 |
 
-![Violência doméstica SSP/SC — análise exploratória, unidade em validação](documentacao/graficos/painel/07-sspsc_violencia_domestica_2023_2024.png)
+![Violência doméstica SSP/SC — análise exploratória, unidade em validação](documentacao/graficos/analises/07-sspsc_violencia_domestica_2023_2024.png)
 
 **Leitura permitida:** comparação de cada categoria consigo mesma entre 2023 e 2024 na unidade publicada. **Não permitida:** somar categorias (um mesmo fato pode envolver mais de uma), tratar "Fato Comunicado" como vítima, pessoa ou ocorrência única, comparar com o Sinesp, ou apresentar os números como definitivos.
 
@@ -525,7 +525,8 @@ Seguranca Publica Joinville/
 ├── documentacao/
 │   ├── auditoria/              procedência Sinesp e inventários SHA-256
 │   └── graficos/
-│       └── painel/             seis capturas Streamlit + figura exploratória SSP/SC (07)
+│       ├── painel/             seis capturas históricas da interface Streamlit (Etapa 25)
+│       └── analises/           figura exploratória SSP/SC (07), fora do painel
 ├── dados/                       (local, fora do Git) brutos/ e processados/ de cada fonte
 └── tests/                      suíte ativa e garantias históricas migradas
 ```
@@ -533,7 +534,7 @@ Seguranca Publica Joinville/
 **Recuperação do histórico:** `historico/`, `tests_historicos/` e `dashboard/data_publica/LEIAME.md` foram retirados da árvore ativa na Etapa 26;
 os arquivos versionados continuam recuperáveis com `git show 5702724:<caminho>`. A antiga página SSP/SC é recuperável em `bad9723`.
 O backup externo `C:\Users\Ususario\Desktop\readme.ia\arquivo_etapa26\` contém 192 arquivos com hashes conferidos em `hashes_originais.txt`, incluindo saídas ignoradas pelo Git.
-O notebook foi renomeado, as seis capturas foram movidas para `documentacao/graficos/painel/` e os dois inventários históricos foram mantidos em `documentacao/auditoria/`.
+O notebook foi renomeado, as seis capturas foram movidas para `documentacao/graficos/painel/` (e, na Etapa 29, a figura exploratória SSP/SC para `documentacao/graficos/analises/`) e os dois inventários históricos foram mantidos em `documentacao/auditoria/`.
 Não use operações destrutivas para consultar versões anteriores. A pasta residual `backup_pre_migracao_20261016/` contém cache com acesso negado; não foram alteradas permissões nem forçada exclusão.
 
 ## 13. Limitações e melhorias futuras

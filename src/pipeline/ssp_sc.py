@@ -36,7 +36,7 @@ from src.pipeline.utils import project_path
 
 PASTA_BRUTOS = project_path("dados", "brutos", "ssp_sc")
 PASTA_PROCESSADOS = project_path("dados", "processados", "ssp_sc")
-PASTA_GRAFICOS = project_path("documentacao", "graficos", "painel")
+PASTA_GRAFICOS = project_path("documentacao", "graficos", "analises")
 
 FONTE = "SSP/SC"
 UNIDADE_VD = "Fato Comunicado"
@@ -391,7 +391,7 @@ def processar() -> dict:
 
 
 def exportar(pasta: Path = PASTA_PROCESSADOS, pasta_graficos: Path | None = PASTA_GRAFICOS) -> dict:
-    """Grava as bases tratadas em ``dados/processados/ssp_sc/`` e o gráfico em ``documentacao/graficos/painel/``.
+    """Grava as bases tratadas em ``dados/processados/ssp_sc/`` e o gráfico em ``documentacao/graficos/analises/``.
 
     Os arquivos brutos são conferidos por SHA-256 antes e depois. Retorno: o resumo usado no README e nos testes.
     """
