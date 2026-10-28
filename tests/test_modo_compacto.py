@@ -210,7 +210,7 @@ def test_alternancia_do_modo_compacto_preserva_filtros_e_abas():
     assert app.toggle[0].value is True  # o modo permanece durante as interações
     app.toggle[0].set_value(False).run()
     assert app.toggle[0].value is False and not app.exception
-    assert [t.label for t in app.tabs] == ["Visão geral", "Evolução temporal", "Estatística descritiva", "Outliers", "Indicadores e interpretação"]
+    assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"]
 
 
 def test_modo_compacto_na_pagina_move_o_texto_explicativo_para_componentes_nativos():

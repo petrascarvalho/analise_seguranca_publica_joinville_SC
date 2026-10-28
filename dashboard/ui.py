@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pandas as pd
 import streamlit as st
 
 from dashboard import dados_publicos as dp
@@ -15,6 +16,25 @@ _TEXTO_CLASSIFICACAO = {
     "alteracao_de_esquema_ou_fonte": "alteração de esquema, formato ou fonte",
     "falha_de_consulta": "falha de consulta",
 }
+
+
+def direcao_da_seta(diferenca) -> str:
+    """Seta do ``st.metric`` de acordo com o sinal da diferença: "up" (aumento), "down" (queda) ou "off" (sem diferença).
+
+    O texto do delta usa o sinal tipográfico "−" (ex.: "−7 vs 2024"); como o Streamlit decide a seta pelo primeiro caractere, ela é
+    informada explicitamente para não mostrar seta para cima ao lado de um valor negativo.
+    """
+    if diferenca is None or pd.isna(diferenca) or int(diferenca) == 0:
+        return "off"
+    return "up" if int(diferenca) > 0 else "down"
+
+
+def link_pagina(arquivo: str, rotulo: str, icone: str) -> None:
+    """Link para outra página do painel (caminho relativo ao arquivo de entrada, scripts/painel_streamlit.py). Fora da navegação principal (ex.: página aberta sozinha), mostra só o nome da página."""
+    try:
+        st.page_link(arquivo, label=rotulo, icon=icone)
+    except st.errors.StreamlitAPIException:
+        st.markdown(f"**{icone} {rotulo}**")
 
 
 def aviso_ano_parcial(ano: int, mes_final: int) -> str:

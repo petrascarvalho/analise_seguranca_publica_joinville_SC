@@ -11,6 +11,7 @@ import sys
 import textwrap
 
 import pytest
+from streamlit.proto.Metric_pb2 import Metric
 from streamlit.testing.v1 import AppTest
 
 from dashboard import dados_publicos as dp
@@ -53,17 +54,24 @@ def test_cada_pagina_executa_sem_excecoes(nome):
     _sem_erros(_pagina(nome))
 
 
-def test_projeto_apresenta_fonte_unica_periodo_real_e_nao_afirma_deploy():
+def test_projeto_apresenta_fonte_unica_periodo_real_destaques_e_um_grafico():
     app = _pagina("home")
     texto = _texto(app)
-    assert "não há deploy público confirmado" in texto and "streamlit.app" not in texto
+    assert "deploy" not in texto and "streamlit.app" not in texto  # a página não trata de publicação
     assert "janeiro/2020 a setembro/2026" in texto and "2026 é parcial" in texto
     assert "única fonte deste painel" in texto and "Mortes no trânsito (Polícia Rodoviária Federal) até 2026-08" in texto
-    assert [m.value for m in app.metric] == ["911", "12", "2026-09"]
+    # destaques calculados da base (homicídio 2025, homicídio e tentativa em janeiro–setembro de 2026) e números da base
+    assert [m.value for m in app.metric] == ["29", "25", "77", "911", "12", "2026-09"]
+    assert "−7 vs 2024" in app.metric[0].delta and "+4 vs janeiro–setembro de 2025" in app.metric[1].delta
+    assert "+34 vs janeiro–setembro de 2025" in app.metric[2].delta
+    direcoes = [Metric.MetricDirection.Name(m.proto.direction) for m in app.metric[:3]]
+    assert direcoes == ["DOWN", "UP", "UP"]  # a seta acompanha o sinal da diferença
     for ausente in ("SSP", "Prefeitura", "violência doméstica", "Fato Comunicado"):
         assert ausente not in texto, ausente
-    assert [s.value for s in app.subheader][:3] == ["Pergunta analítica", "Objetivo", "Relevância"]
-    assert "Principais achados (descritivos)" in [s.value for s in app.subheader] and "Unidades e limitações" in [s.value for s in app.subheader]
+    assert [s.value for s in app.subheader] == [
+        "Pergunta analítica", "Indicadores de destaque", "Evolução do homicídio doloso", "Explore", "Sobre os dados", "Limites da leitura"]
+    assert sum(1 for e in app.expander if e.label == "Valores usados neste gráfico (tabela)") == 1  # um único gráfico, com a tabela de apoio
+    assert "Principais achados descritivos" in [e.label for e in app.expander]
 
 
 # ------------------------------------------------------------------------------------------- Sinesp
@@ -112,7 +120,7 @@ def test_sinesp_todos_os_indicadores_e_abrangencias_executam():
 def test_sinesp_organiza_a_analise_em_quatro_grupos_com_tabela_por_grafico():
     app = _pagina("sinesp")
     _sem_erros(app)
-    assert [t.label for t in app.tabs] == ["Visão geral", "Evolução temporal", "Estatística descritiva", "Outliers", "Indicadores e interpretação"]
+    assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"]
     tabelas = [e for e in app.expander if e.label == "Valores usados neste gráfico (tabela)"]
     assert len(tabelas) >= 9  # mapa de calor, períodos, ranking, anual, mensal, média móvel, acumulado, boxplot, distribuição, sazonalidade, outliers
     assert any("Método informativo" in i.value for i in app.info)  # homicídio doloso: limites de Tukey informativos
