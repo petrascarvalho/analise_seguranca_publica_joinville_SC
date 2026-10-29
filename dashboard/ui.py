@@ -105,6 +105,7 @@ def direcao_da_seta(diferenca) -> str:
     O texto do delta usa o sinal tipográfico "−" (ex.: "−7 vs 2024"); como o Streamlit decide a seta pelo primeiro caractere, ela é
     informada explicitamente para não mostrar seta para cima ao lado de um valor negativo.
     """
+    # Sem diferença (vazia ou zero): nenhuma seta; positiva: seta para cima; negativa: seta para baixo.
     if diferenca is None or pd.isna(diferenca) or int(diferenca) == 0:
         return "off"
     return "up" if int(diferenca) > 0 else "down"
@@ -265,10 +266,12 @@ def mostrar_versao_dos_dados() -> None:
         st.markdown("**Fonte dos dados:** Ministério da Justiça e Segurança Pública (MJSP) — Sinesp VDE (Sistema Nacional de Estatísticas de Segurança Pública). "
                     "Tabelas e gráficos são elaborações próprias, feitas a partir de números estatísticos públicos.")
         if fonte:
+            # [texto](endereço) vira um link clicável no Markdown.
             st.markdown(f"**Página oficial da fonte:** [{fonte['nome']}]({fonte['url']})")
             consulta = (fonte.get("consulta") or {}).get("data_consulta_utc") or ""   # versões sem consulta registrada têm este campo vazio
             if consulta[:10].count("-") == 2:
                 ano, mes, dia = consulta[:10].split("-")
+                # split("-") separa a data AAAA-MM-DD em três partes, reescritas como DD/MM/AAAA.
                 st.markdown(f"**Fonte consultada pela última vez em:** {dia}/{mes}/{ano}.")
         st.markdown(
             "**Atualização dos dados:** feita manualmente, depois de conferência. Este painel não busca informações sozinho: você vê a base "

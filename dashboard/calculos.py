@@ -42,6 +42,7 @@ def tabela_anual_sinesp(sinesp: pd.DataFrame) -> pd.DataFrame:
     linhas = []
     # Último ano de cada série: groupby separa as séries e max() pega o maior ano de cada uma.
     ultimo_ano_serie = sinesp.groupby(CHAVE_SERIE)["ano"].max()
+    # Percorre cada grupo série + ano: chave traz (indicador, classificação, unidade, ano) e grupo traz as linhas desse ano.
     for chave, grupo in sinesp.groupby(CHAVE_SERIE + ["ano"], sort=False):
         meses = tuple(sorted(int(m) for m in grupo["mes"].unique()))
         # notna() marca os meses com valor e sum() conta quantos são.
@@ -52,6 +53,7 @@ def tabela_anual_sinesp(sinesp: pd.DataFrame) -> pd.DataFrame:
             # Soma só quando todos os meses presentes têm valor: soma incompleta nunca é apresentada como total.
             "soma": grupo["valor"].sum(min_count=1) if com_valor == len(grupo) else pd.NA,
         })
+    # Transforma a lista de dicionários em tabela; a soma vira Int64 (inteiro que aceita ausência <NA>).
     quadro = pd.DataFrame(linhas)
     quadro["soma"] = quadro["soma"].astype("Int64")
     return quadro
@@ -60,6 +62,7 @@ def tabela_anual_sinesp(sinesp: pd.DataFrame) -> pd.DataFrame:
 def comparacao_periodo_sinesp(sinesp: pd.DataFrame, mes_final: int = 8) -> pd.DataFrame:
     """Soma de janeiro até mes_final em cada ano; só anos com todos esses meses publicados."""
     linhas = []
+    # Mesmo laço por série e ano, agora para somar só de janeiro até o mês final.
     for chave, grupo in sinesp.groupby(CHAVE_SERIE + ["ano"], sort=False):
         # Mantém só janeiro até o mês final (le = menor ou igual): o mesmo período em todos os anos.
         recorte = grupo.loc[grupo["mes"].le(mes_final)]
@@ -72,6 +75,7 @@ def comparacao_periodo_sinesp(sinesp: pd.DataFrame, mes_final: int = 8) -> pd.Da
             # Soma só se todos os meses do período têm valor; sum(min_count=1) devolve vazio (e não 0) quando não há nenhum valor.
             "soma": recorte["valor"].sum(min_count=1) if recorte["valor"].notna().all() else pd.NA,
         })
+    # columns= fixa as colunas: mesmo sem nenhum ano válido, a tabela sai vazia, mas com as colunas certas.
     quadro = pd.DataFrame(linhas, columns=CHAVE_SERIE + ["ano", "periodo", "meses_com_valor", "soma"])
     quadro["soma"] = quadro["soma"].astype("Int64")
     return quadro
@@ -79,6 +83,7 @@ def comparacao_periodo_sinesp(sinesp: pd.DataFrame, mes_final: int = 8) -> pd.Da
 
 def variacao(anterior, atual) -> tuple[object, object]:
     """(diferença absoluta, variação percentual); percentual só com base positiva."""
+    # Se faltar um dos dois valores, não há como comparar: devolve ausente nas duas medidas (nunca zero).
     if pd.isna(anterior) or pd.isna(atual):
         return pd.NA, pd.NA
     # Diferença absoluta; a variação percentual só existe quando o valor anterior é maior que zero.
@@ -116,6 +121,7 @@ def comparacao_ultimo_periodo_sinesp(serie: pd.DataFrame) -> dict | None:
     atual, anterior = periodo.loc[periodo["ano"].eq(ano), "soma"], periodo.loc[periodo["ano"].eq(ano - 1), "soma"]
     if atual.empty or anterior.empty:
         return None
+    # iloc[0] pega o primeiro (e único) valor de cada seleção.
     dif, pct = variacao(anterior.iloc[0], atual.iloc[0])
     return {"periodo": f"janeiro–{_nome_mes(mes_final)}", "mes_final": mes_final, "ano_atual": ano, "ano_anterior": ano - 1,
             "valor_atual": atual.iloc[0], "valor_anterior": anterior.iloc[0], "diferenca_absoluta": dif, "variacao_percentual": pct}
@@ -124,6 +130,7 @@ def comparacao_ultimo_periodo_sinesp(serie: pd.DataFrame) -> dict | None:
 def comparacao_ultimo_periodo_todas_as_series(sinesp: pd.DataFrame) -> pd.DataFrame:
     """Comparação do último período parcial × mesmo período do ano anterior para cada série (cada uma com seu mês final)."""
     linhas = []
+    # groupby por série devolve, a cada volta, a chave (indicador, classificação, unidade) e as linhas dessa série.
     for (evento, abrangencia, unidade), serie in sinesp.groupby(CHAVE_SERIE, sort=True):
         resultado = comparacao_ultimo_periodo_sinesp(serie.sort_values(["ano", "mes"]))
         if resultado is not None:
@@ -163,6 +170,7 @@ def estatisticas_por_ano(serie: pd.DataFrame) -> pd.DataFrame:
 def variacoes_anuais(serie: pd.DataFrame) -> pd.DataFrame:
     """Variação entre anos COMPLETOS consecutivos (soma de 12 meses); anos parciais ou sem soma ficam de fora."""
     anual = tabela_anual_sinesp(serie)
+    # Mantém só os anos completos com total conhecido (.loc com duas condições) e os ordena por ano.
     completos = anual.loc[anual["cobertura"].eq("ano completo") & anual["soma"].notna()].sort_values("ano")
     linhas = []
     # Dicionário ano -> total, só com anos completos; compara cada ano com o anterior, se existir.
@@ -172,6 +180,7 @@ def variacoes_anuais(serie: pd.DataFrame) -> pd.DataFrame:
             dif, pct = variacao(anteriores[ano - 1], soma)
             linhas.append({"ano_anterior": ano - 1, "ano": ano, "valor_anterior": anteriores[ano - 1], "valor": soma,
                            "diferenca_absoluta": dif, "variacao_percentual": pct})
+    # Tabela das variações; astype define os tipos: Int64 para contagens e Float64 para o percentual (os dois aceitam ausência).
     quadro = pd.DataFrame(linhas, columns=["ano_anterior", "ano", "valor_anterior", "valor", "diferenca_absoluta", "variacao_percentual"])
     for coluna in ("valor_anterior", "valor", "diferenca_absoluta"):
         quadro[coluna] = quadro[coluna].astype("Int64")
@@ -186,6 +195,7 @@ def comparar_anos_completos(serie: pd.DataFrame, ano_a: int, ano_b: int) -> dict
     for ano in (ano_a, ano_b):
         if ano not in anual.index or anual.loc[ano, "cobertura"] != "ano completo" or pd.isna(anual.loc[ano, "soma"]):
             return None
+    # anual.loc[ano, "soma"] lê o total do ano (linha = ano, coluna = soma).
     dif, pct = variacao(anual.loc[ano_a, "soma"], anual.loc[ano_b, "soma"])
     return {"ano_a": ano_a, "ano_b": ano_b, "valor_a": anual.loc[ano_a, "soma"], "valor_b": anual.loc[ano_b, "soma"],
             "diferenca_absoluta": dif, "variacao_percentual": pct}
@@ -219,6 +229,7 @@ def achados_principais(sinesp: pd.DataFrame) -> list[dict]:
         anual = tabela_anual_sinesp(serie)
         completos = anual.loc[anual["cobertura"].eq("ano completo") & anual["soma"].notna()].sort_values("ano")
         if len(completos) >= 2:
+            # iloc[0] é o primeiro ano completo e iloc[-1] é o último.
             primeiro, ultimo = completos.iloc[0], completos.iloc[-1]
             _, pct = variacao(primeiro["soma"], ultimo["soma"])
             achados.append({"titulo": "Homicídio doloso — anos completos", "texto":
@@ -295,6 +306,7 @@ def quartis_iqr(valores) -> dict:
 
 def _fora_dos_limites(serie: pd.DataFrame, inferior: float, superior: float) -> pd.DataFrame:
     """Meses com valor abaixo do limite inferior ou acima do superior, com a direção de cada um."""
+    # Converte para decimal (Float64 aceita ausência) para comparar com os limites, que podem ter casas decimais.
     valor = serie["valor"].astype("Float64")
     # Marca os meses abaixo do limite inferior e acima do superior; | (ou) junta as duas marcações.
     abaixo, acima = valor.notna() & (valor < inferior), valor.notna() & (valor > superior)
@@ -313,6 +325,7 @@ def diagnostico_outliers_iqr(serie: pd.DataFrame) -> dict:
     Fora do caso informativo nenhum ponto deve ser apresentado como anomalia (interpretavel é falso).
     """
     _exigir_uma_serie(serie)
+    # Coloca os meses em ordem cronológica antes dos cálculos.
     serie = serie.sort_values(["ano", "mes"])
     q = quartis_iqr(serie["valor"])
     n = q["n"]
@@ -343,6 +356,7 @@ def diagnostico_outliers_iqr(serie: pd.DataFrame) -> dict:
         classificacao = "informativo"
         mensagem = ("Os limites de Tukey são informativos para esta série. Pontos fora deles são atípicos estatísticos em relação ao conjunto dos meses "
                     "observados — não são prova de erro, de anomalia ou de mudança real; séries com tendência podem ter limites pouco representativos.")
+    # Os meses fora dos limites só são procurados quando há meses suficientes e valores diferentes; senão, a tabela fica vazia.
     fora = (_fora_dos_limites(serie, q["limite_inferior"], q["limite_superior"]) if n >= MESES_MINIMOS_IQR and distintos > 1
             else pd.DataFrame(columns=["ano", "mes", "valor", "direcao"]))
     return {**q, "zeros": zeros, "proporcao_zeros": proporcao, "valores_distintos": distintos, "classificacao": classificacao,
@@ -353,6 +367,7 @@ def diagnostico_outliers_iqr(serie: pd.DataFrame) -> dict:
 def diagnostico_outliers_todas_as_series(sinesp: pd.DataFrame) -> pd.DataFrame:
     """Quadro com o diagnóstico IQR de cada série (cada uma tratada separadamente, na sua própria unidade)."""
     linhas = []
+    # Aplica o diagnóstico a cada uma das 12 séries, separadamente (cada uma na sua unidade).
     for (evento, abrangencia, unidade), serie in sinesp.groupby(CHAVE_SERIE, sort=True):
         d = diagnostico_outliers_iqr(serie)
         linhas.append({"evento": evento, "abrangencia": abrangencia, "unidade": unidade, "meses": d["n"], "q1": d["q1"], "q3": d["q3"],
@@ -369,6 +384,7 @@ def quartis_por_ano(serie: pd.DataFrame) -> pd.DataFrame:
     _exigir_uma_serie(serie)
     ultimo_ano = int(serie["ano"].max())
     linhas = []
+    # Um grupo por ano: quartis e limites calculados só com os meses daquele ano.
     for ano, grupo in serie.sort_values(["ano", "mes"]).groupby("ano", sort=True):
         q = quartis_iqr(grupo["valor"])
         if q["n"] == 0:
@@ -410,6 +426,7 @@ def perfil_sazonal(serie: pd.DataFrame, anos: list[int] | None = None) -> pd.Dat
     usados = [a for a in anos_completos_da_serie(serie) if anos is None or a in anos]
     colunas = ["mes", "n_anos", "media", "mediana", "minimo", "maximo", "indice"]
     if not usados:
+        # Sem anos completos: devolve uma tabela vazia com as colunas certas (nada é inventado).
         vazio = pd.DataFrame(columns=colunas)
         vazio.attrs["anos_usados"] = []
         return vazio
@@ -434,11 +451,13 @@ def media_movel(serie: pd.DataFrame, janela: int = 12) -> pd.DataFrame:
     _exigir_uma_serie(serie)
     # Número sequencial do mês (ano x 12 + mês): meses seguidos viram números seguidos.
     indice = serie["ano"].astype(int) * 12 + serie["mes"].astype(int) - 1
+    # Série de valores decimais indexada pelo número do mês; a ausência vira NaN (vazio), nunca zero.
     valores = pd.Series(serie["valor"].astype("Float64").to_numpy(dtype="float64", na_value=float("nan")), index=indice.to_numpy())
     # reindex inclui os meses que faltarem (como vazios) para a janela não pular meses.
     completo = valores.reindex(range(int(indice.min()), int(indice.max()) + 1))
     # rolling(12).mean(): média de cada mês com os 11 anteriores; min_periods=12 deixa vazio se faltar algum mês.
     movel = completo.rolling(janela, min_periods=janela).mean()
+    # Volta do número sequencial para ano e mês: // é a divisão inteira e % é o resto da divisão.
     quadro = pd.DataFrame({"ano": completo.index // 12, "mes": completo.index % 12 + 1, "valor": completo.to_numpy(), "media_movel": movel.to_numpy()})
     quadro["valor"] = quadro["valor"].astype("Int64")
     return quadro.reset_index(drop=True)
@@ -448,6 +467,7 @@ def acumulado_no_ano(serie: pd.DataFrame) -> pd.DataFrame:
     """Soma acumulada de janeiro até cada mês, por ano; <NA> depois de um mês sem valor (nunca soma parcial como total)."""
     _exigir_uma_serie(serie)
     linhas = []
+    # Um grupo por ano; os meses precisam começar em janeiro e não pular nenhum.
     for ano, grupo in serie.sort_values(["ano", "mes"]).groupby("ano", sort=True):
         meses = grupo["mes"].astype(int).tolist()
         if meses != list(range(1, len(meses) + 1)):
@@ -456,6 +476,7 @@ def acumulado_no_ano(serie: pd.DataFrame) -> pd.DataFrame:
         acumulado = grupo["valor"].astype("Float64").cumsum(skipna=False)
         for mes, valor, soma in zip(meses, grupo["valor"], acumulado):
             linhas.append({"ano": int(ano), "mes": mes, "valor": valor, "acumulado": soma})
+    # Tabela final do acumulado; valor e acumulado ficam Int64 (inteiros que aceitam ausência).
     quadro = pd.DataFrame(linhas)
     quadro["valor"], quadro["acumulado"] = quadro["valor"].astype("Int64"), quadro["acumulado"].astype("Int64")
     return quadro
@@ -480,9 +501,11 @@ def distribuicao_frequencias(serie: pd.DataFrame) -> pd.DataFrame:
     ficam de fora (e são contadas na página/roteiro). tabela.attrs["largura"] guarda w.
     """
     _exigir_uma_serie(serie)
+    # Só os meses com valor (dropna), como inteiros: ausências não entram na distribuição.
     v = serie["valor"].dropna().astype("int64")
     colunas = ["rotulo", "inicio", "fim", "n_meses", "percentual"]
     if v.empty:
+        # Sem valores: tabela vazia com as colunas certas.
         vazio = pd.DataFrame(columns=colunas)
         vazio.attrs["largura"] = 1
         return vazio
@@ -511,6 +534,7 @@ def distribuicao_frequencias(serie: pd.DataFrame) -> pd.DataFrame:
         while inicio <= maximo:
             linhas.append(faixa(inicio, min(inicio + largura - 1, maximo)))
             inicio += largura
+    # Tabela de frequências; attrs guarda a largura das faixas junto com a tabela (usada no texto explicativo).
     quadro = pd.DataFrame(linhas, columns=colunas)
     quadro.attrs["largura"] = largura
     return quadro
@@ -522,12 +546,14 @@ def soma_no_periodo(serie: pd.DataFrame, mes_inicial: int, mes_final: int) -> pd
     _exigir_uma_serie(serie)
     esperado = mes_final - mes_inicial + 1
     linhas = []
+    # Para cada ano, soma só os meses escolhidos no filtro.
     for ano, grupo in serie.groupby("ano", sort=True):
         # Só os meses escolhidos no filtro, dentro de cada ano.
         recorte = grupo.loc[grupo["mes"].between(mes_inicial, mes_final)]
         # O ano só entra se tiver todos os meses escolhidos e todos com valor.
         completo = len(recorte) == esperado and recorte["valor"].notna().all()
         linhas.append({"ano": int(ano), "soma": int(recorte["valor"].sum()) if completo else pd.NA, "meses_com_valor": int(recorte["valor"].notna().sum())})
+    # Tabela por ano; a soma vira Int64 para aceitar ausência nos anos incompletos.
     quadro = pd.DataFrame(linhas, columns=["ano", "soma", "meses_com_valor"])
     quadro["soma"] = quadro["soma"].astype("Int64")
     return quadro

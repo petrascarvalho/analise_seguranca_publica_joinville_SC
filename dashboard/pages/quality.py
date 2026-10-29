@@ -43,11 +43,13 @@ ui.cartoes_html([
     # isna() marca os valores ausentes e sum() conta quantos são; eq(0) faz o mesmo para os zeros informados.
     {"titulo": "Dados não informados", "valor": "Nenhum valor ausente" if int(sinesp["valor"].isna().sum()) == 0 else fmt_int(int(sinesp["valor"].isna().sum())),
      "detalhe": "registros mensais do Sinesp" if int(sinesp["valor"].isna().sum()) == 0 else "registros mensais sem valor informado",
+     # Texto do card: isna().sum() conta os registros sem valor e eq(0).sum() conta os zeros publicados pela fonte.
      "base": (f"Os {fmt_int(len(sinesp))} registros disponíveis possuem valores informados. " if int(sinesp["valor"].isna().sum()) == 0
               else f"Dos {fmt_int(len(sinesp))} registros, {fmt_int(int(sinesp['valor'].isna().sum()))} não têm valor informado. ")
              + f"Em {fmt_int(int(sinesp['valor'].eq(0).sum()))} deles, a fonte registrou zero, o que não significa ausência de informação."},
 ])
 
+# st.subheader escreve um título de seção; st.markdown, logo abaixo, o texto explicativo.
 st.subheader("Sobre os dados apresentados")
 st.markdown(
     f"- **Fonte dos dados:** Sinesp/MJSP (Sistema Nacional de Estatísticas de Segurança Pública, do Ministério da Justiça e Segurança Pública).\n"
@@ -61,6 +63,7 @@ st.markdown(
     f"comparação com o registro da versão). É uma conferência interna do projeto: **não é uma aprovação ou certificação oficial do governo**."
 )
 
+# Bloco recolhível (st.expander) com os detalhes técnicos: só abre se o usuário clicar.
 with st.expander("Detalhes técnicos de conferência (opcional)"):
     st.markdown(f"Identificador da versão dos dados: `{manifesto.get('versao', '—')}`. Cada arquivo tem um código de conferência (SHA-256); se o arquivo mudar, "
                 "o código muda e o painel avisa.")
@@ -105,14 +108,17 @@ with abas[0]:
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor"})
     tabela["Início"] = [fmt_competencia(c, curto=True) for c in tabela["inicio"]]  # "2020-01" vira "jan/2020"
     tabela["Última competência"] = [fmt_competencia(c, curto=True) for c in tabela["fim"]]
+    # Mostra a tabela de cobertura só com as colunas desta lista; hide_index esconde a numeração das linhas.
     st.dataframe(tabela[["Indicador", "Classificação institucional", "Unidade", "Início", "Última competência", "Meses", "Com valor", "Zeros informados", "Sem valor"]], hide_index=True)
     st.markdown(
+        # len() conta os registros e as séries; isna().sum() e eq(0).sum() separam ausências de zeros publicados.
         f"- **Total:** {fmt_int(len(sinesp))} registros mensais em {len(catalogo)} séries; **valores ausentes:** {int(sinesp['valor'].isna().sum())} "
         f"(nunca trocados por zero); **zeros informados:** {fmt_int(int(sinesp['valor'].eq(0).sum()))}.\n"
         "- Séries que terminam em meses diferentes (como a PRF) aparecem só até o último mês disponível, sem preenchimento; a Polícia Federal só tem registros "
         "a partir do início da sua série."
     )
 
+    # Texto fixo sobre a SSP/SC: fonte separada, que nunca é somada nem comparada com o Sinesp.
     st.subheader("SSP/SC — violência doméstica (fonte separada)")
     st.markdown(
         "- **Origem:** relatórios oficiais de violência doméstica da Secretaria de Estado da Segurança Pública de SC (“Segurança em Números”), com os "

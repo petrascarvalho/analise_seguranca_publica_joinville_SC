@@ -10,6 +10,7 @@ TRACO = "—"
 
 def _ausente(valor) -> bool:
     """Diz se o valor é vazio (None ou NaN); texto nunca conta como ausente."""
+    # pd.isna reconhece os vazios do pandas (NaN e <NA>); isinstance evita testar textos.
     return valor is None or (not isinstance(valor, str) and bool(pd.isna(valor)))
 
 

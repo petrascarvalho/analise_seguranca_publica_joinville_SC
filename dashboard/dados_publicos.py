@@ -45,6 +45,7 @@ def sha256_normalizado(conteudo: bytes) -> str:
 
     A normalização evita falso alarme quando o Git converte LF/CRLF no checkout.
     """
+    # Troca a quebra de linha do Windows (CRLF) pela do Linux (LF) antes do SHA-256; hexdigest() devolve o código em texto.
     return hashlib.sha256(conteudo.replace(b"\r\n", b"\n")).hexdigest()
 
 
@@ -98,6 +99,7 @@ def validar_sinesp(quadro: pd.DataFrame, nome: str = ARQ_SINESP) -> pd.DataFrame
     for campo in ("evento", "abrangencia", "unidade"):
         if (saida[campo].str.strip() == "").any():
             raise ErroDados(f"{nome}: campo '{campo}' vazio.")
+    # isin confere se cada ano está na lista de anos esperados (2020 a 2026).
     if not saida["ano"].isin(ANOS_SINESP).all():
         raise ErroDados(f"{nome}: ano fora de {ANOS_SINESP[0]}–{ANOS_SINESP[-1]}.")
     if not saida["mes"].between(1, 12).all():
@@ -119,6 +121,7 @@ def validar_sinesp(quadro: pd.DataFrame, nome: str = ARQ_SINESP) -> pd.DataFrame
 def validar_catalogo(quadro: pd.DataFrame, nome: str = ARQ_SINESP_CATALOGO) -> pd.DataFrame:
     """Confere as colunas do catálogo e se não há série repetida (indicador + classificação)."""
     _exigir_colunas(quadro, COLUNAS_CATALOGO, nome)
+    # duplicated().any(): verdadeiro se alguma série (indicador + classificação) aparecer duas vezes no catálogo.
     if quadro.duplicated(["evento", "abrangencia"]).any():
         raise ErroDados(f"{nome}: combinação evento/abrangência repetida.")
     return quadro.reset_index(drop=True)
@@ -133,6 +136,7 @@ def validar_consistencia(sinesp: pd.DataFrame, catalogo: pd.DataFrame) -> None:
         raise ErroDados(f"Catálogo e série mensal descrevem séries diferentes: só nos dados {sorted(series_dados - series_catalogo)}; "
                         f"só no catálogo {sorted(series_catalogo - series_dados)}.")
     cat = catalogo.set_index(["evento", "abrangencia"])
+    # Para cada série da base, compara as contagens calculadas com as anotadas no catálogo (cat.loc busca a linha da série).
     for (evento, abrangencia), serie in sinesp.groupby(["evento", "abrangencia"]):
         ficha = cat.loc[(evento, abrangencia)]
         esperado = (str(len(serie)), str(int(serie["valor"].notna().sum())), str(int(serie["valor"].eq(0).sum())), str(int(serie["valor"].isna().sum())),

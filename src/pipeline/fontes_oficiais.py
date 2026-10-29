@@ -285,6 +285,7 @@ def verificar_catalogo_ckan(cliente: Cliente, url: str, fonte: str, recurso: str
     if resposta.status != 200:
         return [_falha(fonte, recurso, url, "catalogo_ckan", instante, f"HTTP {resposta.status}")]
     try:
+        # json.loads transforma a resposta do catálogo (texto JSON) em dicionário; ["result"] pega a parte com os dados.
         resultado = json.loads(resposta.texto())["result"]
         evidencia = {"license_id": resultado.get("license_id"), "license_title": resultado.get("license_title"),
                      "metadata_modified": resultado.get("metadata_modified"),
@@ -318,5 +319,6 @@ def salvar_relatorio(relatorio: Relatorio, diretorio: Path) -> Path:
     """Grava o relatório de verificação em JSON, com data e hora no nome do arquivo."""
     diretorio.mkdir(parents=True, exist_ok=True)
     caminho = diretorio / f"verificacao_{relatorio.consultado_em_utc.replace(':', '').replace('-', '')}.json"
+    # Grava o relatório da verificação em JSON legível (indent=2), mantendo os acentos (ensure_ascii=False).
     caminho.write_text(json.dumps(relatorio.para_dict(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     return caminho

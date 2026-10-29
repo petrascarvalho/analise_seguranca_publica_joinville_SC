@@ -60,6 +60,7 @@ from dashboard import ui  # noqa: E402
 
 ui.aplicar_estilo()
 ui.cabecalho(TITULO, "Indicadores oficiais do Sinesp/MJSP e exploração separada de violência doméstica da SSP/SC · Joinville/SC")
+# st.markdown escreve texto formatado; [texto](#ancora) cria links que levam a cada seção da página.
 st.markdown("**Nesta página:** [Apresentação](#apresentacao) · [Indicadores Sinesp](#indicadores) · [Violência doméstica SSP/SC](#violencia-domestica) · "
             "[Qualidade](#qualidade) · [Metodologia](#metodologia)")
 

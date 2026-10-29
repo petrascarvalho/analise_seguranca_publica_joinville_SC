@@ -266,6 +266,7 @@ def figuras_sinesp_etapa10(sinesp: pd.DataFrame) -> dict[str, Figure]:
     mulher = quadro_eventos(sinesp, ["Feminicídio", "Tentativa de feminicídio"], list(range(2020, 2026)), mes_final=None)
     homicidios_ja = quadro_eventos(sinesp, ["Homicídio doloso", "Tentativa de homicídio"], list(range(2020, 2027)), mes_final=8)
     mulher_ja = quadro_eventos(sinesp, ["Feminicídio", "Tentativa de feminicídio"], [2025, 2026], mes_final=8)
+    # Textos das figuras fixas: .loc[2020, "Homicídio doloso"] lê o valor da linha 2020 na coluna do indicador.
     textos = {
         "homicidio_anual": f"O total publicado passou de {homicidio.loc[2020, 'Homicídio doloso']} vítimas em 2020 para {homicidio.loc[2025, 'Homicídio doloso']} "
                            "em 2025, com oscilações intermediárias. A série não demonstra causas.",
@@ -321,18 +322,21 @@ def _barras_e_linha_anual(eixo, valores: list[int], gid_linha: str, gid_barras: 
     linha, = eixo.plot(x, valores, color=COR_AZUL, linewidth=2.4, marker="o", markersize=8, markerfacecolor=COR_AZUL, markeredgecolor="white", zorder=3)
     linha.set_gid(gid_linha)
     for posicao, valor in zip(x, valores):
+        # annotate escreve o número acima de cada ponto da linha (xytext desloca o texto 11 pontos para cima).
         eixo.annotate(fmt_int(valor), (posicao, valor), textcoords="offset points", xytext=(0, 11), ha="center", fontsize=10.5, fontweight="semibold", color="#103C6D", zorder=4)
     return linha
 
 
 def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
     """Série anual de um único indicador (somente anos completos selecionados), em gráfico combinado: barras azul-claras e linha azul-escura com marcadores e rótulos."""
+    # Seleciona as linhas do indicador escolhido (.loc com duas condições ligadas por &).
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
     tabela = calculos.tabela_anual_sinesp(serie)
     # Totais anuais só dos anos escolhidos que estão completos e têm soma conhecida, em ordem de ano.
     tabela = tabela.loc[tabela["ano"].isin(anos) & tabela["cobertura"].eq("ano completo") & tabela["soma"].notna()].sort_values("ano")
     if tabela.empty:
         return None
+    # Unidade da série (vítimas ou mandados), lida na primeira linha: aparece no rodapé e no eixo vertical.
     unidade = tabela["unidade"].iloc[0]
     maximo = int(tabela["soma"].max())
     figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", _subtitulo(unidade, f"por ano completo ({int(tabela['ano'].min()) if tabela['ano'].min() == tabela['ano'].max() else str(int(tabela['ano'].min())) + '–' + str(int(tabela['ano'].max()))})"),
@@ -340,6 +344,7 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
                                     "de cada ponto. "
                                     "Um ano parcial (ainda incompleto) não entra em séries anuais.", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
+    # Listas Python com os anos e os totais: são as coordenadas x e y do gráfico.
     anos_plot = tabela["ano"].astype(int).tolist()
     # Desenha barras + linha e escreve os anos no eixo horizontal (set_xticks).
     _barras_e_linha_anual(eixo, [int(v) for v in tabela["soma"]], "linha_anual", "barra_anual")
@@ -351,13 +356,16 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
 
 def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int], mes_final: int = 8) -> Figure | None:
     """Gráfico combinado (barras claras + linha com marcadores) dos períodos equivalentes (janeiro até mes_final) por ano para um indicador."""
+    # Mesma seleção do indicador; depois soma o período equivalente (janeiro até o mês final) de cada ano.
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
     tabela = calculos.comparacao_periodo_sinesp(serie, mes_final)
+    # Só os anos escolhidos no filtro (isin) e com total conhecido (notna), em ordem.
     tabela = tabela.loc[tabela["ano"].isin(anos) & tabela["soma"].notna()].sort_values("ano")
     if tabela.empty:
         return None
     unidade = tabela["unidade"].iloc[0]
     maximo = int(tabela["soma"].max())
+    # Nome do período (ex.: janeiro–setembro), igual em todas as linhas.
     rotulo = tabela["periodo"].iloc[0]
     figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", _subtitulo(unidade, f"em {rotulo}, em cada ano"),
                                     f"Todos os anos têm os mesmos meses ({rotulo}); a comparação é entre períodos de igual duração. Barras e linha mostram o mesmo valor, na mesma escala (iniciada em zero).", max(maximo * 1.25, 1),
@@ -385,6 +393,7 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
                                     "mês disponível; nenhum mês é preenchido.",
                                     max(maximo * 1.25, 1), f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}",
                                     unidade.split(" (")[0].capitalize(), xlabel="Mês")
+    # set() tira os anos repetidos e sorted() os coloca em ordem: um grupo de barras por ano.
     anos_barras = sorted(set(serie["ano"].astype(int)))
     # Cada mês tem 0,8 de largura dividida entre os anos (uma barra por ano).
     largura = 0.8 / len(anos_barras)
@@ -399,6 +408,7 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
         rotulo = str(ano)
         if compacto and len(parte) < 12:  # ano parcial identificado na legenda (ex.: 2026 até setembro; PRF até agosto)
             rotulo = f"{ano} (parcial)"
+        # eixo.bar desenha as barras de um ano, deslocadas para ficarem lado a lado com as dos outros anos.
         barras = eixo.bar(posicoes, [int(v) for v in parte["valor"]], width=largura * 0.92, color=cor_ano(ano), label=rotulo)
         entradas.append(barras)
         for barra in barras:
@@ -415,6 +425,7 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
     if compacto:  # marcações discretas, sem barras artificiais: "—" = zero publicado (observação); "×" cinza = mês sem valor publicado
         for chave, pontos, marca, cor, legenda in (("zero", zeros, "_", None, "Zero publicado"), ("sem_valor", ausentes, "x", "#9A9A9A", "Sem valor (×)")):
             for k, (ano, x) in enumerate(pontos):
+                # Marca no eixo os meses com zero publicado (traço) e os meses sem valor (×), para não confundir zero com ausência.
                 linha, = eixo.plot([x], [0], linestyle="none", marker=marca, markersize=7 if marca == "_" else 4, markeredgewidth=2 if marca == "_" else 1,
                                    color=cor or cor_ano(ano), label=legenda if k == 0 else None)
                 linha.set_gid(f"{chave}_{ano}")
@@ -434,6 +445,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
     """
     if ranking.empty:
         return None
+    # Todas as barras do ranking têm a mesma unidade (o cálculo não mistura vítimas com mandados).
     unidade = ranking["unidade"].iloc[0]
     # Segurança: o ranking nunca mistura vítimas com mandados.
     if ranking["unidade"].nunique() != 1:
@@ -447,6 +459,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
     valores = [int(v) for v in ranking["soma"]]
     if compacto:
         altura = 0.62 * len(valores) + 2.5
+        # Figure cria a área da figura: figsize é largura × altura em polegadas; a altura cresce com o número de barras.
         figura = Figure(figsize=(4.4, altura), dpi=120)
         eixo = figura.add_axes([0.46, 0.95 / altura, 0.50, (altura - 0.95 - 1.0) / altura])
     else:
@@ -458,6 +471,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
     barras = eixo.barh(posicoes, valores, color=cores, height=0.62)
     for barra in barras:
         barra.set_gid("ranking")
+    # bar_label escreve o valor ao lado de cada barra (padding é a distância entre a barra e o texto).
     eixo.bar_label(barras, labels=[fmt_int(v) for v in valores], padding=4, fontsize=10)
     eixo.set_yticks(posicoes, rotulos, fontsize=10 if compacto else 9)
     eixo.set_xlim(0, max(valores) * 1.18 if max(valores) else 1)
@@ -543,6 +557,7 @@ def _aviso_sem_variacao(eixo, valores, *, acima_do_eixo: bool = False) -> None:
 def _serie_figura(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> pd.DataFrame:
     """Linhas da série escolhida nos anos pedidos."""
     serie = calculos.serie_sinesp(sinesp, evento, abrangencia)
+    # isin(anos) mantém só as linhas dos anos escolhidos.
     return serie.loc[serie["ano"].isin(anos)]
 
 
@@ -565,6 +580,7 @@ def _eixo_anos(eixo, quadro: pd.DataFrame) -> None:
 
 def _valores_float(coluna) -> list[float]:
     """Converte uma coluna em lista de números decimais (ausente vira NaN, sem virar zero)."""
+    # to_numpy converte para números do NumPy; na_value=nan deixa a ausência como espaço vazio no gráfico.
     return pd.Series(coluna).astype("Float64").to_numpy(dtype="float64", na_value=float("nan")).tolist()
 
 
@@ -617,6 +633,7 @@ def figura_media_movel_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
     if serie.empty:
         return None
     tabela = calculos.media_movel(serie)
+    # Se nenhum mês tem média móvel (menos de 12 meses seguidos com valor), não há gráfico.
     if tabela["media_movel"].notna().sum() == 0:
         return None
     unidade = serie["unidade"].iloc[0]
@@ -666,6 +683,7 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
                                     "Ano parcial termina antes de dezembro: compare os anos no mesmo mês, nunca o total de um ano parcial com o de um ano completo.",
                                     limite_y, _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
     finais = []
+    # Uma linha por ano: groupby("ano") separa os meses de cada ano.
     for ano, parte in tabela.groupby("ano", sort=True):
         valores = _valores_float(parte["acumulado"])
         observados = [(int(m), v) for m, v in zip(parte["mes"], valores) if v == v]
@@ -673,6 +691,7 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
         parcial = mes_final < 12
         legenda = f"{int(ano)} (parcial, até {ABREV_MESES[mes_final - 1].lower()})" if parcial else str(int(ano))
         rotulo_legenda = f"{legenda}: {fmt_int(valor_final)}" if esta_compacto() else legenda  # compacto: o valor final fica na legenda
+        # eixo.plot desenha a linha do acumulado do ano (x = mês, y = soma acumulada) com marcadores redondos.
         linha, = eixo.plot(parte["mes"].astype(int).tolist(), valores, color=cor_ano(int(ano)), linewidth=2, marker="o", markersize=4, label=rotulo_legenda,
                            linestyle="-" if int(ano) % 2 == 0 else "--")  # tons de azul + traço alternado ajudam a separar anos vizinhos
         linha.set_gid(f"acumulado_{int(ano)}")
@@ -691,6 +710,7 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
         rotulos = []  # compacto: sem rótulos soltos no gráfico; valores finais na legenda e na tabela de apoio
     posicoes = _separar_rotulos([r[2] for r in rotulos], 0.075 * limite_y)
     for (texto, mes_final, valor_final, cor, parcial), y in zip(rotulos, posicoes):
+        # Escreve o total final de cada ano à direita do gráfico, na altura do último ponto da linha.
         rotulo = eixo.annotate(texto, xy=(mes_final, valor_final), xytext=(12.45, y), textcoords="data", va="center", ha="left", fontsize=10, color="#222222",
                                arrowprops={"arrowstyle": "-", "color": cor, "linewidth": 0.9, "shrinkA": 0, "shrinkB": 4, "linestyle": ":" if parcial else "-"})
         rotulo.set_gid("rotulo_final")
@@ -740,6 +760,7 @@ def figura_boxplot_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: 
         elementos["caps"][2 * i + 1].set_gid("bigode_superior")
         elementos["fliers"][i].set_gid("atipicos")
         if r.iqr_zero:
+            # Avisa no gráfico os anos em que a caixa vira um traço (IQR = 0).
             eixo.annotate("IQR = 0", (i + 1, r.q3), textcoords="offset points", xytext=(0, 6 if esta_compacto() else 10), ha="center", va="bottom",
                           rotation=90 if esta_compacto() else 0, fontsize=10, color="#555555")  # compacto: vertical, para os rótulos não se tocarem
     eixo.set_xlabel("Ano", fontsize=11)
@@ -760,6 +781,7 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     if tabela.empty:
         return None
     unidade = serie["unidade"].iloc[0]
+    # Quantos meses têm zero publicado (eq(0) marca e sum() conta).
     zeros = int(serie["valor"].eq(0).sum())
     total = int(serie["valor"].count())
     largura = int(tabela.attrs.get("largura", 1))
@@ -777,6 +799,7 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
         if int(inicio) == 0:
             barra.set_hatch("//")
             barra.set_edgecolor("white")
+    # Escreve acima de cada barra quantos meses caíram naquela faixa.
     eixo.bar_label(barras, labels=[fmt_int(n) for n in tabela["n_meses"]], padding=3, fontsize=10)
     eixo.set_xticks(range(len(tabela)), tabela["rotulo"].tolist(), rotation=0 if len(tabela) <= (5 if esta_compacto() else 9) else 45, fontsize=10)
     return figura
@@ -803,15 +826,18 @@ def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                                     f"Barras: mediana do mês nos anos completos usados ({anos_texto}); traço fino: mínimo a máximo desses anos. Anos parciais "
                                     f"(como 2026) ficam de fora. {aviso}",
                                     max(float(perfil["maximo"].max()) * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
+    # Listas com os meses (1 a 12) e a mediana de cada mês, usadas para desenhar as barras.
     meses = perfil["mes"].astype(int).tolist()
     medianas = perfil["mediana"].astype("float64").tolist()
     # Barras com a mediana de cada mês do ano e, por cima, traços verticais (vlines) do menor ao maior valor.
     barras = eixo.bar(meses, medianas, width=0.7, color=COR_AZUL, label="Mediana do mês" if esta_compacto() else f"Mediana do mês ({anos_texto})")
     for barra in barras:
         barra.set_gid("mediana_mensal")
+    # vlines desenha uma linha vertical do mínimo ao máximo de cada mês (quanto o mês variou entre os anos).
     faixa = eixo.vlines(meses, perfil["minimo"].astype("float64").tolist(), perfil["maximo"].astype("float64").tolist(), color="#20354F", linewidth=1.2, label="Mínimo a máximo")
     faixa.set_gid("faixa_min_max")
     if not esta_compacto():
+        # Escreve a mediana dentro de cada barra (inteiro sem casas decimais; senão, com uma casa).
         eixo.bar_label(barras, labels=[fmt_int(m) if float(m).is_integer() else fmt_dec(m, 1) for m in medianas], label_type="center", color="white", fontweight="bold", fontsize=9,
                       bbox={"boxstyle": "square,pad=0.15", "facecolor": COR_AZUL, "edgecolor": "none"})  # dentro da barra: o traço mínimo–máximo não cobre o número
     _eixo_meses(eixo)
@@ -829,11 +855,13 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     serie = _serie_figura(sinesp, evento, abrangencia, anos)
     if serie.empty:
         return None
+    # Ordem cronológica; o diagnóstico IQR dá os limites e diz se o critério se aplica a esta série.
     serie = serie.sort_values(["ano", "mes"])
     d = calculos.diagnostico_outliers_iqr(serie)
     unidade = serie["unidade"].iloc[0]
     maximo = float(serie["valor"].max()) if serie["valor"].notna().any() else 1.0
     topo = max(maximo, d["limite_superior"] if d["interpretavel"] else 0)
+    # Primeiro e último mês da série (iloc[0] e iloc[-1]), usados para descrever o período.
     primeiro, ultimo = serie.iloc[0], serie.iloc[-1]
     referencia = (f"{d['n']} meses, {ABREV_MESES[int(primeiro['mes']) - 1].lower()}/{int(primeiro['ano'])} a "
                   f"{ABREV_MESES[int(ultimo['mes']) - 1].lower()}/{int(ultimo['ano'])}")
@@ -857,9 +885,11 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
             inferior = eixo.axhline(d["limite_inferior"], color="#C0392B", linestyle="--", linewidth=1.6, label="Limite inferior" if esta_compacto() else f"Limite inferior ({_dec1(d['limite_inferior'])})")
             inferior.set_gid("limite_inferior")
         else:
+            # Linha sem pontos, só para a legenda explicar que o limite inferior não se aplica.
             eixo.plot([], [], linestyle="none", label="Limite inferior (n/a)" if esta_compacto() else f"Limite inferior ({_dec1(d['limite_inferior'])}): não se aplica")
         fora = d["fora"]
         if len(fora):
+            # Círculos vazios destacam os meses fora dos limites de referência.
             atipicos, = eixo.plot(_x_mensal(fora), _valores_float(fora["valor"]), linestyle="none", marker="o", markersize=10, markerfacecolor="none",
                                   markeredgecolor="#C0392B", markeredgewidth=2, label=f"Fora dos limites ({len(fora)})")
             atipicos.set_gid("pontos_atipicos")
@@ -869,6 +899,7 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                 nivel = nivel + 1 if x_anterior is not None and x_ponto - x_anterior < 0.8 else 0
                 x_anterior = x_ponto
                 a_direita = esta_compacto() and x_ponto > min(x) + 0.65 * (max(x) - min(x))  # compacto: rótulo de ponto perto da borda direita vai para a esquerda
+                # Rótulo de cada mês destacado (ex.: jan/2023: 19).
                 rotulo = eixo.annotate(f"{ABREV_MESES[int(r.mes) - 1]}/{int(r.ano)}: {fmt_int(r.valor)}", (x_ponto, float(r.valor)),
                                        textcoords="offset points", xytext=(-8 if a_direita else 8, 8 + 16 * nivel), ha="right" if a_direita else "left", fontsize=10, color="#C0392B")
                 rotulo.set_gid("rotulo_atipico")
@@ -893,6 +924,7 @@ def figura_violencia_domestica_ssp(vd: pd.DataFrame, categoria: str | None = Non
     if vd is None or vd.empty:
         return None
     compacto = esta_compacto()
+    # Figura da SSP/SC: tamanho menor no modo compacto (celular).
     figura = Figure(figsize=(4.4, 6.8) if compacto else (10, 6.2), dpi=120)
     eixo = figura.add_subplot(111)
     cores = {2023: COR_SSP_2023, 2024: COR_SSP_2024}
@@ -924,13 +956,16 @@ def figura_violencia_domestica_ssp(vd: pd.DataFrame, categoria: str | None = Non
         eixo.set_xlim(0, float(totais.to_numpy().max()) * 1.18)
         eixo.xaxis.set_major_formatter(FuncFormatter(_milhar))
         eixo.grid(axis="x", color="#D9E5F2", linewidth=0.8)
+        # subplots_adjust define as margens (frações da figura) para os nomes das categorias caberem à esquerda.
         figura.subplots_adjust(left=0.36 if compacto else 0.30, right=0.95, bottom=0.2 if compacto else 0.17, top=topo)
     else:
+        # Categoria escolhida no filtro: só as linhas dela; depois, uma linha por ano (2023 e 2024), mês a mês.
         parte = vd.loc[vd["categoria"].eq(categoria)]
         # SSP/SC, uma categoria: tabela mês x ano para desenhar as duas linhas (2023 e 2024).
         mensal = parte.pivot(index="mes", columns="ano", values="valor").reindex(range(1, 13))
         for ano in (2023, 2024):
             valores = [int(v) for v in mensal[ano]]
+            # Uma linha por ano: x = mês, y = fatos comunicados naquele mês.
             linha, = eixo.plot(list(mensal.index), valores, color=cores[ano], linewidth=2.2, marker="o", markersize=6 if compacto else 7, label=str(ano))
             linha.set_gid(f"linha_ssp_{ano}")
             if not compacto:

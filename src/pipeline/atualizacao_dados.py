@@ -93,6 +93,7 @@ def _csv_bytes(quadro: pd.DataFrame) -> bytes:
 
 def _sha256_arquivo(caminho: Path) -> str:
     """SHA-256 de um arquivo, lido em blocos de 1 MB."""
+    # Cria o calculador de SHA-256; o arquivo é lido em pedaços para não ocupar muita memória.
     resumo = hashlib.sha256()
     with caminho.open("rb") as fluxo:
         for bloco in iter(lambda: fluxo.read(1024 * 1024), b""):
@@ -102,6 +103,7 @@ def _sha256_arquivo(caminho: Path) -> str:
 
 def _ler_csv_bytes(conteudo: bytes) -> pd.DataFrame:
     """Lê um CSV (em bytes) tudo como texto, sem converter nem preencher valores."""
+    # io.BytesIO faz os bytes se comportarem como um arquivo aberto; read_csv lê tudo como texto, sem trocar vazios por NaN.
     return pd.read_csv(io.BytesIO(conteudo), dtype=str, keep_default_na=False, na_filter=False, encoding="utf-8")
 
 
@@ -109,6 +111,7 @@ def _registrar_historico(base: Path, evento: dict) -> None:
     """Acrescenta uma linha com data e operação ao arquivo historico.jsonl."""
     base.mkdir(parents=True, exist_ok=True)
     with (base / "historico.jsonl").open("a", encoding="utf-8", newline="\n") as fluxo:
+        # Acrescenta uma linha JSON ao histórico (modo "a" = acrescentar ao final, sem apagar o que já existe).
         fluxo.write(json.dumps({"em_utc": vv.agora_utc().strftime("%Y-%m-%dT%H:%M:%SZ"), **evento}, ensure_ascii=False) + "\n")
 
 
@@ -143,6 +146,7 @@ def ler_sinesp_xlsx(caminho: Path) -> pd.DataFrame:
 
 def _inteiro_nao_negativo(valor, descricao: str):
     """Confere a contagem publicada: inteiro não negativo ou vazio (ausência continua ausência)."""
+    # Valor vazio continua vazio (pd.NA); nunca vira zero.
     if pd.isna(valor):
         return pd.NA
     if isinstance(valor, bool) or not isinstance(valor, (int, float)) or float(valor) != int(valor) or valor < 0:
@@ -182,6 +186,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
             valor = _inteiro_nao_negativo(linha.total if mandado else linha.total_vitima, descricao)
             registros.append({"ano": data.year, "mes": data.month, "evento": linha.evento, "abrangencia": str(linha.abrangencia),
                               "unidade": vv.UNIDADE_MANDADOS if mandado else vv.UNIDADE_VITIMAS, "valor": valor})
+    # Tabela com uma linha por registro do XLSX já padronizado (ano, mês, indicador, classificação, unidade, valor).
     bruto = pd.DataFrame(registros)
     chave = ["evento", "abrangencia", "ano", "mes"]
     # duplicated(keep=False) marca TODAS as linhas que repetem indicador + classificação + ano + mês.
@@ -195,6 +200,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
                       f"({len(repetidas)} linhas; requer conferência).")
         agrupado = bruto.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].sum(min_count=1)  # soma as parcelas; devolve vazio (e não 0) se todas forem vazias
         bruto = agrupado
+    # Ordena por série e mês e define os tipos finais: Int64 para o valor (aceita ausência) e int64 para ano e mês.
     mensal = bruto.sort_values(["evento", "abrangencia", "ano", "mes"], kind="stable").reset_index(drop=True)
     mensal["valor"] = mensal["valor"].astype("Int64")
     mensal["ano"], mensal["mes"] = mensal["ano"].astype("int64"), mensal["mes"].astype("int64")
@@ -207,6 +213,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
         linhas_catalogo.append({
             "evento": evento, "abrangencia": abrangencia, "unidade": serie["unidade"].iloc[0], "natureza": vv.NATUREZAS[evento],
             "medida_origem": "total" if mandado else "total_vitima", "inicio": ini, "fim": fim, "meses_observados": len(serie),
+            # notna().sum() conta meses com valor, eq(0).sum() conta zeros e isna().sum() conta meses sem valor.
             "meses_com_valor": int(serie["valor"].notna().sum()), "meses_valor_zero": int(serie["valor"].eq(0).sum()),
             "meses_sem_valor": int(serie["valor"].isna().sum()), "limitacoes": vv.limitacoes(mandado)})
     return mensal, pd.DataFrame(linhas_catalogo, columns=dp.COLUNAS_CATALOGO), avisos
@@ -216,6 +223,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
 def comparar_sinesp(ativa: pd.DataFrame, candidata: pd.DataFrame) -> pd.DataFrame:
     """Diferenças por chave (evento, abrangência, ano, mês): novo, removido ou alterado."""
     chave = ["evento", "abrangencia", "ano", "mes"]
+    # assign cria/atualiza colunas e rename muda os nomes (valor_ativo, valor_candidato) para as duas versões caberem na mesma tabela.
     a = ativa.assign(ano=ativa["ano"].astype("int64"), mes=ativa["mes"].astype("int64")).rename(columns={"valor": "valor_ativo", "unidade": "unidade_ativa"})
     c = candidata.assign(ano=candidata["ano"].astype("int64"), mes=candidata["mes"].astype("int64")).rename(columns={"valor": "valor_candidato", "unidade": "unidade_candidata"})
     # merge "outer" junta a versão ativa e a candidata pela chave; indicator diz se a linha existe só na ativa, só na candidata ou nas duas.
@@ -228,6 +236,7 @@ def comparar_sinesp(ativa: pd.DataFrame, candidata: pd.DataFrame) -> pd.DataFram
             situacao = "novo"
         elif linha.unidade_ativa != linha.unidade_candidata:
             situacao = "unidade_alterada"
+        # Vazio nas duas versões: nada mudou. Vazio em só uma ou números diferentes: o valor foi alterado.
         elif pd.isna(linha.valor_ativo) and pd.isna(linha.valor_candidato):
             continue
         elif pd.isna(linha.valor_ativo) != pd.isna(linha.valor_candidato) or int(linha.valor_ativo) != int(linha.valor_candidato):
@@ -249,6 +258,7 @@ def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, at
             validacao.erros.append(f"Série(s) nova(s) (indicador/abrangência): {sorted(series_cand - series_ativas)}; exigem decisão metodológica.")
         if series_ativas - series_cand:
             validacao.erros.append(f"Série(s) ausente(s) na candidata: {sorted(series_ativas - series_cand)}.")
+    # Para cada série da candidata, confere se os meses são seguidos (índice ano × 12 + mês sem saltos).
     for (evento, abrangencia), serie in candidata.groupby(["evento", "abrangencia"]):
         indices = (serie["ano"].astype(int) * 12 + serie["mes"].astype(int) - 1).sort_values().tolist()
         if indices != list(range(indices[0], indices[0] + len(indices))):
@@ -261,6 +271,7 @@ def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, at
     validacao.informacoes.update({"observacoes": int(len(candidata)), "series": int(len(series_cand)), "primeira_competencia": ini, "ultima_competencia": fim,
                                   "valores_ausentes": int(candidata["valor"].isna().sum()), "zeros_publicados": int(candidata["valor"].eq(0).sum())})
     if comparacao is not None:
+        # value_counts conta quantas linhas há de cada situação (novo, removido, alterado); to_dict vira dicionário.
         contagem = comparacao["situacao"].value_counts().to_dict()
         validacao.informacoes["comparacao"] = {k: int(v) for k, v in contagem.items()}
         if contagem.get("removido"):
@@ -271,6 +282,7 @@ def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, at
             validacao.avisos.append(f"REVISÃO HISTÓRICA: {contagem['alterado']} valor(es) de competências já publicadas foram alterados; revisar `comparacao_sinesp.csv`.")
         novos = comparacao[comparacao["situacao"].eq("novo")]
         if len(novos) and ativa is not None:
+            # Último mês de cada série na versão ativa: groupby separa as séries e apply calcula o maior índice de mês de cada uma.
             fim_ativo = ativa.groupby(["evento", "abrangencia"]).apply(lambda s: (s["ano"].astype(int) * 12 + s["mes"].astype(int)).max(), include_groups=False)
             for (evento, abrangencia), grupo in novos.groupby(["evento", "abrangencia"]):
                 esperado_inicio = int(fim_ativo[(evento, abrangencia)]) + 1
@@ -325,6 +337,7 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
     destino.mkdir(parents=True)
 
     origem = {k: json.loads(json.dumps(v)) for k, v in manifesto_ativo.get("origem_dos_dados", {}).items() if k in ("sinesp_xlsx_sha256", "sinesp_xlsx_bytes")}
+    # Comparação começa vazia (com as colunas certas); só é preenchida quando há novos XLSX.
     comparacao = pd.DataFrame(columns=["evento", "abrangencia", "ano", "mes", "situacao", "valor_ativo", "valor_candidato"])
     if entradas_sinesp is not None:
         anos = sorted({int(a) for a in origem.get("sinesp_xlsx_bytes", {})} | set(anos_adicionais or []))
@@ -347,11 +360,13 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
         mensal, catalogo = ativa_sinesp, dp.carregar_catalogo_sinesp(ativa)
         sinesp_bytes, catalogo_bytes = (ativa / dp.ARQ_SINESP).read_bytes(), (ativa / dp.ARQ_SINESP_CATALOGO).read_bytes()
 
+    # Grava os dois CSVs da candidata exatamente com os bytes preparados (write_bytes não altera nada).
     (destino / dp.ARQ_SINESP).write_bytes(sinesp_bytes)
     (destino / dp.ARQ_SINESP_CATALOGO).write_bytes(catalogo_bytes)
 
     fichas = []
     for nome in dp.ARQUIVOS_DE_DADOS:
+        # Relê cada arquivo gravado para registrar no manifesto o tamanho e o SHA-256.
         conteudo = (destino / nome).read_bytes()
         quadro = _ler_csv_bytes(conteudo)
         fichas.append({"arquivo": nome, "linhas": int(len(quadro)), "colunas": int(quadro.shape[1]), "esquema": list(quadro.columns), "bytes": len(conteudo),
@@ -379,6 +394,7 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
         validacao={"status": validacao.status, "erros": validacao.erros, "avisos": validacao.avisos, "informacoes": validacao.informacoes,
                    "descricao": "Candidata preparada e validada; pendente de aprovação."},
         cobertura=cobertura, revisoes_historicas=revisoes, origem=origem, arquivos=fichas, criterios=vv.CRITERIOS, consulta=relatorio_verificacao)
+    # Grava o manifesto da candidata em JSON (default=str converte datas e outros objetos em texto).
     (destino / dp.ARQ_MANIFESTO).write_text(json.dumps(manifesto, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
     integridade = dp.verificar_integridade(destino)
     if not integridade["integro"].all():
@@ -417,6 +433,7 @@ def _validar_diretorio(diretorio: Path) -> None:
     dp.validar_consistencia(dp.carregar_sinesp(diretorio), dp.carregar_catalogo_sinesp(diretorio))
     integridade = dp.verificar_integridade(diretorio)
     if not integridade["integro"].all():
+        # Se algum SHA-256 não confere, interrompe e lista os arquivos (~ seleciona os que NÃO estão íntegros).
         raise dp.ErroDados("integridade (SHA-256) divergente: " + ", ".join(integridade.loc[~integridade["integro"], "arquivo"]))
 
 
@@ -435,6 +452,7 @@ def _promover_diretorio(origem: Path, ativa: Path, versoes_root: Path, *, aprova
     shutil.copytree(origem, novo)
     try:
         if aprovacao is not None:
+            # Lê o manifesto, registra a aprovação e grava de novo (json.loads lê o texto JSON; json.dumps escreve).
             manifesto = json.loads((novo / dp.ARQ_MANIFESTO).read_text(encoding="utf-8"))
             manifesto["aprovacao"] = aprovacao
             manifesto["situacao_validacao"] = {**manifesto.get("situacao_validacao", {}), "status": "aprovado", "descricao": "Aprovada explicitamente pelo responsável."}
@@ -469,6 +487,7 @@ def aprovar(id_candidata: str, *, confirmacao: str | None, aceitar_revisoes: boo
         raise ErroAtualizacao(f"Candidata {id_candidata} inexistente ou sem relatório de validação. Nenhum dado foi alterado.")
     if (raiz / "promovida.json").exists():
         raise ErroAtualizacao(f"Candidata {id_candidata} já foi promovida.")
+    # Lê o relatório da validação da candidata para conferir se ela pode ser aprovada.
     relatorio = json.loads((raiz / "relatorio_validacao.json").read_text(encoding="utf-8"))
     if relatorio["status"] == "bloqueado" or relatorio["erros"]:
         raise ErroAtualizacao("Candidata com erros de validação: promoção impossível. " + "; ".join(relatorio["erros"]))
@@ -481,6 +500,7 @@ def aprovar(id_candidata: str, *, confirmacao: str | None, aceitar_revisoes: boo
     agora = agora or vv.agora_utc()
     anterior = _promover_diretorio(raiz / "dados", ativa, versoes_root, aprovacao={
         "aprovado_em_utc": agora.strftime("%Y-%m-%dT%H:%M:%SZ"), "aprovado_por": aprovado_por, "aceitou_revisoes": bool(aceitar_revisoes), "candidata": id_candidata})
+    # Marca a candidata como promovida (impede aprovar a mesma candidata duas vezes).
     (raiz / "promovida.json").write_text(json.dumps({"promovida_em_utc": agora.strftime("%Y-%m-%dT%H:%M:%SZ"), "versao_anterior": anterior}) + "\n", encoding="utf-8")
     _registrar_historico(staging_root.parent, {"operacao": "aprovar", "id": id_candidata, "versao_anterior": anterior})
     return anterior
@@ -545,6 +565,7 @@ def baixar_sinesp(anos: list[int], destino: Path, cliente: fo.Cliente | None = N
         if not zipfile.is_zipfile(io.BytesIO(resposta.corpo)):
             raise ErroAtualizacao(f"O arquivo baixado para {ano} não é um XLSX íntegro; descartado.")
         caminho = destino / f"bancovde-{ano}.xlsx"
+        # Grava o XLSX baixado exatamente como veio da fonte.
         caminho.write_bytes(resposta.corpo)
         caminhos[ano] = caminho
     return caminhos
@@ -581,6 +602,7 @@ def main(argv: list[str] | None = None) -> int:
             relatorio = fo.verificar_fontes(manifesto)
             caminho = fo.salvar_relatorio(relatorio, BASE_ATUALIZACAO / "verificacoes")
             _registrar_historico(BASE_ATUALIZACAO, {"operacao": "verificar", "resumo": relatorio.resumo()})
+            # Mostra no terminal o resumo da verificação em JSON legível.
             print(json.dumps({"resumo": relatorio.resumo(), "acao_recomendada": relatorio.acao_recomendada(), "relatorio": str(caminho)}, ensure_ascii=False, indent=2))
             for a in relatorio.achados:
                 print(f"[{a.classificacao.value}] {a.fonte}/{a.recurso} {a.identificador}: {a.detalhe}")
@@ -597,6 +619,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(candidato.validacao.para_dict(), ensure_ascii=False, indent=2, default=str))
         elif argumentos.comando == "comparar":
             raiz = BASE_ATUALIZACAO / "staging" / argumentos.id
+            # Comando comparar: mostra no terminal o relatório e a tabela de diferenças da candidata.
             print((raiz / "relatorio_validacao.json").read_text(encoding="utf-8"))
             print((raiz / "comparacao_sinesp.csv").read_text(encoding="utf-8"))
         elif argumentos.comando == "aprovar":

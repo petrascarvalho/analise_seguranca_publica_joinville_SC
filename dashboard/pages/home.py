@@ -94,5 +94,6 @@ with st.expander("Pergunta, unidades e limites da leitura"):
         "- Não há taxas por habitante nem dados por bairro, rua ou horário.\n"
         "- Zero informado é um número publicado; falta de informação não é zero. Contagens pequenas geram percentuais instáveis."
     )
+    # [3:] pula os três primeiros achados (já mostrados nos cards) e escreve os demais como itens de lista.
     for achado in calculos.achados_principais(sinesp)[3:]:
         st.markdown(f"- **{achado['titulo']}:** {achado['texto']}")

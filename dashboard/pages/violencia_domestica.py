@@ -39,6 +39,7 @@ if vd is None:
     st.info("Os dados detalhados de violência doméstica da SSP/SC não estão disponíveis nesta versão pública do painel: as condições de reutilização da fonte "
             "ainda não foram avaliadas formalmente e os relatórios completos não são divulgados. Abaixo, uma figura-resumo com os totais anuais por categoria.")
     if dados_ssp.FIGURA_ESTATICA.is_file():
+        # st.image mostra a figura-resumo já salva (PNG); é o que aparece no Streamlit Cloud, onde o CSV não existe.
         st.image(str(dados_ssp.FIGURA_ESTATICA), caption="Fatos comunicados por categoria, 2023 × 2024 (SSP/SC). Unidade em validação; não integra os indicadores Sinesp.")
 else:
     # ------------------------------------------------------------------------------------------ filtro próprio e cards

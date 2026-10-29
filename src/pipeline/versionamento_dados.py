@@ -191,9 +191,11 @@ def cobertura_padrao(sinesp: pd.DataFrame) -> dict:
     """Cobertura geral e INDIVIDUAL de cada série (início, fim, meses, zeros e ausências)."""
     ini, fim = primeira_e_ultima_competencia(sinesp)
     ano_fim = int(fim[:4])
+    # Meses publicados no último ano: se não forem os 12, esse ano é parcial.
     meses_ano_fim = sorted(int(m) for m in sinesp.loc[sinesp["ano"].astype(int).eq(ano_fim), "mes"].unique())
     parcial = ano_fim if meses_ano_fim != list(range(1, 13)) else None
     series = []
+    # Cobertura de cada série: primeiro e último mês, meses com valor, zeros publicados e meses sem valor.
     for (evento, abrangencia), serie in sinesp.groupby(["evento", "abrangencia"], sort=True):
         s_ini, s_fim = primeira_e_ultima_competencia(serie)
         series.append({"evento": evento, "abrangencia": abrangencia, "unidade": serie["unidade"].iloc[0], "primeira_competencia": s_ini,

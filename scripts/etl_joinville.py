@@ -114,6 +114,7 @@ print(f"Linhas que repetem indicador + abrangência + mês: {repeticoes_de_chave
 # Na camada original, os campos vazios de total_vitima e total só mostram que cada linha usa uma das duas medidas.
 # isna() marca as células vazias; sum() conta as vazias de cada coluna; to_frame() vira tabela.
 ausencias = dados_brutos.isna().sum().rename("ausências").to_frame()
+# Percentual de células vazias em cada coluna: vazias ÷ total de linhas × 100, arredondado com round(2).
 ausencias["%"] = (ausencias["ausências"] / len(dados_brutos) * 100).round(2)
 display(ausencias)
 
@@ -126,6 +127,7 @@ for ano, recorte in recortes.items():
     for linha in recorte.itertuples(index=False):
         if linha.evento not in vv.NATUREZAS:
             raise ValueError(f"Indicador não previsto: {linha.evento!r} (exige decisão metodológica).")
+        # pd.isna verifica se a célula está vazia: toda linha precisa da classificação institucional (Estadual, PF ou PRF).
         if pd.isna(linha.abrangencia):
             raise ValueError("Abrangência ausente.")
         # A data vem como número serial do Excel (dias contados a partir de 30/12/1899); deve ser dia 1 do ano do arquivo.
@@ -143,6 +145,7 @@ for ano, recorte in recortes.items():
             raise ValueError(f"Valor inválido (esperado inteiro não negativo): {valor!r}")
         else:
             valor = int(valor)
+        # append acrescenta à lista um dicionário com a observação padronizada (cada dicionário será uma linha da tabela).
         observacoes.append({"ano": data.year, "mes": data.month, "evento": linha.evento, "abrangencia": str(linha.abrangencia),
                             "unidade": vv.UNIDADE_MANDADOS if mandado else vv.UNIDADE_VITIMAS, "valor": valor})
 
@@ -152,14 +155,18 @@ dados_tratados = pd.DataFrame(observacoes)
 dados_tratados[["ano", "mes"]] = dados_tratados[["ano", "mes"]].astype("int64")
 dados_tratados["valor"] = dados_tratados["valor"].astype("Int64")
 print(f"Observações padronizadas: {len(dados_tratados)}")
+# isna().sum() conta os valores ausentes e eq(0).sum() conta os zeros publicados: são informações diferentes.
 print(f"Valores ausentes: {int(dados_tratados['valor'].isna().sum())} | zeros publicados: {int(dados_tratados['valor'].eq(0).sum())}")
+# head() mostra as 5 primeiras linhas da tabela já tratada.
 display(dados_tratados.head())
 
 
 # 8. FILTRO DO MUNICÍPIO DE JOINVILLE
 # O filtro foi feito na leitura (etapa 03), porque o arquivo nacional tem milhões de linhas. Aqui conferimos o resultado.
+# eq('SC') compara cada linha com o texto 'SC'; all() só devolve True se todas as linhas forem iguais.
 print(f"Todas as linhas são de SC: {bool(dados_brutos['uf'].eq('SC').all())}")
 print(f"Todas as linhas são de JOINVILLE: {bool(dados_brutos['municipio'].eq('JOINVILLE').all())}")
+# ~ inverte o resultado (True vira False): conta as linhas que NÃO são de Joinville; o esperado é 0.
 print(f"Linhas de outros municípios: {int((~dados_brutos['municipio'].eq('JOINVILLE')).sum())}")
 
 
@@ -169,21 +176,28 @@ print(f"Linhas de outros municípios: {int((~dados_brutos['municipio'].eq('JOINV
 chave = ["evento", "abrangencia", "ano", "mes"]
 # Linhas que repetem a chave (só podem existir nos indicadores com nota oficial de soma).
 repetidas = dados_tratados[dados_tratados.duplicated(chave, keep=False)]
+# Diferença entre conjuntos: indicadores repetidos que não estão na lista oficial de soma (precisa ficar vazia).
 nao_permitidos = set(repetidas["evento"]) - set(vv.EVENTOS_COM_LINHAS_MULTIPLAS)
 if nao_permitidos:
     raise ValueError(f"Repetição sem nota oficial de soma em: {sorted(nao_permitidos)}")
 print(f"Linhas repetidas somadas conforme a nota oficial: {len(repetidas)}")
 
+# Agrupa por indicador, classificação, ano, mês e unidade e soma a coluna valor: as parcelas do mesmo mês viram uma linha.
+# as_index=False mantém as colunas do agrupamento como colunas comuns; sort=False preserva a ordem de leitura.
 dados_processados = dados_tratados.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].sum(min_count=1)
 dados_processados = dados_processados[dp.COLUNAS_SINESP]  # volta à ordem oficial das colunas
 # Ordena por indicador, classificação, ano e mês e renumera as linhas.
 dados_processados = dados_processados.sort_values(chave, kind="stable").reset_index(drop=True)
+# Tipos finais: valor em Int64 (inteiro que aceita ausência) e ano e mês como inteiros comuns.
 dados_processados["valor"] = dados_processados["valor"].astype("Int64")
 dados_processados[["ano", "mes"]] = dados_processados[["ano", "mes"]].astype("int64")
 
 # Catálogo: resumo de cada série (início, fim, meses, meses com valor, zeros publicados e ausências).
+# Competência no formato AAAA-MM: astype(str) transforma em texto e zfill(2) completa o mês com zero (1 vira 01).
 competencia = dados_processados["ano"].astype(str) + "-" + dados_processados["mes"].astype(str).str.zfill(2)
 dados_catalogo = dados_processados.assign(competencia=competencia, zero=dados_processados["valor"].eq(0))  # zero = True quando a fonte publicou 0
+# agg calcula várias medidas por série de uma só vez: primeiro e último mês (min e max), quantidade de meses (size),
+# meses com valor (count ignora os ausentes) e zeros publicados (sum soma os True da coluna zero).
 catalogo = dados_catalogo.groupby(["evento", "abrangencia", "unidade"]).agg(
     inicio=("competencia", "min"), fim=("competencia", "max"), meses=("valor", "size"), com_valor=("valor", "count"), zeros=("zero", "sum")).reset_index()
 # Meses sem valor = meses existentes - meses com valor (subtração de colunas inteiras).
@@ -194,12 +208,15 @@ display(catalogo)
 # 10. CONFERÊNCIA DOS RESULTADOS
 # Regras de qualidade da base mensal. Índice contínuo de meses = ano x 12 + mês (para ver se alguma série pula meses).
 indice_mes = dados_processados["ano"] * 12 + dados_processados["mes"] - 1
+# diff() calcula a diferença entre meses seguidos de cada série; se todas forem 1, a série não pula nenhum mês.
 sem_lacuna = all((indices.sort_values().diff().dropna() == 1).all()
                  for _, indices in indice_mes.groupby([dados_processados["evento"], dados_processados["abrangencia"]]))
+# Dicionário regra -> True/False. Cada conferência usa operações já vistas: duplicated, nunique e dropna.
 regras = {
     "colunas na ordem oficial": list(dados_processados.columns) == dp.COLUNAS_SINESP,
     "sem competência repetida": not dados_processados.duplicated(chave).any(),
     "séries com meses consecutivos": sem_lacuna,
+    # nunique conta quantas unidades diferentes cada série tem: precisa ser exatamente 1.
     "uma unidade por série": bool(dados_processados.groupby(["evento", "abrangencia"])["unidade"].nunique().eq(1).all()),
     "valores inteiros não negativos (ou ausentes)": bool((dados_processados["valor"].dropna() >= 0).all()),
 }
@@ -211,13 +228,16 @@ for regra, aprovada in regras.items():
 base_publicada = dp.carregar_sinesp()
 catalogo_publicado = dp.carregar_catalogo_sinesp()
 csv_mensal = dados_processados.to_csv(index=False, lineterminator="\n", na_rep="").encode("utf-8")  # sem caminho: nada é gravado
+# SHA-256 do CSV reconstruído e SHA-256 registrado no manifesto: se forem iguais, o conteúdo é idêntico ao aprovado.
 hash_gerado = dp.sha256_normalizado(csv_mensal)
 hash_aprovado = next(f["sha256"] for f in manifesto["arquivos"] if f["arquivo"] == dp.ARQ_SINESP)
 # equals() é verdadeiro só se as duas tabelas tiverem os mesmos valores, na mesma ordem.
 base_igual = dados_processados.astype(base_publicada.dtypes.to_dict()).equals(base_publicada)
+# tolist() transforma a coluna em lista Python para comparar, item a item, com o catálogo publicado.
 catalogo_igual = (catalogo["meses"].tolist() == catalogo_publicado["meses_observados"].astype(int).tolist()
                   and catalogo["fim"].tolist() == catalogo_publicado["fim"].tolist()
                   and catalogo[["evento", "abrangencia"]].reset_index(drop=True).equals(catalogo_publicado[["evento", "abrangencia"]].reset_index(drop=True)))
+# len() conta as linhas; max() da coluna fim mostra o último mês disponível na base.
 print(f"Observações: {len(dados_processados)} | séries: {len(catalogo)} | zeros publicados: {int(dados_processados['valor'].eq(0).sum())} | "
       f"valores ausentes: {int(dados_processados['valor'].isna().sum())} | último mês: {catalogo['fim'].max()}")
 print(f"Base reconstruída igual à publicada: {base_igual}")
@@ -233,8 +253,10 @@ assert all(regras.values()) and base_igual and hash_gerado == hash_aprovado and 
 # página, a tabela e a linha de cada célula. O CSV localiza os valores; o PDF continua sendo o documento oficial.
 if not ssp_sc.acervo_disponivel():
     raise FileNotFoundError("Acervo da SSP/SC incompleto: são esperados 45 PDFs e 45 CSVs em dados/brutos/ssp_sc/.")
+# Inventário: uma linha por PDF, com o tipo do documento, o tamanho, o SHA-256 e se o CSV correspondente existe.
 inventario = ssp_sc.inventariar_acervo()
 print(f"PDFs: {len(inventario)} | pares PDF + CSV completos: {int(inventario['par_completo'].sum())} | PDFs repetidos: {int(inventario['pdf_duplicado'].sum())}")
+# Lista de colunas entre colchetes duplos [[...]] seleciona só essas colunas; head() mostra as 5 primeiras linhas.
 display(inventario[["arquivo_pdf", "tipo_documento", "bytes_pdf", "par_completo"]].head())
 
 
@@ -247,6 +269,7 @@ violencia = resultado["vd"]
 verificacoes = resultado["verificacoes"]
 homicidios_grupos = resultado["grupos"]
 
+# nunique() conta as categorias diferentes; drop_duplicates() nas colunas ano e mês conta quantos meses existem.
 print(f"Violência doméstica: {len(violencia)} observações | {violencia['indicador'].nunique()} categorias | "
       f"{violencia[['ano', 'mes']].drop_duplicates().shape[0]} meses | zeros publicados: {int(violencia['valor'].eq(0).sum())} | "
       f"ausentes: {int(violencia['valor'].isna().sum())}")
@@ -255,6 +278,8 @@ print(f"Unidade: {sorted(violencia['unidade'].unique())} (definição operaciona
 print(f"Verificações contra os PDFs: {int(verificacoes['ok'].sum())} aprovadas de {len(verificacoes)}")
 print(f"Homicídios: {len(homicidios_grupos)} números republicados em mais de uma edição, {int(homicidios_grupos['divergente'].sum())} com versões "
       "diferentes (nenhuma versão é escolhida)")
+# Conferências fixas da SSP/SC: 216 observações (9 categorias × 24 meses), nenhum valor ausente,
+# a unidade original preservada e todas as verificações contra os PDFs aprovadas.
 assert len(violencia) == 216 and violencia["indicador"].nunique() == 9 and violencia["valor"].isna().sum() == 0
 assert list(violencia["unidade"].unique()) == [ssp_sc.UNIDADE_VD] and bool(verificacoes["ok"].all())
 
@@ -263,6 +288,7 @@ assert list(violencia["unidade"].unique()) == [ssp_sc.UNIDADE_VD] and bool(verif
 # Sinesp e SSP/SC são gravados em pastas separadas: as duas fontes não são misturadas nem somadas.
 pasta_sinesp = pasta_saida / "sinesp"
 pasta_ssp = pasta_saida / "ssp_sc"
+# resolve() transforma em caminho completo: a pasta de saída nunca pode ser a pasta de dados usada pelo painel.
 assert pasta_saida.resolve() != dp.DIRETORIO_DADOS.resolve(), "O ETL não pode gravar sobre a base publicada no painel."
 # mkdir cria a pasta (e as pastas acima, se faltarem); exist_ok evita erro se ela já existir.
 pasta_sinesp.mkdir(parents=True, exist_ok=True)
@@ -287,6 +313,7 @@ tabelas_ssp = {
     "inventario_acervo_ssp_sc.csv": resultado["inventario"],
     "violencia_domestica_joinville_tratada.csv": violencia,
     "homicidios_boletins_joinville_versoes.csv": resultado["versoes"],
+    # astype(str) grava a lista de valores publicados como texto, do mesmo jeito que o arquivo aprovado guarda.
     "homicidios_republicacoes_grupos.csv": homicidios_grupos.astype({"valores_publicados_distintos": str}),
     "verificacoes_extracao_ssp_sc.csv": verificacoes,
     "rastreabilidade_celulas_ssp_sc.csv": resultado["rastreabilidade"],
@@ -294,10 +321,13 @@ tabelas_ssp = {
 # Grava cada tabela da SSP/SC com o nome definido no dicionário acima.
 for nome, tabela in tabelas_ssp.items():
     tabela.to_csv(pasta_ssp / nome, index=False, encoding="utf-8", lineterminator="\n")
+# Recalcula o SHA-256 dos PDFs depois do processamento: precisam continuar iguais (nenhum original foi alterado).
 originais_inalterados = ssp_sc.inventariar_acervo()["sha256_pdf"].tolist() == inventario["sha256_pdf"].tolist()
 relatorio_ssp = {**resultado["resumo"], "originais_inalterados": originais_inalterados, "arquivos_gerados": sorted(tabelas_ssp)}
+# Relatório da SSP/SC em JSON: resumo das contagens e das verificações e a lista dos arquivos gerados.
 (pasta_ssp / "relatorio_auditoria_ssp_sc.json").write_text(json.dumps(relatorio_ssp, ensure_ascii=False, indent=2), encoding="utf-8")
 print(f"Arquivos gravados em {pasta_saida}:")
+# rglob lista todos os arquivos gravados (inclusive nas subpastas); stat().st_size dá o tamanho em bytes.
 for arquivo in sorted(pasta_saida.rglob("*.*")):
     print(f"  {arquivo.relative_to(pasta_saida).as_posix()} ({arquivo.stat().st_size} bytes)")
 
@@ -307,8 +337,10 @@ for arquivo in sorted(pasta_saida.rglob("*.*")):
 # read_csv lê de volta os arquivos gravados, para conferir o que realmente ficou no disco.
 mensal_gravado = pd.read_csv(pasta_sinesp / "etl_sinesp_joinville_mensal.csv")
 vd_gravada = pd.read_csv(pasta_ssp / "violencia_domestica_joinville_tratada.csv")
+# Compara o arquivo relido com os números de referência: 911 observações, 401 zeros, nenhum ausente e 12 séries.
 sinesp_ok = (len(mensal_gravado) == 911 and int(mensal_gravado["valor"].eq(0).sum()) == 401 and int(mensal_gravado["valor"].isna().sum()) == 0
              and mensal_gravado[["evento", "abrangencia"]].drop_duplicates().shape[0] == 12)
+# SSP/SC relida: 216 observações, 9 categorias, 27 zeros e a unidade original 'Fato Comunicado'.
 ssp_ok = (len(vd_gravada) == 216 and vd_gravada["indicador"].nunique() == 9 and int(vd_gravada["valor"].eq(0).sum()) == 27
           and set(vd_gravada["unidade"]) == {"Fato Comunicado"})
 print(f"Sinesp: 911 observações, 12 séries, 401 zeros publicados, 0 ausentes -> {'OK' if sinesp_ok else 'ERRO'}")

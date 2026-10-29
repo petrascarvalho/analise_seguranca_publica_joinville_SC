@@ -44,6 +44,7 @@ def sinesp_no_esquema_comum(sinesp: pd.DataFrame | None = None, versao: str | No
         "fonte": "Sinesp/MJSP", "municipio": "JOINVILLE", "uf": "SC",
         "serie_id": "sinesp|" + sinesp["evento"] + "|" + sinesp["abrangencia"],
         "indicador": sinesp["evento"], "indicador_original": sinesp["evento"], "abrangencia": sinesp["abrangencia"],
+        # astype("Int64") padroniza ano, mês e valor como inteiros que aceitam ausência, iguais aos da outra fonte.
         "ano": sinesp["ano"].astype("Int64"), "mes": sinesp["mes"].astype("Int64"), "periodicidade": "mensal",
         "periodo_inicio": inicio.dt.strftime("%Y-%m-%d"), "periodo_fim": (inicio + pd.offsets.MonthEnd(0)).dt.strftime("%Y-%m-%d"),
         "unidade": sinesp["unidade"], "valor": sinesp["valor"].astype("Int64"),
@@ -65,6 +66,7 @@ def unir(*fontes: pd.DataFrame) -> pd.DataFrame:
     if len(uniao) != sum(len(t) for t in fontes):
         raise ValueError("A união mudou a quantidade de linhas.")
     chave = ["fonte", "serie_id", "periodo_inicio", "periodo_fim"]
+    # Conferências da UNION: nenhuma observação repetida (duplicated) e uma única unidade por série (nunique).
     if uniao.duplicated(subset=chave).any():
         raise ValueError("Chave repetida na união (a mesma observação aparece duas vezes).")
     if (uniao.groupby("serie_id")["unidade"].nunique() > 1).any():
@@ -88,6 +90,7 @@ def matriz_compatibilidade() -> pd.DataFrame:
         ("Prefeitura/SEPROT — furtos e roubos (notícias)", "anual", "não informada", "divergente entre publicações",
          "não", "não", "Acervo histórico preservado; valores conflitantes para o mesmo ano."),
     ]
+    # Matriz de compatibilidade: uma linha por conjunto de dados, dizendo se pode entrar na UNION ou no JOIN.
     return pd.DataFrame(linhas, columns=["conjunto", "granularidade", "unidade", "situacao", "union_com_sinesp", "join", "observacao"])
 
 
