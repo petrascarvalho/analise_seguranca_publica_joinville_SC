@@ -11,7 +11,7 @@ import streamlit as st
 
 from dashboard import dados_publicos as dp
 from dashboard import graficos
-from dashboard.formatacao import NOMES_MESES
+from dashboard.formatacao import NOMES_MESES, fmt_competencia
 
 
 # Cores da identidade visual (PROPOSTA inspirada na bandeira de Joinville; não são códigos oficiais do município).
@@ -96,15 +96,6 @@ def selecao_dependente(local, rotulo: str, opcoes: list, *, chave: str, padrao=N
         st.session_state[chave] = inicial
     return local.selectbox(rotulo, opcoes, key=chave, index=opcoes.index(inicial), **kwargs)
 
-_TEXTO_CLASSIFICACAO = {
-    "nenhuma_novidade_identificada": "nenhuma novidade identificada",
-    "possivel_nova_competencia": "possível nova competência",
-    "possivel_revisao_de_competencia_historica": "possível revisão de competência histórica",
-    "alteracao_de_esquema_ou_fonte": "alteração de esquema, formato ou fonte",
-    "falha_de_consulta": "falha de consulta",
-}
-
-
 def direcao_da_seta(diferenca) -> str:
     """Seta do ``st.metric`` de acordo com o sinal da diferença: "up" (aumento), "down" (queda) ou "off" (sem diferença).
 
@@ -132,7 +123,7 @@ def periodo_sinesp_texto(manifesto: dict) -> str:
     try:
         return f"{texto(cobertura['primeira_competencia'])} a {texto(cobertura['ultima_competencia'])}"
     except (KeyError, ValueError):
-        return "período não informado no manifesto"
+        return "período não informado"
 
 
 @st.cache_data(show_spinner=False)
@@ -220,41 +211,44 @@ def mostrar_figura(figura, legenda: str | None = None, tabela=None):
             st.dataframe(tabela, hide_index=True)
 
 
-def descricao_versao(manifesto: dict) -> str:
-    """Texto curto: versão validada, geração, cobertura e última competência (apenas dados do manifesto)."""
-    cobertura = manifesto.get("cobertura", {}).get("sinesp", {})
-    ultima = cobertura.get("ultima_competencia", "—")
-    texto = (f"Versão histórica validada `{manifesto.get('versao', '—')}`, gerada em {manifesto.get('datas', {}).get('gerado_em_utc', '—')} (UTC) · "
-             f"cobertura {cobertura.get('primeira_competencia', '—')} a {ultima} · **última competência disponível: {ultima}**")
-    if cobertura.get("ano_parcial"):
-        texto += f" · {cobertura['ano_parcial']} é parcial (cada série vai até a sua última competência)"
-    return texto + "."
+def data_da_atualizacao(manifesto: dict) -> str:
+    """Data da última atualização dos dados (dia/mês/ano), lida do identificador da versão: '20261027T114400Z' → '27/10/2026'."""
+    versao = str(manifesto.get("versao", ""))
+    return f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 and versao[:8].isdigit() else "não informada"
+
+
+# Frase usada em mais de um lugar: explica o que significa a abrangência "Estadual" sem sugerir que o número é do estado inteiro.
+NOTA_ABRANGENCIA = ("Todos os números do Sinesp são de **Joinville/SC**. “Estadual”, “Polícia Federal” e “Polícia Rodoviária Federal” indicam a "
+                    "abrangência institucional do registro (quem informou o dado); **“Estadual” não é o total do estado de Santa Catarina**.")
 
 
 def mostrar_versao_dos_dados() -> None:
-    """Rodapé informativo com versão, fonte, atualização e atribuição. Não consulta a rede nem baixa dados."""
+    """Rodapé simples: fonte, data da atualização e condições de uso, em linguagem comum. Não consulta a rede nem baixa dados."""
     try:
         manifesto = _manifesto()
     except dp.ErroDados:
-        st.caption("Informações de versão dos dados indisponíveis (manifesto ausente ou inválido).")
+        st.caption("Informações sobre a atualização dos dados indisponíveis no momento.")
         return
-    st.caption(descricao_versao(manifesto))
+    ultima = manifesto.get("cobertura", {}).get("sinesp", {}).get("ultima_competencia", "")
+    st.caption(f"Dados do Sinesp/MJSP para Joinville/SC · última atualização em {data_da_atualizacao(manifesto)} · "
+               f"período: {periodo_sinesp_texto(manifesto)} (2026 é parcial; a última competência disponível é {fmt_competencia(ultima)}).")
     fonte = next((f for f in manifesto.get("fontes", []) if f.get("id") == "sinesp_vde"), None)
     with st.expander("Fonte, atualização dos dados e condições de uso"):
-        st.markdown(manifesto.get("atribuicao", ""))
+        st.markdown("**Fonte:** Ministério da Justiça e Segurança Pública (MJSP) — Sistema Nacional de Estatísticas de Segurança Pública (Sinesp). "
+                    "Tabelas e gráficos são elaborações próprias do projeto a partir de números estatísticos públicos.")
         if fonte:
-            st.markdown(f"**Fonte oficial:** [{fonte['nome']}]({fonte['url']})")
-            publicacao = fonte.get("publicacao") or {}
-            if publicacao.get("pagina_atualizada_em"):
-                st.markdown(f"**Data informada pela página da fonte ('Atualizado em'):** {publicacao['pagina_atualizada_em']} — informação da página, não prova alteração de valores.")
-            consulta = fonte.get("consulta") or {}
-            if consulta.get("data_consulta_utc"):
-                resumo = sorted({_TEXTO_CLASSIFICACAO.get(a["classificacao"], a["classificacao"]) for a in consulta.get("achados", [])})
-                st.markdown(f"**Última verificação registrada nesta versão:** {consulta['data_consulta_utc']} (UTC) — {', '.join(resumo) or 'sem achados'}.")
-            else:
-                st.markdown("**Última verificação da fonte:** nenhuma registrada nesta versão.")
-            st.markdown(f"**Condições de reutilização verificadas:** {fonte.get('condicoes_de_reutilizacao', '—')}")
+            st.markdown(f"**Página oficial da fonte:** [{fonte['nome']}]({fonte['url']})")
+            consulta = (fonte.get("consulta") or {}).get("data_consulta_utc") or ""   # versões sem consulta registrada têm este campo vazio
+            if consulta[:10].count("-") == 2:
+                ano, mes, dia = consulta[:10].split("-")
+                st.markdown(f"**Fonte consultada pela última vez em:** {dia}/{mes}/{ano}.")
         st.markdown(
-            "**Atualização dos dados:** manual e controlada (verificar → preparar → aprovar). O painel **não** baixa dados, não executa ETL e não se atualiza "
-            "sozinho: você está consultando uma versão histórica validada. Novas publicações oficiais só entram após validação, registro de versão e aprovação."
+            "**Atualização dos dados:** feita manualmente, depois de conferência. Este painel não busca informações sozinho: você vê a versão "
+            f"de {data_da_atualizacao(manifesto)}. Novas publicações oficiais só entram depois de conferidas."
+        )
+        st.markdown(
+            "**Condições de uso:** o painel usa apenas contagens agregadas de Joinville/SC; os arquivos originais completos e dados pessoais não são "
+            "redistribuídos. Não foi encontrada nenhuma proibição de uso, mas também não foi possível confirmar uma licença específica para esta base "
+            "(o portal gov.br informa a licença CC BY-ND 3.0 para o conteúdo geral do site). Por isso a fonte é sempre citada. "
+            "Esta é uma avaliação do projeto, não um parecer jurídico."
         )

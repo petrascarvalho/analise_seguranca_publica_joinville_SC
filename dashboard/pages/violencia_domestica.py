@@ -33,9 +33,8 @@ except dados_ssp.ErroDadosSsp as erro:
 
 if vd is None:
     # Sem o CSV local (clone limpo, Streamlit Cloud): não há dado para filtrar. Mostra só a figura exploratória que já está no repositório.
-    st.info("Os dados tratados de violência doméstica da SSP/SC não são distribuídos com este painel: as condições de reutilização da fonte ainda não foram "
-            "avaliadas formalmente e os PDFs integrais ficam fora do Git. A análise reproduzível está no notebook e no README; abaixo, a figura exploratória "
-            "versionada, que mostra apenas totais anuais por categoria.")
+    st.info("Os dados detalhados de violência doméstica da SSP/SC não estão disponíveis nesta versão pública do painel: as condições de reutilização da fonte "
+            "ainda não foram avaliadas formalmente e os relatórios completos não são divulgados. Abaixo, uma figura-resumo com os totais anuais por categoria.")
     if dados_ssp.FIGURA_ESTATICA.is_file():
         st.image(str(dados_ssp.FIGURA_ESTATICA), caption="Fatos comunicados por categoria, 2023 × 2024 (SSP/SC). Unidade em validação; não integra os indicadores Sinesp.")
 else:
@@ -51,9 +50,9 @@ else:
     if categoria is None:
         ui.cartoes_html([
             {"titulo": "Período", "valor": "2023–2024", "detalhe": "SSP/SC · Joinville", "base": "Janeiro/2023 a dezembro/2024 (24 meses)."},
-            {"titulo": "Observações", "valor": fmt_int(len(vd)), "detalhe": f"{len(categorias)} categorias × 24 meses", "base": "Nenhuma chave repetida; nenhum valor ausente."},
-            {"titulo": "Zeros publicados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": "meses com 0 fatos comunicados", "base": "Zero publicado é observação, não ausência."},
-            {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Sem definição oficial nos PDFs."},
+            {"titulo": "Registros", "valor": fmt_int(len(vd)), "detalhe": f"{len(categorias)} categorias × 24 meses", "base": "Sem registros repetidos e sem valores ausentes."},
+            {"titulo": "Zeros publicados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": "meses com 0 fatos comunicados", "base": "Zero informado é um número publicado, não ausência."},
+            {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Sem definição oficial nos documentos da fonte."},
         ])
     else:
         a23, a24 = int(totais.loc[categoria, 2023]), int(totais.loc[categoria, 2024])
@@ -62,7 +61,7 @@ else:
             {"titulo": f"{categoria} — 2024", "valor": fmt_int(a24), "detalhe": "fatos comunicados · 12 meses", "variacao": f"{fmt_dif(a24 - a23)} vs 2023",
              "diferenca": a24 - a23, "base": "Comparado com 2023 (ano completo)."},
             {"titulo": "Meses com zero", "valor": fmt_int(int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())), "detalhe": "de 24 meses",
-             "base": "Zero publicado é observação."},
+             "base": "Zero informado é um número publicado."},
         ])
 
     # ------------------------------------------------------------------------------------------ gráfico e tabela
@@ -84,11 +83,11 @@ else:
 with st.expander("Fonte, procedência e limitações da SSP/SC"):
     st.markdown(
         "- **Fonte:** SSP/SC — Segurança em Números, relatórios de violência doméstica (1º e 2º semestres de 2023 e ano de 2024), bloco do município de Joinville.\n"
-        "- **Extração:** as 216 observações (9 categorias × 24 meses, 27 zeros) foram lidas dos PDFs e **conferidas célula a célula** contra as tabelas oficiais "
-        "(159 verificações aprovadas); ver o notebook e a seção de fontes do README.\n"
-        "- **Unidade em validação:** “Fato Comunicado” não possui definição operacional confirmada; por isso não se interpreta como vítimas, pessoas únicas "
-        "ou ocorrências únicas, e não se soma entre categorias.\n"
+        "- **Conferência:** os 216 registros (9 categorias × 24 meses, com 27 zeros) foram extraídos dos relatórios em PDF e **conferidos um a um** com as tabelas "
+        "oficiais (159 verificações, todas aprovadas).\n"
+        "- **Unidade em validação:** “Fato Comunicado” não tem definição oficial confirmada; por isso não é interpretado como vítimas, pessoas ou "
+        "ocorrências únicas, e não se soma entre categorias.\n"
         "- **Separação metodológica:** estes números não são comparáveis automaticamente com as vítimas do Sinesp e não existe união das duas fontes.\n"
-        "- **Reutilização:** as condições de reutilização da SSP/SC não foram avaliadas formalmente; o acervo completo (PDFs e boletins de homicídio, com "
-        "versões divergentes) fica fora do repositório e do painel."
+        "- **Reutilização:** as condições de reutilização da SSP/SC não foram avaliadas formalmente; os relatórios completos (inclusive boletins de homicídio, "
+        "com versões divergentes entre si) não são publicados neste painel."
     )

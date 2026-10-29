@@ -23,13 +23,15 @@ import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
 from dashboard import calculos, graficos, ui  # noqa: E402
-from dashboard.formatacao import ABREV_MESES, NOMES_MESES, fmt_dec, fmt_dif, fmt_int, fmt_pct  # noqa: E402
+from dashboard.formatacao import ABREV_MESES, NOMES_MESES, fmt_competencia, fmt_dec, fmt_dif, fmt_int, fmt_pct  # noqa: E402
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 _ini, _fim = sinesp.assign(c=sinesp["ano"] * 100 + sinesp["mes"])["c"].agg(["min", "max"])
 ui.secao("Indicadores Sinesp — Joinville/SC", "indicadores",
          f"Fonte: MJSP / Sinesp VDE, Joinville/SC, {NOMES_MESES[int(_ini) % 100 - 1]}/{int(_ini) // 100} a {NOMES_MESES[int(_fim) % 100 - 1]}/{int(_fim) // 100}. "
-         "Contagens mensais publicadas (agregadas). Escolha o indicador e navegue pelas abas.")
+         "Contagens mensais publicadas pela fonte. Escolha o indicador, o período e os meses; os resultados aparecem nas abas abaixo.")
+st.caption("“Estadual”, “Polícia Federal” e “Polícia Rodoviária Federal” indicam quem registrou a informação. Todos os números são de Joinville/SC; "
+           "“Estadual” não é o total do estado de Santa Catarina.")
 
 # ------------------------------------------------------------------------------------------ filtros
 # Cada série (indicador × abrangência) vira uma opção "Indicador — Abrangência". Assim não existe um filtro de abrangência redundante,
@@ -62,14 +64,14 @@ with st.container(border=True):
         del st.session_state["periodo_anos"]  # a escolha não existe nesta série: o controle recomeça com o período inteiro (value abaixo)
     ano_ini, ano_fim = f2.select_slider("Período (anos)", options=anos_disponiveis, value=(anos_disponiveis[0], anos_disponiveis[-1]), key="periodo_anos")
     mes_ini, mes_fim = f3.select_slider("Meses", options=list(range(1, 13)), value=(1, 12), key="periodo_meses", format_func=lambda m: ABREV_MESES[m - 1],
-                                        help="Vale para o resumo, o mapa de calor, a evolução mensal, as estatísticas, o boxplot, a distribuição e os outliers. "
-                                             "Totais anuais, comparações de anos completos, média móvel, acumulado e sazonalidade usam sempre os 12 meses.")
+                                        help="Vale para os cards, o mapa de calor, a evolução mensal, as estatísticas e a análise de meses fora do padrão. "
+                                             "Totais anuais, comparações de anos completos, média móvel, acumulado e perfil por mês do ano usam sempre os 12 meses.")
     anos_sel = list(range(ano_ini, ano_fim + 1))
     b1, b2 = st.columns([1, 2.2], vertical_alignment="center")
     b1.button("Restaurar filtros", on_click=restaurar_filtros, width="stretch", type="primary",
               help="Retorna ao indicador, ao período e aos meses iniciais; mantém a preferência de visualização.")
     b2.toggle("Visualização compacta (celular)", key="modo_compacto",
-              help="Gráficos mais estreitos, com fontes maiores, menos marcas nos eixos e os textos explicativos abaixo da imagem. A aplicação não detecta o tamanho "
+              help="Gráficos mais estreitos, com letras maiores, menos marcas nos eixos e os textos explicativos abaixo da imagem. O painel não detecta o tamanho "
                    "da tela: ative em telas pequenas. Os números e as tabelas são os mesmos nos dois modos.")
 graficos.definir_modo_compacto(ui.modo_compacto())  # vale para todas as figuras criadas nesta execução
 filtro_meses = (mes_ini, mes_fim) != (1, 12)
@@ -80,7 +82,7 @@ _MESES_TEXTO = "janeiro–dezembro (12 meses)" if not filtro_meses else f"{NOMES
 def aviso_ano_completo() -> None:
     """Identifica as análises que usam os 12 meses mesmo com o filtro de meses ativo (nunca somam alguns meses como total anual)."""
     if filtro_meses:
-        st.caption("Análise de ano completo (12 meses): não usa o filtro de meses. Totais anuais são sempre a soma dos 12 meses.")
+        st.caption("Análise de ano completo (12 meses): não usa o filtro de meses. Os totais anuais são sempre a soma dos 12 meses.")
 
 
 unidade = ficha["unidade"]
@@ -88,11 +90,11 @@ unidade_curta = unidade.split(" (")[0]
 # Recorte ativo: o que está sendo analisado (indicador com abrangência, período, unidade e cobertura da série), num único bloco de texto.
 st.markdown(f"**Recorte ativo:** indicador **{serie_escolhida}** · anos **{ano_ini}–{ano_fim}** · meses **{_MESES_TEXTO}**"
             f" · visualização **{'compacta' if ui.modo_compacto() else 'completa'}**  \n"
-            f"**Unidade:** {unidade} · **Natureza:** {ficha['natureza']} · **Cobertura da série:** {ficha['inicio']} a {ficha['fim']}")
+            f"**Unidade:** {unidade} · **Tipo de indicador:** {ficha['natureza']} · **Período da série:** {fmt_competencia(ficha['inicio'])} a {fmt_competencia(ficha['fim'])}")
 if abrangencia == "Polícia Federal":
-    st.warning(f"Mandados da Polícia Federal só aparecem a partir de {NOMES_MESES[int(ficha['inicio'][5:]) - 1]}/{ficha['inicio'][:4]}; os anos anteriores não têm cobertura (ausência de série, e não zero).")
+    st.warning(f"Os mandados da Polícia Federal só aparecem a partir de {fmt_competencia(ficha['inicio'])}; antes disso não há série (e isso não significa zero).")
 if abrangencia == "Polícia Rodoviária Federal":
-    st.info("A série da PRF pode terminar em competência diferente das demais; ela é apresentada até a sua última competência, sem preenchimento.")
+    st.info("A série da PRF termina em um mês diferente das demais; ela é mostrada só até o último mês publicado, sem preencher os meses que faltam.")
 ano_final_serie, mes_final_serie = calculos.ultima_competencia_da_serie(serie)
 serie_parcial = mes_final_serie < 12
 nome_periodo = f"janeiro–{NOMES_MESES[mes_final_serie - 1]}" if serie_parcial else "ano completo (12 meses)"
@@ -108,10 +110,10 @@ serie_sel = serie.loc[serie["ano"].isin(anos_sel)]
 serie_mes = serie_sel.loc[serie_sel["mes"].isin(meses_sel)]  # período (anos) e meses escolhidos
 sinesp_mes = sinesp.loc[sinesp["mes"].isin(meses_sel)]
 if filtro_meses:
-    st.caption(f"Filtro de meses ativo: {ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]}. Valem para os resultados mensais; anos completos e acumulados continuam com os 12 meses.")
+    st.caption(f"Filtro de meses ativo: {ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]}. Vale para os resultados mensais; anos completos e acumulados continuam usando os 12 meses.")
 
 # ------------------------------------------------------------------------------------- cards do indicador
-st.subheader("Cards do indicador selecionado")
+st.subheader("Resumo do indicador escolhido")
 cards = []   # cada card é um dicionário: titulo, valor, detalhe, variacao, diferenca, ajuda (ver ui.cartoes_html)
 detalhe = f"{evento} · {abrangencia}"
 soma_meses = calculos.soma_no_periodo(serie, mes_ini, mes_fim)
@@ -123,7 +125,7 @@ if filtro_meses:  # com filtro de meses, o card principal é a soma desses meses
         dif_m = int(ultimo_m["soma"]) - int(anterior_m.iloc[0]["soma"]) if len(anterior_m) else None
         cards.append({"titulo": f"{ABREV_MESES[mes_ini - 1]}–{ABREV_MESES[mes_fim - 1]} de {int(ultimo_m['ano'])} ({unidade_curta})", "detalhe": detalhe,
                       "valor": fmt_int(ultimo_m["soma"]), "variacao": f"{fmt_dif(dif_m)} vs {int(ultimo_m['ano']) - 1}" if dif_m is not None else "", "diferenca": dif_m,
-                      "ajuda": "Soma dos meses selecionados; só entra o ano com todos esses meses publicados. A diferença compara com o mesmo intervalo do ano anterior."})
+                      "ajuda": "Soma dos meses escolhidos; só entra o ano que tem todos esses meses publicados. A diferença compara com os mesmos meses do ano anterior."})
     else:
         cards.append({"titulo": "Soma dos meses selecionados", "detalhe": detalhe, "valor": "—", "ajuda": "Nenhum ano do período tem todos os meses selecionados publicados."})
 elif len(completos):
@@ -135,7 +137,7 @@ elif len(completos):
             dif_anual = int(ultimo["soma"]) - int(anterior["soma"])
             variacao = f"{fmt_dif(dif_anual)} vs {int(anterior['ano'])}"
     cards.append({"titulo": f"Último ano completo: {int(ultimo['ano'])} ({unidade_curta})", "detalhe": detalhe, "valor": fmt_int(ultimo["soma"]),
-                  "variacao": variacao, "diferenca": dif_anual, "ajuda": "Soma dos 12 meses publicados. A diferença compara apenas com o ano completo imediatamente anterior."})
+                  "variacao": variacao, "diferenca": dif_anual, "ajuda": "Soma dos 12 meses publicados. A diferença compara apenas com o ano completo anterior."})
 else:
     cards.append({"titulo": "Último ano completo", "detalhe": detalhe, "valor": "—", "ajuda": "Nenhum ano completo no período selecionado."})
 if filtro_meses:
@@ -146,13 +148,13 @@ elif len(periodo_sel) and serie_parcial:
     dif_p = int(ult_p["soma"]) - int(ant.iloc[0]["soma"]) if len(ant) else None
     cards.append({"titulo": f"{nome_periodo.capitalize()} de {int(ult_p['ano'])} ({unidade_curta})", "detalhe": detalhe, "valor": fmt_int(ult_p["soma"]),
                   "variacao": f"{fmt_dif(dif_p)} vs {nome_periodo} de {int(ult_p['ano']) - 1}" if dif_p is not None else "", "diferenca": dif_p,
-                  "ajuda": f"Períodos equivalentes: os dois anos têm os mesmos {mes_final_serie} meses."})
+                  "ajuda": f"Períodos equivalentes: os dois anos são comparados nos mesmos {mes_final_serie} meses."})
 else:
-    cards.append({"titulo": nome_periodo.capitalize(), "detalhe": detalhe, "valor": "—", "ajuda": "A série tem o último ano completo: não há período parcial a comparar."})
+    cards.append({"titulo": nome_periodo.capitalize(), "detalhe": detalhe, "valor": "—", "ajuda": "O último ano da série está completo: não há período parcial para comparar."})
 resumo = calculos.resumo_serie_sinesp(serie_mes)
 cards.append({"titulo": "Meses com valor publicado", "detalhe": detalhe, "valor": f"{resumo['meses_com_valor']} de {resumo['meses_observados']}",
-              "base": f"Zeros publicados: {resumo['meses_valor_zero']}. Meses sem valor: {resumo['meses_sem_valor']} (nunca preenchidos).",
-              "ajuda": "Zero publicado é observação; mês sem valor nunca é preenchido."})
+              "base": f"Zeros informados: {resumo['meses_valor_zero']}. Meses sem informação: {resumo['meses_sem_valor']} (nunca preenchidos).",
+              "ajuda": "Zero informado é um número publicado; mês sem informação nunca é preenchido."})
 ui.cartoes_html(cards)
 
 # Abas com execução preguiçosa (Streamlit 1.66): só a aba selecionada é calculada e desenhada (cada figura leva ~0,3 s para virar PNG).
@@ -175,8 +177,8 @@ def tabela_quartis(quadro: pd.DataFrame) -> pd.DataFrame:
         "Ano": quadro["ano"], "Cobertura": quadro["cobertura"], "Meses": quadro["n"], "Mín.": quadro["minimo"].map(_num), "Q1": quadro["q1"].map(_num),
         "Mediana": quadro["mediana"].map(_num), "Q3": quadro["q3"].map(_num), "Máx.": quadro["maximo"].map(_num), "IQR": quadro["iqr"].map(_num),
         "Limite inferior": quadro["limite_inferior"].map(_num), "Limite superior": quadro["limite_superior"].map(_num),
-        "Bigode inferior": quadro["bigode_inferior"].map(_num), "Bigode superior": quadro["bigode_superior"].map(_num),
-        "Pontos fora": quadro.apply(lambda r: "IQR = 0 (não interpretado)" if r["iqr_zero"] else (", ".join(_num(v) for v in r["valores_fora"]) or "—"), axis=1)})
+        "Menor valor dentro dos limites": quadro["bigode_inferior"].map(_num), "Maior valor dentro dos limites": quadro["bigode_superior"].map(_num),
+        "Meses fora": quadro.apply(lambda r: "IQR = 0 (não interpretado)" if r["iqr_zero"] else (", ".join(_num(v) for v in r["valores_fora"]) or "—"), axis=1)})
 
 
 
@@ -204,7 +206,7 @@ with abas[0]:
         if not anos_mensal:
             st.info("Selecione ao menos um ano para ver a evolução mensal.")
         if mensal is not None:
-            ui.mostrar_figura(mensal, "Evolução mensal: uma barra por ano, com o mesmo tom de azul em todas as figuras. Valores publicados, sem preenchimento.",
+            ui.mostrar_figura(mensal, "Evolução mensal: uma barra por ano, sempre com o mesmo tom de azul. Valores publicados, sem preenchimento.",
                               tabela_ano_mes(calculos.quadro_ano_mes(serie_mes.loc[serie_mes["ano"].isin(anos_mensal)])))
         st.divider()
         variacoes = calculos.variacoes_anuais(serie.loc[serie["ano"].isin(anos_sel)])
@@ -218,7 +220,7 @@ with abas[0]:
                 f"Total ({unidade_curta})": variacoes["valor"].map(fmt_int), "Diferença absoluta": variacoes["diferenca_absoluta"].map(fmt_dif),
                 "Variação %": variacoes["variacao_percentual"].map(fmt_pct)})
             st.dataframe(tabela, hide_index=True)
-            st.caption("Variação percentual só é calculada com base positiva (n/a = base zero). Em contagens pequenas, observe a diferença absoluta. Não indica causa.")
+            st.caption("A variação percentual só é calculada quando o ponto de partida é maior que zero (n/a = não se aplica). Em contagens pequenas, observe a diferença em números absolutos. Não indica causa.")
 
 # ------------------------------------------------------------------------------------------------ 2. comparações
 with abas[1]:
@@ -252,13 +254,13 @@ with abas[1]:
             if figura is None:
                 st.info(f"Não há período {nome_periodo} completo no intervalo selecionado para esta série.")
             else:
-                ui.mostrar_figura(figura, f"Períodos de igual duração ({mes_final_serie} meses). Cores por ano consistentes.", tabela)
+                ui.mostrar_figura(figura, f"Períodos de igual duração ({mes_final_serie} meses). Cada ano tem sempre o mesmo tom de azul.", tabela)
             r = calculos.comparacao_ultimo_periodo_sinesp(serie)
             if r is not None:
                 st.markdown(f"**{r['periodo'].capitalize()}, {r['ano_atual']} × {r['ano_anterior']}:** {fmt_int(r['valor_atual'])} × {fmt_int(r['valor_anterior'])} · "
                             f"diferença {fmt_dif(r['diferenca_absoluta'])} · variação {fmt_pct(r['variacao_percentual'])}"
                             + (" (percentual não aplicável: base zero)" if pd.isna(r["variacao_percentual"]) else ""))
-                st.caption("Variação descritiva entre períodos equivalentes; em contagens pequenas, observe a magnitude absoluta. Não indica causa.")
+                st.caption("Variação entre períodos equivalentes; em contagens pequenas, observe a diferença em números absolutos. Não indica causa.")
         else:
             st.caption("O último ano desta série está completo; não há período parcial a comparar.")
         st.divider()
@@ -276,19 +278,19 @@ with abas[1]:
                 tabela = ranking.rename(columns={"evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "soma": f"Total de {int(ano_rank)}"})
                 tabela[f"Total de {int(ano_rank)}"] = tabela[f"Total de {int(ano_rank)}"].map(fmt_int)
                 figura = graficos.figura_ranking_sinesp(ranking, int(ano_rank), destaque=(evento, abrangencia))
-                ui.mostrar_figura(figura, "Ordenação das séries dentro de uma única unidade; a barra mais escura é a série selecionada. Não há total entre indicadores nem entre abrangências.", tabela)
-            st.caption("Séries com cobertura diferente (p.ex. PF a partir de 2025) só entram nos anos em que estão completas.")
+                ui.mostrar_figura(figura, "Ordem dos indicadores dentro de uma única unidade; a barra mais escura é o indicador escolhido. Não existe total entre indicadores nem entre abrangências.", tabela)
+            st.caption("Séries com cobertura diferente (por exemplo, a Polícia Federal a partir de 2025) só entram nos anos em que estão completas.")
 
 # ------------------------------------------------------------------------------ 3. padrões e tendência (secundária)
 with abas[2]:
     if abas[2].open:
-        st.caption("Leituras complementares da série: cobertura mês a mês, tendência de 12 meses, acumulado no ano e perfil mensal. São análises exploratórias.")
+        st.caption("Leituras complementares: mês a mês, tendência de 12 meses, acumulado no ano e perfil por mês do ano. São análises exploratórias, para ajudar a explorar os números.")
         st.markdown("**Mapa de calor (ano × mês)**")
         figura = graficos.figura_mapa_calor_sinesp(sinesp_mes, evento, abrangencia, anos_sel)
         if figura is None:
             st.info("Nenhum mês publicado no período selecionado.")
         else:
-            ui.mostrar_figura(figura, "Mapa de calor ano × mês. Células cinza: mês sem valor publicado (não preenchido).",
+            ui.mostrar_figura(figura, "Mapa de calor (ano × mês): quanto mais escuro, maior o valor. Células cinza: mês sem informação publicada (não preenchido).",
                               tabela_ano_mes(calculos.quadro_ano_mes(serie_mes)))
         st.divider()
         st.markdown("**Tendência (média móvel de 12 meses)**")
@@ -299,7 +301,7 @@ with abas[2]:
         else:
             movel = calculos.media_movel(serie_sel)
             tabela = pd.DataFrame({"Ano": movel["ano"], "Mês": movel["mes"], "Valor mensal": movel["valor"].map(fmt_int), "Média móvel de 12 meses": movel["media_movel"].map(fmt_dec)})
-            ui.mostrar_figura(figura, "Tendência: a média móvel só existe quando os 12 meses da janela têm valor.", tabela)
+            ui.mostrar_figura(figura, "Tendência: a média móvel de 12 meses suaviza as oscilações e só existe quando os 12 meses têm valor.", tabela)
         st.divider()
         st.markdown("**Acumulado no ano**")
         aviso_ano_completo()
@@ -307,29 +309,39 @@ with abas[2]:
         if figura is not None:
             acumulado = calculos.acumulado_no_ano(serie_sel)
             quadro_acumulado = acumulado.pivot(index="ano", columns="mes", values="acumulado").reindex(columns=range(1, 13)).astype("Int64")
-            ui.mostrar_figura(figura, "Acumulado no ano: compare os anos no mesmo mês; anos parciais terminam no último mês publicado.", tabela_ano_mes(quadro_acumulado))
+            ui.mostrar_figura(figura, "Acumulado no ano: compare os anos no mesmo mês; os anos parciais terminam no último mês publicado.", tabela_ano_mes(quadro_acumulado))
         st.divider()
         aviso_ano_completo()
-        st.markdown("**Sazonalidade (exploratória)**")
+        st.markdown("**Perfil por mês do ano (sazonalidade, exploratório)**")
         perfil = calculos.perfil_sazonal(serie_sel)
         usados = perfil.attrs.get("anos_usados", [])
         if len(usados) < 2:
-            st.info("Sazonalidade não avaliada: são necessários pelo menos 2 anos completos no período selecionado (o ano parcial não entra).")
+            st.info("Perfil por mês não avaliado: são necessários pelo menos 2 anos completos no período escolhido (o ano parcial não entra).")
         else:
             figura = graficos.figura_sazonalidade_sinesp(sinesp, evento, abrangencia, anos_sel)
             tabela = pd.DataFrame({"Mês": [NOMES_MESES[int(m) - 1] for m in perfil["mes"]], "Anos": perfil["n_anos"], "Média": perfil["media"].map(fmt_dec),
                                    "Mediana": perfil["mediana"].map(fmt_dec), "Mín.": perfil["minimo"].map(fmt_int), "Máx.": perfil["maximo"].map(fmt_int),
                                    "Índice (média do mês ÷ média geral)": perfil["indice"].map(fmt_dec)})
-            ui.mostrar_figura(figura, f"Mediana de cada mês usando só os anos completos {usados[0]}–{usados[-1]} ({len(usados)} anos). 2026 é parcial e não entra; nenhum mês é inventado.", tabela)
-            st.caption("Limitação: com poucos anos completos, o perfil descreve esses anos e não demonstra sazonalidade; um mês pode destoar por um único ano.")
+            ui.mostrar_figura(figura, f"Mediana de cada mês usando só os anos completos {usados[0]}–{usados[-1]} ({len(usados)} anos). O ano parcial não entra; nenhum mês é inventado.", tabela)
+            st.caption("Cuidado: com poucos anos completos, o perfil descreve apenas esses anos e não prova que existe sazonalidade; um mês pode destoar por causa de um único ano.")
 
 # ------------------------------------------------------------------------------ 4. estatística e outliers (secundária)
 with abas[3]:
     if abas[3].open:
-        st.caption("Estatísticas dos valores mensais (média, mediana, dispersão), distribuição e pontos fora dos limites de Tukey. Descrevem os números publicados; não explicam causas.")
+        st.caption("Estatísticas dos valores mensais (média, mediana, variação), distribuição dos valores e meses fora do padrão. Descrevem os números publicados; não explicam causas.")
+        with st.expander("O que significam estes termos?"):
+            st.markdown(
+                "- **Média:** soma dos valores dividida pelo número de meses. **Mediana:** valor do meio quando os meses são colocados em ordem; é menos afetada por meses muito altos.\n"
+                "- **Desvio-padrão:** mede o quanto os meses variam em torno da média (quanto maior, mais os valores oscilam).\n"
+                "- **Quartis (Q1 e Q3):** Q1 deixa 25% dos meses abaixo dele e Q3 deixa 75% abaixo. **IQR:** a distância entre Q1 e Q3.\n"
+                "- **Limites de referência:** Q1 − 1,5 × IQR e Q3 + 1,5 × IQR (método de Tukey). Meses fora deles são “incomuns” em comparação com os demais, "
+                "mas isso **não é prova de erro nem de anomalia**.\n"
+                "- **Gráfico de caixa (boxplot):** a caixa vai de Q1 a Q3, o traço é a mediana e os pontos são meses fora dos limites de referência.\n"
+                "- **Média móvel de 12 meses:** média do mês e dos 11 anteriores; suaviza as oscilações."
+            )
         st.markdown("**Estatística descritiva**")
         est = calculos.estatisticas_por_ano(serie_mes) if len(serie_mes) else calculos.estatisticas_por_ano(serie_sel)
-        st.caption(f"Estatísticas descritivas dos valores MENSAIS de cada ano ({unidade_curta}). Desvio-padrão descritivo (ddof=0); zero publicado é observação, ausência nunca é preenchida.")
+        st.caption(f"Estatísticas dos valores MENSAIS de cada ano ({unidade_curta}). Zero informado é um número publicado; mês sem informação nunca é preenchido.")
         exib = pd.DataFrame({
             "Ano": est["ano"], "Cobertura": est["cobertura"], "Meses": est["meses_observados"], "Soma do ano": est["soma"].map(fmt_int),
             "Média mensal": est["media_mensal"].map(fmt_dec), "Mediana": est["mediana_mensal"].map(fmt_dec), "Mín.": est["minimo"].map(fmt_int),
@@ -338,77 +350,79 @@ with abas[3]:
         st.markdown("**Todo o período selecionado**")
         geral = pd.DataFrame([{
             "Meses observados": resumo["meses_observados"], "Média mensal": fmt_dec(resumo["media_mensal"]), "Mediana": fmt_dec(resumo["mediana_mensal"]),
-            "Mínimo": fmt_int(resumo["minimo"]), "Máximo": fmt_int(resumo["maximo"]), "Desvio-padrão (ddof=0)": fmt_dec(resumo["desvio_padrao_ddof0"]),
+            "Mínimo": fmt_int(resumo["minimo"]), "Máximo": fmt_int(resumo["maximo"]), "Desvio-padrão": fmt_dec(resumo["desvio_padrao_ddof0"]),
             "Meses com zero": resumo["meses_valor_zero"], "Meses sem valor": resumo["meses_sem_valor"]}])
         st.dataframe(geral, hide_index=True)
-        st.caption("A soma do ano só aparece quando todos os meses presentes têm valor. Em séries com muitos zeros, a média e a mediana descrevem contagens pequenas.")
+        st.caption("A soma do ano só aparece quando todos os meses presentes têm informação. Em séries com muitos zeros, a média e a mediana descrevem contagens pequenas.")
         st.divider()
-        st.markdown("**Boxplot e distribuição**")
+        st.markdown("**Gráfico de caixa (boxplot) e distribuição dos valores**")
         figura = graficos.figura_boxplot_anual_sinesp(sinesp_mes, evento, abrangencia, anos_sel)
         if figura is not None:
-            ui.mostrar_figura(figura, "Boxplot: resumo de cinco números dos valores mensais de cada ano. Anos com IQR = 0 têm caixa degenerada.", tabela_quartis(calculos.quartis_por_ano(serie_mes)))
+            ui.mostrar_figura(figura, "Gráfico de caixa: resume os valores mensais de cada ano (menor, Q1, mediana, Q3 e maior). Em anos com IQR = 0 a caixa vira um traço, porque quase todos os meses têm o mesmo valor.", tabela_quartis(calculos.quartis_por_ano(serie_mes)))
         figura = graficos.figura_distribuicao_sinesp(sinesp_mes, evento, abrangencia, anos_sel)
         if figura is not None:
             frequencias = calculos.distribuicao_frequencias(serie_mes)
             tabela = pd.DataFrame({"Faixa do valor mensal": frequencias["rotulo"], "Meses": frequencias["n_meses"], "% dos meses": frequencias["percentual"].map(fmt_dec)})
-            ui.mostrar_figura(figura, f"Distribuição em faixas de contagem (largura {frequencias.attrs.get('largura', 1)}; regra de Sturges). O zero publicado é faixa própria e o maior valor está na última faixa; "
+            ui.mostrar_figura(figura, f"Quantos meses caem em cada faixa de valores (cada faixa abrange {frequencias.attrs.get('largura', 1)} valor(es)). O zero informado é uma faixa própria; "
                                       f"a soma das faixas é {int(frequencias['n_meses'].sum())} meses.", tabela)
         st.divider()
-        st.markdown("**Pontos fora dos limites (IQR)**")
-        st.caption("Pontos fora dos limites de Tukey (Q1 − 1,5·IQR; Q3 + 1,5·IQR) nos valores mensais da série e do período selecionados. "
-                   "São atípicos estatísticos, não anomalias: o método só é apresentado como informativo quando a série permite.")
+        st.markdown("**Meses fora dos limites de referência (IQR)**")
+        st.caption("Meses cujo valor fica fora dos limites de referência (Q1 − 1,5 × IQR e Q3 + 1,5 × IQR), na série e no período escolhidos. "
+                   "São meses incomuns em comparação com os demais, não anomalias comprovadas; o método só é apresentado como útil quando a série permite.")
         diagnostico = calculos.diagnostico_outliers_iqr(serie_mes)
         if diagnostico["interpretavel"]:
-            st.info(f"Método informativo. {diagnostico['mensagem']}")
+            st.info("Os limites de referência são úteis para esta série. Meses fora deles são incomuns em relação aos demais meses observados — "
+                    "não são prova de erro, de anomalia ou de mudança real. Em séries com tendência, os limites podem representar pouco.")
         else:
-            st.warning(f"Método IQR não informativo para esta série ({diagnostico['rotulo']}). {diagnostico['mensagem']}")
+            st.warning(f"Os limites de referência (IQR) não ajudam a interpretar esta série ({diagnostico['rotulo']}). Nenhum mês é apontado como incomum, "
+                       "e valores acima do limite não indicam anomalia.")
         figura = graficos.figura_outliers_iqr_sinesp(sinesp_mes, evento, abrangencia, anos_sel)
         if figura is not None:
             limites = pd.DataFrame([{"Meses com valor": diagnostico["n"], "Q1": _num(diagnostico["q1"]), "Mediana": _num(diagnostico["mediana"]), "Q3": _num(diagnostico["q3"]),
                                      "IQR": _num(diagnostico["iqr"]), "Limite inferior": _num(diagnostico["limite_inferior"]), "Limite superior": _num(diagnostico["limite_superior"]),
-                                     "Zeros publicados": f"{diagnostico['zeros']} ({fmt_dec((diagnostico['proporcao_zeros'] or 0) * 100, 0)}%)",
-                                     "Pontos fora (interpretáveis)": diagnostico["n_fora"] if diagnostico["interpretavel"] else "não interpretados"}])
-            ui.mostrar_figura(figura, "Série mensal com os limites de Tukey. Os pontos só são destacados quando o método é informativo.", limites)
+                                     "Zeros informados": f"{diagnostico['zeros']} ({fmt_dec((diagnostico['proporcao_zeros'] or 0) * 100, 0)}%)",
+                                     "Meses fora dos limites": diagnostico["n_fora"] if diagnostico["interpretavel"] else "não interpretados"}])
+            ui.mostrar_figura(figura, "Série mensal com os limites de referência. Os meses fora deles só são destacados quando o método é útil para a série.", limites)
             if diagnostico["interpretavel"] and diagnostico["n_fora"]:
                 fora = diagnostico["fora"]
                 st.dataframe(pd.DataFrame({"Ano": fora["ano"], "Mês": [NOMES_MESES[int(m) - 1] for m in fora["mes"]], "Valor": fora["valor"].map(fmt_int), "Posição": fora["direcao"]}), hide_index=True)
-        with st.expander("Diagnóstico do método IQR em todas as séries (cada uma na sua unidade)"):
+        with st.expander("Limites de referência (IQR) em todas as séries, cada uma na sua unidade"):
             todas = calculos.diagnostico_outliers_todas_as_series(sinesp)
             st.dataframe(pd.DataFrame({
                 "Indicador": todas["evento"], "Abrangência": todas["abrangencia"], "Unidade": todas["unidade"], "Meses": todas["meses"], "Q1": todas["q1"].map(_num),
                 "Q3": todas["q3"].map(_num), "IQR": todas["iqr"].map(_num), "Zeros": todas["zeros"], "Método": todas["classificacao"],
-                "Pontos fora": todas["pontos_fora"].map(fmt_int)}), hide_index=True)
-            st.caption("Período completo de cada série. O diagnóstico não compara séries entre si: mandados (contagem publicada) e vítimas têm unidades distintas.")
+                "Meses fora": todas["pontos_fora"].map(fmt_int)}), hide_index=True)
+            st.caption("Período completo de cada série. As séries não são comparadas entre si: mandados e vítimas têm unidades diferentes.")
 
 # ------------------------------------------------------------------------------------------------ 5. indicadores
 with abas[4]:
-    st.caption("Catálogo das séries (indicador × abrangência) com unidade, medida de origem, cobertura e limitações.")
+    st.caption("Lista dos indicadores disponíveis, com abrangência, unidade, período coberto e cuidados de leitura.")
     cat = catalogo.rename(columns={
-        "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "natureza": "Natureza", "medida_origem": "Medida de origem",
-        "inicio": "Início", "fim": "Fim", "meses_observados": "Meses", "meses_com_valor": "Com valor", "meses_valor_zero": "Zeros publicados",
-        "meses_sem_valor": "Sem valor", "limitacoes": "Limitações"})
-    st.dataframe(cat, hide_index=True)
-    st.markdown("**Como interpretar (observado × hipótese)**")
+        "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "natureza": "Tipo", "meses_observados": "Meses", "meses_com_valor": "Com valor",
+        "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor", "limitacoes": "Cuidados de leitura"})
+    cat["Início"] = catalogo["inicio"].map(lambda c: fmt_competencia(c, curto=True))
+    cat["Fim"] = catalogo["fim"].map(lambda c: fmt_competencia(c, curto=True))
+    st.dataframe(cat[["Indicador", "Abrangência", "Unidade", "Tipo", "Início", "Fim", "Meses", "Com valor", "Zeros informados", "Sem valor", "Cuidados de leitura"]], hide_index=True)
+    st.markdown("**Como interpretar estes números**")
     st.markdown(
-        "- **Observado:** valores publicados pelo Sinesp para Joinville (contagens mensais agregadas) e as diferenças calculadas entre eles.\n"
-        "- **Não é afirmado:** causa das variações, efeito de políticas ou de ações policiais, subnotificação ou o total de crimes ocorridos.\n"
-        "- **Hipóteses metodológicas:** nenhuma é assumida; variações pequenas em contagens baixas podem refletir poucas unidades.\n"
-        "- **Vítimas × mandados:** conceitos distintos, nunca somados. Feminicídio e tentativa são séries separadas e não se somam a homicídio.\n"
-        "- **Zero publicado** é uma observação; ausência de série (p.ex. PF antes de 2025) não é zero.\n"
-        "- **Pontos fora dos limites (IQR)** são atípicos estatísticos, não anomalias; **sazonalidade** com poucos anos completos é apenas exploratória.\n"
-        "- Linhas da base original são observações mensais agregadas, não ocorrências individuais."
+        "- **O que os números mostram:** valores publicados pelo Sinesp para Joinville (contagens mensais) e as diferenças calculadas entre eles.\n"
+        "- **O que eles não afirmam:** a causa das variações, o efeito de políticas ou de ações policiais, os casos não registrados ou o total de crimes ocorridos.\n"
+        "- **Contagens pequenas:** uma diferença de poucas unidades pode ser só oscilação natural; observe sempre os números absolutos.\n"
+        "- **Vítimas e mandados** são medidas diferentes e nunca são somados. Feminicídio e tentativa são séries separadas e não se somam a homicídio.\n"
+        "- **Zero informado** é um número publicado; a falta de uma série (por exemplo, a Polícia Federal antes de 2025) não significa zero.\n"
+        "- **Meses fora dos limites de referência** são apenas incomuns em comparação com os demais; o **perfil por mês do ano**, com poucos anos completos, é só exploratório.\n"
+        "- Cada linha dos dados é um total mensal, não uma ocorrência individual."
     )
 
 # ---------------------------------------------------------------------------------- figuras Etapa 10
-with st.expander("Material histórico (Etapa 10) — independente dos filtros", expanded=False):
-    st.warning("**Material histórico, independente dos filtros desta página** (indicador, anos e meses não alteram estas quatro figuras).")
-    st.write("As quatro figuras da Etapa 10 do roteiro, recriadas a partir dos dados curados (vítimas, abrangência Estadual; anos completos 2020–2025 e janeiro–agosto de 2020 a 2026). "
-             "Elas são fixas e independem dos filtros acima.")
-    mostrar_etapa10 = st.checkbox("Mostrar as quatro figuras", key="mostrar_etapa10", help="Gerar as figuras leva alguns segundos; por isso elas só são desenhadas quando você pedir.")
+with st.expander("Quatro gráficos de referência (fixos, não mudam com os filtros)", expanded=False):
+    st.warning("**Estes quatro gráficos são fixos:** o indicador, os anos e os meses escolhidos acima não os alteram.")
+    st.write("Mostram vítimas de homicídio doloso, tentativa de homicídio, feminicídio e tentativa de feminicídio (abrangência Estadual, Joinville/SC), em anos completos de 2020 a 2025 e no período de janeiro a agosto de 2020 a 2026.")
+    mostrar_etapa10 = st.checkbox("Mostrar os quatro gráficos", key="mostrar_etapa10", help="Gerar os gráficos leva alguns segundos; por isso eles só são desenhados quando você pedir.")
     try:
         figuras = graficos.figuras_sinesp_etapa10(sinesp) if mostrar_etapa10 else {}
     except ValueError as erro:
-        st.error(f"Figuras indisponíveis: {erro}")
+        st.error(f"Gráficos indisponíveis: {erro}")
         figuras = {}
     nomes = list(figuras)
     if ui.modo_compacto():

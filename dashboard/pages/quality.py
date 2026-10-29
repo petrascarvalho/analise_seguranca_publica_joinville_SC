@@ -1,3 +1,9 @@
+"""Seções "Qualidade dos dados" e "Fontes, metodologia e limitações", escritas para o público em geral.
+
+Os detalhes técnicos (código de conferência dos arquivos, identificador da versão) ficam em um bloco recolhido no fim da primeira seção.
+O passo a passo para reproduzir o projeto fica no README.md, não aqui.
+"""
+
 import sys
 from pathlib import Path
 
@@ -8,163 +14,135 @@ if str(_RAIZ) not in sys.path:
 import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
-from dashboard import dados_publicos as dp  # noqa: E402
 from dashboard import ui  # noqa: E402
-from dashboard.formatacao import fmt_int  # noqa: E402
-
-ui.secao("Qualidade dos dados", "qualidade", "Sinesp/MJSP · Joinville/SC. Integridade, cobertura e limites dos dados publicados.")
+from dashboard.formatacao import fmt_competencia, fmt_int  # noqa: E402
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 manifesto = ui.carregar_manifesto()
 integridade = ui.verificar_integridade()
-cobertura = manifesto.get("cobertura", {})
+cobertura = manifesto.get("cobertura", {}).get("sinesp", {})
+primeira, ultima = cobertura.get("primeira_competencia", ""), cobertura.get("ultima_competencia", "")
+periodo = ui.periodo_sinesp_texto(manifesto)
+atualizacao = ui.data_da_atualizacao(manifesto)
+
+# ------------------------------------------------------------------------------------------ 1. qualidade dos dados
+ui.secao("Qualidade dos dados", "qualidade", "O que foi conferido, até quando vão os dados e o que ainda exige cuidado na leitura.")
 
 if integridade["integro"].all():
-    st.success(f"Integridade confirmada: os {len(integridade)} arquivos de dados coincidem com o manifesto (versão {manifesto.get('versao', '—')}).")
+    st.info(f"Conferência concluída: os {len(integridade)} arquivos de dados usados pelo painel coincidem com o registro da versão de {atualizacao}.", icon="✅")
 
-# Resumo da qualidade: os números que respondem "posso confiar nestes dados?" antes dos detalhes técnicos.
-cob_sinesp = cobertura.get("sinesp", {})
-versao = str(manifesto.get("versao", "—"))
+# Quatro cards com o essencial; cada card é um dicionário (ver ui.cartoes_html).
 ui.cartoes_html([
-    {"titulo": "Arquivos íntegros (SHA-256)", "valor": f"{int(integridade['integro'].sum())} de {len(integridade)}", "detalhe": "dados publicados × manifesto",
-     "base": "Cada arquivo tem o hash conferido ao abrir o painel."},
-    {"titulo": "Versão dos dados", "valor": f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 else versao, "detalhe": f"Identificador {versao}",
-     "base": "Atualização manual e controlada."},
-    {"titulo": "Última competência", "valor": cob_sinesp.get("ultima_competencia", "—"), "detalhe": f"Cobertura {cob_sinesp.get('primeira_competencia', '—')} a {cob_sinesp.get('ultima_competencia', '—')}",
-     "base": "A PRF termina antes das demais; mandados da PF só a partir de 2025."},
-    {"titulo": "Valores ausentes", "valor": fmt_int(int(sinesp["valor"].isna().sum())), "detalhe": f"Zeros publicados: {fmt_int(int(sinesp['valor'].eq(0).sum()))}",
-     "base": "Ausência nunca é convertida em zero."},
+    {"titulo": "Arquivos conferidos", "valor": f"{int(integridade['integro'].sum())} de {len(integridade)}", "detalhe": "dados do painel × registro da versão",
+     "base": "Cada arquivo é comparado com o registro da versão."},
+    {"titulo": "Última atualização", "valor": atualizacao, "detalhe": "Sinesp/MJSP · Joinville/SC", "base": "Atualização manual, depois de conferência."},
+    {"titulo": "Dados até", "valor": fmt_competencia(ultima, curto=True), "detalhe": f"A partir de {fmt_competencia(primeira, curto=True)}",
+     "base": "A série da PRF termina em agosto/2026; os mandados da PF começam em 2025."},
+    {"titulo": "Valores ausentes", "valor": fmt_int(int(sinesp["valor"].isna().sum())), "detalhe": f"Zeros informados: {fmt_int(int(sinesp['valor'].eq(0).sum()))}",
+     "base": "Ausência nunca é trocada por zero."},
 ])
-st.caption("Unidades: **vítimas** e **mandados cumpridos** (nunca somadas). Fonte: MJSP / Sinesp VDE. Os XLSX originais não são distribuídos.")
 
-aba_integridade = st.container()   # detalhes de integridade e versão (logo abaixo dos cards)
-ui.secao("Fontes, metodologia e limitações", "metodologia", "Origem dos dados, regras de tratamento e o que as análises não permitem afirmar.")
-abas = [aba_integridade] + list(st.tabs(["Fonte e cobertura", "Métodos e limitações", "Atualização e licenças"]))
+st.subheader("Sobre os dados apresentados")
+st.markdown(
+    f"- **Fonte dos dados:** Sinesp/MJSP (Sistema Nacional de Estatísticas de Segurança Pública, do Ministério da Justiça e Segurança Pública).\n"
+    f"- **Município analisado:** Joinville/SC. {ui.NOTA_ABRANGENCIA}\n"
+    f"- **Última atualização dos dados:** {atualizacao}.\n"
+    f"- **Período do Sinesp:** {periodo}. A série da Polícia Rodoviária Federal vai até agosto/2026.\n"
+    f"- **Ano de 2026 parcial:** só se compara com o mesmo período dos anos anteriores, nunca com anos completos.\n"
+    f"- **Zero informado e ausência são diferentes:** zero é um número publicado pela fonte; ausência é a falta de informação e nunca é preenchida.\n"
+    f"- **Conferências do projeto:** os dados passaram por verificações de consistência (formato das colunas, repetições, meses faltando, unidades e "
+    f"comparação com o registro da versão). É uma conferência interna do projeto: **não é uma aprovação ou certificação oficial do governo**."
+)
 
-# ------------------------------------------------------------------------------ integridade e versão
-with abas[0]:
-    st.subheader("Integridade e hashes (SHA-256)")
+with st.expander("Detalhes técnicos de conferência (opcional)"):
+    st.markdown(f"Identificador da versão dos dados: `{manifesto.get('versao', '—')}`. Cada arquivo tem um código de conferência (SHA-256); se o arquivo mudar, "
+                "o código muda e o painel avisa.")
     fichas = pd.DataFrame(manifesto["arquivos"])[["arquivo", "linhas", "colunas", "sha256"]]
     fichas = fichas.merge(integridade[["arquivo", "integro"]], on="arquivo", how="left")
-    fichas["Integridade"] = fichas["integro"].map({True: "✅ confere com o manifesto", False: "❌ divergente"})
+    fichas["Conferência"] = fichas["integro"].map({True: "✅ confere", False: "❌ diverge"})
     fichas["linhas"] = fichas["linhas"].map(fmt_int)
-    st.dataframe(fichas.drop(columns="integro").rename(columns={"arquivo": "Arquivo", "linhas": "Linhas", "colunas": "Colunas", "sha256": "SHA-256 (fins de linha normalizados)"}), hide_index=True)
-    if not integridade["integro"].all():
-        st.error("Um ou mais arquivos não coincidem com o manifesto. Os números exibidos podem não corresponder aos dados auditados.")
-    st.caption("Verificações feitas ao abrir esta página: esquema e tipos, sem competências repetidas, sem lacunas por série, uma unidade por série, catálogo consistente com os dados e hashes iguais aos do manifesto.")
+    st.dataframe(fichas.drop(columns="integro").rename(columns={"arquivo": "Arquivo", "linhas": "Linhas", "colunas": "Colunas", "sha256": "Código de conferência (SHA-256)"}),
+                 hide_index=True)
+if not integridade["integro"].all():
+    st.error("Um ou mais arquivos não coincidem com o registro da versão. Os números exibidos podem não corresponder aos dados conferidos.")
 
-    st.subheader("Versão, datas e validação")
-    datas = manifesto.get("datas", {})
-    validacao = manifesto.get("situacao_validacao", {})
-    aprovacao = manifesto.get("aprovacao") or {}
-    st.markdown(
-        f"- **Versão:** `{manifesto.get('versao', '—')}` (versão anterior: `{manifesto.get('versao_anterior') or '—'}`)\n"
-        f"- **Data de geração:** {datas.get('gerado_em_utc', '—')} (UTC) · **gerador:** `{manifesto.get('gerador', '—')}`\n"
-        f"- **Última consulta à fonte registrada:** {datas.get('ultima_consulta_as_fontes_utc') or 'nenhuma registrada nesta versão'}\n"
-        f"- **Situação da validação:** **{validacao.get('status', '—')}** — {validacao.get('descricao', '')}\n"
-        f"- **Aprovação:** {('aprovada em ' + aprovacao.get('aprovado_em_utc', '—') + ' (UTC) — ' + aprovacao.get('aprovado_por', '')) if aprovacao else 'versão gerada por procedimento automatizado e validada; sem aprovação registrada'}\n"
-        f"- **Última competência disponível:** **{cobertura.get('sinesp', {}).get('ultima_competencia', '—')}**"
-        f"{' (ano ' + str(cobertura['sinesp']['ano_parcial']) + ' parcial)' if cobertura.get('sinesp', {}).get('ano_parcial') else ''}"
-    )
-    st.caption(datas.get("nota", ""))
-    for item in validacao.get("verificacoes", []):
-        st.markdown(f"  - ✔ {item}")
-    informacoes = validacao.get("informacoes") or {}
-    if informacoes:
-        with st.expander("Resultado detalhado da validação desta versão"):
-            st.json(informacoes)
-    revisoes = manifesto.get("revisoes_historicas", {})
-    if revisoes:
-        with st.expander("Revisões históricas e comparação com a versão anterior"):
-            for chave, texto in revisoes.items():
-                st.markdown(f"- **{chave}:** {texto}")
+# ------------------------------------------------------------------------------------------ 2. fontes, metodologia e limitações
+ui.secao("Fontes, metodologia e limitações", "metodologia", "De onde vêm os números, como foram tratados e o que eles não permitem afirmar.")
+abas = st.tabs(["Origem dos dados", "Como os números são tratados", "Limitações"])
 
-
-# ------------------------------------------------------------------------------ fonte e cobertura
-with abas[1]:
-    st.subheader("Fonte oficial e método de obtenção")
+# ------------------------------------------------------------------ origem dos dados
+with abas[0]:
+    st.subheader("Sinesp/MJSP")
+    st.markdown("As informações foram obtidas em bases oficiais do Sinesp/MJSP. Foram selecionados os registros referentes ao município de Joinville/SC "
+                "e realizadas etapas de organização, tratamento e conferência. Os arquivos originais completos não são redistribuídos por este painel.")
     for fonte in manifesto.get("fontes", []):
-        st.markdown(f"**{fonte['nome']}** — {fonte['descricao']}  \n[{fonte['url']}]({fonte['url']})")
+        st.markdown(f"**Página oficial:** [{fonte['nome']}]({fonte['url']})")
         publicacao = fonte.get("publicacao") or {}
         if publicacao.get("pagina_atualizada_em"):
-            st.caption(f"Datas informadas pela página da fonte — publicada em {publicacao.get('pagina_publicada_em', '—')}; atualizada em {publicacao['pagina_atualizada_em']} "
-                       "(informação da página, não prova alteração de valores).")
-    st.markdown("**Método de obtenção:** " + manifesto.get("metodo_de_obtencao", "—"))
-    origem = manifesto.get("origem_dos_dados", {})
-    with st.expander("SHA-256 e tamanho dos XLSX oficiais usados nesta versão (os originais não são distribuídos)"):
-        xlsx = pd.DataFrame([{"Ano": a, "SHA-256": h, "Bytes": fmt_int(origem.get("sinesp_xlsx_bytes", {}).get(a))} for a, h in sorted(origem.get("sinesp_xlsx_sha256", {}).items())])
-        st.dataframe(xlsx, hide_index=True)
+            st.caption(f"Datas informadas pela própria página da fonte: publicada em {publicacao.get('pagina_publicada_em', '—')} e atualizada em "
+                       f"{publicacao['pagina_atualizada_em']}. São datas da página; não indicam, por si, mudança nos números.")
 
-    # ---------------------------------------------------------------------------- cobertura por indicador
-    st.subheader("Cobertura por indicador, zeros e ausências")
-    unidades = manifesto.get("unidades", {})
-    st.markdown("**Unidades:** " + " · ".join(f"*{u}* = {d}" for u, d in unidades.items()) + ". Vítimas e mandados nunca são somados.")
-    cat = catalogo.rename(columns={
-        "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "inicio": "Início", "fim": "Última competência", "meses_observados": "Meses",
-        "meses_com_valor": "Com valor", "meses_valor_zero": "Zeros publicados", "meses_sem_valor": "Sem valor"})
-    st.dataframe(cat[["Indicador", "Abrangência", "Unidade", "Início", "Última competência", "Meses", "Com valor", "Zeros publicados", "Sem valor"]], hide_index=True)
-    total_ausentes = int(sinesp["valor"].isna().sum())
+    st.subheader("Cobertura por indicador")
+    st.markdown("**Unidades:** *vítimas* (pessoas vítimas registradas) e *mandados cumpridos* (contagem publicada de mandados de prisão cumpridos). "
+                "As duas unidades nunca são somadas. " + ui.NOTA_ABRANGENCIA)
+    tabela = catalogo.rename(columns={
+        "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "meses_observados": "Meses", "meses_com_valor": "Com valor",
+        "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor"})
+    tabela["Início"] = tabela["inicio"].map(lambda c: fmt_competencia(c, curto=True))
+    tabela["Última competência"] = tabela["fim"].map(lambda c: fmt_competencia(c, curto=True))
+    st.dataframe(tabela[["Indicador", "Abrangência", "Unidade", "Início", "Última competência", "Meses", "Com valor", "Zeros informados", "Sem valor"]], hide_index=True)
     st.markdown(
-        f"- **Total:** {fmt_int(len(sinesp))} observações mensais em {len(catalogo)} séries; **valores ausentes:** {total_ausentes} (nunca convertidos em zero); "
-        f"**zeros publicados:** {fmt_int(int(sinesp['valor'].eq(0).sum()))}.\n"
-        "- Séries com última competência diferente (p.ex. a PRF) são exibidas até a sua última competência, sem preenchimento; a PF só tem linhas a partir da sua primeira competência."
+        f"- **Total:** {fmt_int(len(sinesp))} registros mensais em {len(catalogo)} séries; **valores ausentes:** {int(sinesp['valor'].isna().sum())} "
+        f"(nunca trocados por zero); **zeros informados:** {fmt_int(int(sinesp['valor'].eq(0).sum()))}.\n"
+        "- Séries que terminam em meses diferentes (como a PRF) aparecem só até o último mês publicado, sem preenchimento; a Polícia Federal só tem registros "
+        "a partir do início da sua série."
     )
 
+    st.subheader("SSP/SC — violência doméstica (fonte separada)")
+    st.markdown(
+        "- **Origem:** relatórios oficiais de violência doméstica da Secretaria de Estado da Segurança Pública de SC (“Segurança em Números”), com os "
+        "números do município de Joinville em 2023 e 2024. Os números foram lidos dos relatórios em PDF e conferidos nas tabelas oficiais.\n"
+        "- **Situação:** fonte **em validação**. A unidade “Fato Comunicado” não tem definição oficial confirmada: não equivale a vítimas, pessoas ou ocorrências "
+        "únicas e não é comparável com o Sinesp.\n"
+        "- **Uso:** as categorias não são somadas e os números são mostrados em seção separada. As condições de reutilização da fonte não foram avaliadas "
+        "formalmente; por isso os relatórios completos não são publicados."
+    )
 
-# ------------------------------------------------------------------------------ métodos e limitações
+# ------------------------------------------------------------------ como os números são tratados
+with abas[1]:
+    st.subheader("Do dado oficial ao painel")
+    st.markdown(
+        "- **Seleção:** foram mantidos somente os registros de Joinville/SC.\n"
+        "- **Datas e medidas:** cada registro é ligado a um mês. Vítimas e mandados cumpridos são medidas diferentes e nunca são somados.\n"
+        "- **Ausência e zero:** campo vazio continua vazio; zero informado continua zero.\n"
+        "- **Repetições:** nenhum registro é apagado. Linhas repetidas no mesmo mês só são somadas nos dois casos em que a nota oficial do Sinesp prevê "
+        "(tentativa de homicídio e estupro), com aviso.\n"
+        "- **Conferências:** verificação do formato, de meses faltando, de unidades diferentes na mesma série e de mudanças nos valores já publicados."
+    )
+    st.subheader("Regras dos números e dos gráficos")
+    st.markdown(
+        "- **Totais anuais** só existem quando todos os 12 meses têm valor. Os anos parciais nunca são comparados com anos completos: compara-se janeiro até o "
+        "mesmo mês nos dois anos.\n"
+        "- **Variação percentual** só é calculada quando o ponto de partida é maior que zero; a diferença em números absolutos sempre aparece, pois em "
+        "contagens pequenas o percentual engana.\n"
+        "- **Rankings** comparam indicadores só dentro da mesma unidade, sem somar indicadores diferentes.\n"
+        "- **Gráficos** começam do zero, mostram a fonte, a unidade e o período, e usam o mesmo tom de azul para o mesmo ano.\n"
+        "- **Estatísticas** (média, mediana, desvio-padrão) descrevem os meses publicados; não são previsões."
+    )
+
+# ------------------------------------------------------------------ limitações
 with abas[2]:
-    st.subheader("Regras do ETL")
-    for regra in manifesto.get("regras_etl", []):
-        st.markdown(f"- {regra}")
-
-    st.subheader("Regras das estatísticas e dos gráficos")
+    st.subheader("O que estes números não mostram")
     st.markdown(
-        "- **Soma** só quando todos os meses presentes têm valor; **desvio-padrão** descritivo (`ddof=0`); média e mediana sobre os meses com valor.\n"
-        "- **Variação percentual** só com base positiva (n/a quando a base é zero); a diferença absoluta é sempre informada.\n"
-        "- **Anos parciais** nunca são comparados com anos completos: compara-se janeiro até a última competência equivalente.\n"
-        "- **Rankings** ordenam séries dentro de uma única unidade, sem total entre indicadores.\n"
-        "- Gráficos começam o eixo em zero, usam valores inteiros, mostram fonte e unidade e usam a mesma cor para cada ano."
+        "- São registros administrativos agregados: não medem toda a criminalidade ocorrida e não permitem apontar causas.\n"
+        "- Não há taxas por habitante (falta uma base de população compatível), nem dados por bairro, rua, horário ou corporação.\n"
+        "- As séries “Estadual”, “Polícia Federal” e “Polícia Rodoviária Federal” têm coberturas diferentes e não são somadas. Mandados não são pessoas únicas.\n"
+        "- A fonte pode revisar números já publicados; revisões só entram no painel depois de conferidas.\n"
+        "- Contagens pequenas geram variações percentuais instáveis: observe sempre a diferença em números absolutos.\n"
+        "- **SSP/SC (violência doméstica):** fonte separada e em validação; “Fato Comunicado” não tem definição oficial confirmada, não é vítima nem ocorrência "
+        "única e não se soma ao Sinesp. Detalhes na seção própria."
     )
 
-    # ------------------------------------------------------------------------------------- limitações
-    st.subheader("Limitações")
-    st.markdown(
-        "- Registros administrativos agregados do Sinesp: não medem toda a criminalidade ocorrida nem permitem inferir causalidade.\n"
-        "- Sem taxas populacionais (falta base demográfica oficial compatível), sem dados por bairro, rua, horário ou corporação.\n"
-        "- As séries Estadual, PF e PRF têm abrangências e coberturas distintas e não são somadas; mandados não são pessoas únicas.\n"
-        "- Revisões de valores históricos pela fonte podem ocorrer: são detectadas na preparação de uma atualização e só entram com aprovação específica.\n"
-        "- Os XLSX originais não são distribuídos; a reprodução exige baixá-los da fonte oficial.\n"
-        "- Contagens pequenas geram variações percentuais instáveis; observe a magnitude absoluta.\n"
-        "- **SSP/SC (violência doméstica):** fonte separada e em validação; “Fato Comunicado” não tem definição oficial confirmada, não é vítima nem ocorrência única "
-        "e não se soma ao Sinesp. Detalhes na seção própria."
-    )
-
-
-# ------------------------------------------------------------------------------ atualização e licenças
-with abas[3]:
-    st.subheader("Procedimento de atualização dos dados")
-    st.markdown(
-        "Manual e controlado — o painel **não** baixa dados, não executa ETL e não se atualiza sozinho: **verificar** (consulta metadados da fonte e classifica indícios) → "
-        "**preparar** (candidata isolada a partir dos XLSX oficiais, com validação e comparação) → **aprovar** (promoção com versão anterior preservada e reversão). "
-        "Uma atualização inválida não substitui a versão ativa. Procedimento completo no `README.md` do projeto (seção 10)."
-    )
-    st.subheader("Condições de reutilização e atribuição")
-    for fonte in manifesto.get("fontes", []):
-        licenca = fonte.get("licenca", {})
-        cat_l, site = licenca.get("catalogo", {}), licenca.get("site", {})
-        st.markdown(f"- **Catálogo de dados:** {cat_l.get('licenca', '—')} — confirmada na consulta de {licenca.get('data_consulta', '—')}: **{'sim' if cat_l.get('confirmada_na_consulta') else 'não'}**. {cat_l.get('observacao', '')}")
-        st.markdown(f"- **Licença geral do site:** {site.get('licenca', '—')} — {site.get('escopo', '')}")
-        st.markdown(f"- **Condições específicas do recurso:** {licenca.get('condicoes_especificas_do_recurso', '—')}")
-    st.markdown("**Avaliação de reutilização:** " + manifesto.get("avaliacao_de_reutilizacao", "—"))
-    st.markdown("**Atribuição:** " + manifesto.get("atribuicao", "—"))
-
-    with st.expander("Ambiente local (opcional)"):
-        acervo = dp.DIRETORIO_DADOS.parents[1] / "dados"
-        if acervo.is_dir():
-            st.write("O acervo bruto local foi encontrado neste computador. O painel **não** o utiliza.")
-        else:
-            st.write("O acervo bruto local não está presente neste ambiente — situação esperada em um clone limpo ou em um deploy. O painel funciona normalmente.")
-
-# ------------------------------------------------------------------------------ versão e fonte dos dados
+# ------------------------------------------------------------------------------------------ fonte, atualização e condições de uso
 st.divider()
 ui.mostrar_versao_dos_dados()

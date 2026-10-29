@@ -91,8 +91,8 @@ def test_filtro_de_meses_preserva_o_modo_compacto_e_funciona_na_prf():
 def test_etapa_10_e_identificada_como_material_historico_independente_dos_filtros():
     app = _pagina()
     assert not any("Etapa 10" in t.label for t in app.tabs)  # fora das abas de análise
-    assert "Material histórico (Etapa 10) — independente dos filtros" in [e.label for e in app.expander]  # seção expansível
-    assert any("independente dos filtros" in w.value for w in app.warning)
+    assert "Quatro gráficos de referência (fixos, não mudam com os filtros)" in [e.label for e in app.expander]  # seção expansível
+    assert any("Estes quatro gráficos são fixos" in w.value for w in app.warning)
 
 
 # --------------------------------------------------------------------------------------------------- barras

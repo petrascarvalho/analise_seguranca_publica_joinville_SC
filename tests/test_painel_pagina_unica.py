@@ -77,7 +77,7 @@ def test_pagina_unica_tem_cards_do_sinesp_com_abrangencia_e_valores_preservados(
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
     assert not app.exception and not app.error
     lista = cartoes(app)
-    assert [c.value for c in lista][:10] == ["2020–2026", "911", "12", "2026-09", "29", "25", "77", "29", "25", "81 de 81"]
+    assert [c.value for c in lista][:10] == ["2020–2026", "911", "12", "set/2026", "29", "25", "77", "29", "25", "81 de 81"]
     sinesp_cards = lista[7:10]
     assert all(c.detalhe == "Homicídio doloso · Estadual" for c in sinesp_cards)  # a abrangência continua explícita em cada card
 
@@ -159,3 +159,54 @@ def test_figura_ssp_identifica_fonte_periodo_e_unidade_em_validacao_sem_sugerir_
     for cor in (graficos.COR_SSP_2023, graficos.COR_SSP_2024):
         r, g, b = (int(cor[i:i + 2], 16) for i in (1, 3, 5))
         assert b > g > r, cor  # paleta azul
+
+
+# ------------------------------------------------------------------------------------------------- linguagem para o público
+TERMOS_TECNICOS = re.compile(r"\.py\b|python|scripts[/\\]|\bsrc[/\\.]|dashboard[/\\]|README|\bETL\b|Etapa \d|ddof|pandas|XLSX|total_vitima|notebook|pytest|manifest|session_state|Sturges|`",
+                             re.IGNORECASE)
+COMPETENCIA_ISO = re.compile(r"(?<![\d.,-])20\d\d-(0[1-9]|1[0-2])(?![\d-])")  # 2026-09 deve aparecer como "setembro/2026" ou "set/2026"
+
+
+def _todos_os_textos_da_pagina(app) -> list:
+    """Texto visível da página única, inclusive de cada aba de análise e da categoria da SSP/SC; sem o bloco recolhido de detalhes técnicos."""
+    from apoio_painel import textos_visiveis
+
+    textos = textos_visiveis(app)
+    for aba in ("Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"):
+        app.session_state["aba_analise"] = aba
+        app.run()
+        textos += textos_visiveis(app)
+    if "vd_categoria" in [s.key for s in app.selectbox]:
+        app.selectbox(key="vd_categoria").select("Ameaça").run()
+        textos += textos_visiveis(app)
+    # O bloco "Detalhes técnicos de conferência (opcional)" é recolhido e pode citar o identificador da versão e o código SHA-256.
+    return [t for t in textos if not t.startswith("Identificador da versão dos dados") and "SHA-256" not in t and not re.fullmatch(r"[0-9a-f]{64}", t)]
+
+
+def test_texto_visivel_nao_expoe_codigo_caminhos_comandos_nem_jargao_de_implementacao():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=300).run()
+    assert not app.exception and not app.error
+    textos = _todos_os_textos_da_pagina(app)
+    assert len(textos) > 300  # a varredura realmente passou por todas as seções e abas
+    achados = sorted({t[:120] for t in textos if TERMOS_TECNICOS.search(t)})
+    assert not achados, achados
+    datas_tecnicas = sorted({t[:120] for t in textos if COMPETENCIA_ISO.search(t)})
+    assert not datas_tecnicas, datas_tecnicas
+    for sigla_interna in ("2026-10-27T", "UTC", "NXDOMAIN", "gerador", "staging", "candidat"):
+        assert not [t for t in textos if sigla_interna in t], sigla_interna
+
+
+def test_abrangencia_estadual_e_explicada_sem_sugerir_total_de_santa_catarina():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    corpo = " ".join(m.value for m in app.markdown) + " ".join(c.value for c in app.caption) + " ".join(i.value for i in app.info)
+    assert corpo.count("“Estadual” não é o total do estado de Santa Catarina") >= 3  # apresentação, seção Sinesp e qualidade
+    assert "Todos os números do Sinesp são de **Joinville/SC**" in corpo
+    assert "o total do estado" not in corpo.replace("não é o total do estado de Santa Catarina", "")
+
+
+def test_transparencia_preservada_no_texto_publico():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    corpo = " ".join(textos for textos in [m.value for m in app.markdown] + [c.value for c in app.caption] + [i.value for i in app.info] + [w.value for w in app.warning])
+    for trecho in ("2026 é parcial", "Zero informado e ausência são diferentes", "Fato Comunicado", "em validação", "não é uma aprovação ou certificação oficial do governo",
+                   "nunca somadas", "Sinesp/MJSP", "não equivale a vítimas"):
+        assert trecho in corpo or trecho.replace("nunca somadas", "nunca são somadas") in corpo, trecho

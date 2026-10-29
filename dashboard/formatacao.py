@@ -44,3 +44,13 @@ def fmt_dif(valor) -> str:
 
 NOMES_MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 ABREV_MESES = ("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
+
+
+def fmt_competencia(competencia: str, *, curto: bool = False) -> str:
+    """Competência no formato do arquivo ('2026-09') em texto para o público: 'setembro/2026' (ou 'set/2026' se curto=True)."""
+    try:
+        ano, mes = str(competencia).split("-")[:2]
+        nome = ABREV_MESES[int(mes) - 1].lower() if curto else NOMES_MESES[int(mes) - 1]
+        return f"{nome}/{ano}"
+    except (ValueError, IndexError):
+        return str(competencia)

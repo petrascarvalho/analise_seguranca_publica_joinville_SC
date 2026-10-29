@@ -63,10 +63,10 @@ def test_apresentacao_mostra_fonte_periodo_real_e_destaques_calculados():
     texto = _texto(app)
     assert "deploy" not in texto and "streamlit.app" not in texto  # a seção não trata de publicação
     assert "janeiro/2020 a setembro/2026" in texto and "2026 é parcial" in texto
-    assert "Sinesp/MJSP" in texto and "Mortes no trânsito (Polícia Rodoviária Federal) até 2026-08" in texto
+    assert "Sinesp/MJSP" in texto and "Mortes no trânsito (Polícia Rodoviária Federal) até agosto/2026" in texto
     # fonte e período (4 números da base) e os destaques calculados (homicídio 2025, homicídio e tentativa em janeiro–setembro de 2026)
     lista = cartoes(app)
-    assert [c.value for c in lista] == ["2020–2026", "911", "12", "2026-09", "29", "25", "77"]
+    assert [c.value for c in lista] == ["2020–2026", "911", "12", "set/2026", "29", "25", "77"]
     destaques = lista[4:]
     assert "−7 vs 2024" in destaques[0].delta and "+4 vs janeiro–setembro de 2025" in destaques[1].delta
     assert "+34 vs janeiro–setembro de 2025" in destaques[2].delta
@@ -133,7 +133,7 @@ def test_sinesp_serie_prf_vai_ate_agosto_sem_preenchimento():
     _sem_erros(app)
     assert any("2026 contém apenas janeiro a agosto" in i.value for i in app.info)
     assert "Janeiro–agosto de 2026" in cartoes(app)[1].label and "vs janeiro–agosto de 2025" in cartoes(app)[1].delta
-    assert any("PRF pode terminar em competência diferente" in i.value for i in app.info)
+    assert any("A série da PRF termina em um mês diferente das demais" in i.value for i in app.info)
 
 
 def _aba(app, nome):
@@ -165,8 +165,8 @@ def test_sinesp_organiza_a_analise_em_quatro_grupos_com_tabela_por_grafico():
     for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
         _sem_erros(aba)
         tabelas += sum(1 for e in aba.expander if e.label == "Valores usados neste gráfico (tabela)")
-        informativos |= any("Método informativo" in i.value for i in aba.info)  # homicídio doloso: limites de Tukey informativos
-        sazonalidade |= any("Sazonalidade (exploratória)" in m.value for m in aba.markdown)
+        informativos |= any("Os limites de referência são úteis para esta série" in i.value for i in aba.info)  # homicídio doloso: limites informativos
+        sazonalidade |= any("Perfil por mês do ano (sazonalidade, exploratório)" in m.value for m in aba.markdown)
     assert tabelas >= 9  # mapa de calor, períodos, ranking, anual, mensal, média móvel, acumulado, boxplot, distribuição, sazonalidade, outliers
     assert informativos and sazonalidade
 
@@ -176,12 +176,12 @@ def test_sinesp_outliers_nao_conclui_anomalia_quando_o_metodo_nao_e_informativo(
     _aba(app, "Estatística e outliers")
     escolher_serie(app, "Roubo seguido de morte (latrocínio)")
     _sem_erros(app)
-    assert any("Método IQR não informativo" in w.value and "IQR igual a zero" in w.value for w in app.warning)
-    assert not any("Método informativo" in i.value for i in app.info)
+    assert any("não ajudam a interpretar esta série" in w.value and "IQR igual a zero" in w.value for w in app.warning)
+    assert not any("Os limites de referência são úteis" in i.value for i in app.info)
     escolher_serie(app, "Mandado de prisão cumprido", "Polícia Federal")
     _sem_erros(app)
     assert any("maioria de zeros publicados" in w.value for w in app.warning)
-    assert any("Sazonalidade não avaliada" in i.value for i in _aba(app, "Padrões e tendência").info)  # PF: um único ano completo
+    assert any("Perfil por mês não avaliado" in i.value for i in _aba(app, "Padrões e tendência").info)  # PF: um único ano completo
 
 
 def test_sinesp_comparacao_de_anos_completos_e_ranking_por_unidade():
@@ -206,16 +206,21 @@ def test_qualidade_mostra_integridade_cobertura_fonte_e_limitacoes():
     app = _pagina("quality")
     _sem_erros(app)
     corpo = _texto(app)
-    assert "Creative Commons" in corpo and "não confirmada" in corpo.lower() or "NÃO confirmada" in corpo or "não** foi confirmada" in corpo or "confirmada na consulta" in corpo
-    assert "Última competência disponível:** **2026-09**" in corpo and "2026 parcial" in corpo
-    arquivos = app.dataframe[0].value
-    assert len(arquivos) == 2 and arquivos["Integridade"].str.contains("confere").all()
+    assert "Creative Commons" in corpo or "CC BY-ND" in corpo  # condições de reutilização informadas, sem afirmar licença confirmada
+    assert "não foi possível confirmar uma licença específica" in corpo
+    assert "Sobre os dados apresentados" in [s.value for s in app.subheader] and "Versão, datas e validação" not in [s.value for s in app.subheader]
+    for trecho in ("Última atualização dos dados:** 27/10/2026", "janeiro/2020 a setembro/2026", "Ano de 2026 parcial", "Município analisado:** Joinville/SC",
+                   "não é uma aprovação ou certificação oficial do governo", "“Estadual” não é o total do estado de Santa Catarina"):
+        assert trecho in corpo, trecho
+    assert "As informações foram obtidas em bases oficiais do Sinesp/MJSP. Foram selecionados os registros referentes ao município de Joinville/SC" in corpo
+    arquivos = app.dataframe[0].value  # detalhes técnicos recolhidos
+    assert len(arquivos) == 2 and arquivos["Conferência"].str.contains("confere").all()
     assert set(arquivos["Arquivo"]) == {dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO}
-    cobertura = app.dataframe[2].value  # catálogo com cobertura por indicador
-    assert len(cobertura) == 12 and cobertura["Última competência"].isin(["2026-09", "2026-08"]).all()
-    assert cobertura.loc[cobertura["Última competência"].eq("2026-08"), "Abrangência"].tolist() == ["Polícia Rodoviária Federal"]
-    assert "Regras do ETL" in [s.value for s in app.subheader] and "Procedimento de atualização dos dados" in [s.value for s in app.subheader]
-    assert "README.md" in corpo and "não** baixa dados" in corpo
+    cobertura = app.dataframe[1].value  # catálogo com cobertura por indicador
+    assert len(cobertura) == 12 and cobertura["Última competência"].isin(["set/2026", "ago/2026"]).all()
+    assert cobertura.loc[cobertura["Última competência"].eq("ago/2026"), "Abrangência"].tolist() == ["Polícia Rodoviária Federal"]
+    assert "Do dado oficial ao painel" in [s.value for s in app.subheader] and "Procedimento de atualização dos dados" not in [s.value for s in app.subheader]
+    assert "não busca informações sozinho" in corpo
     assert "Prefeitura" not in corpo
     assert "fonte separada e em validação" in corpo and "não tem definição oficial confirmada" in corpo  # a SSP/SC aparece só como limitação
     assert not app.error
@@ -248,12 +253,11 @@ def test_funciona_em_clone_limpo_sem_dados_brutos_nem_ssp(tmp_path):
             app = AppTest.from_file(f"dashboard/pages/{pagina}.py", default_timeout=120).run()
             assert not app.exception and not app.error, (pagina, [e.value for e in app.exception], [e.value for e in app.error])
         vd = AppTest.from_file("dashboard/pages/violencia_domestica.py", default_timeout=120).run()
-        assert any("não são distribuídos" in i.value for i in vd.info), "esperado o aviso de que a SSP/SC não é distribuída (sem o CSV local)"
+        assert any("não estão disponíveis nesta versão pública" in i.value for i in vd.info), "esperado o aviso de que a SSP/SC não está disponível (sem o CSV local)"
         assert not vd.selectbox  # sem dados, não há filtro nem número da SSP/SC
         entrada = AppTest.from_file("scripts/painel_streamlit.py", default_timeout=180).run()
         assert not entrada.exception and not entrada.error
         quality = AppTest.from_file("dashboard/pages/quality.py", default_timeout=120).run()
-        assert any("não está presente" in m.value for m in quality.markdown), "esperado aviso de acervo ausente"
         print("OK")
     """)
     assert resultado.returncode == 0 and "OK" in resultado.stdout, resultado.stderr[-1500:]
@@ -302,7 +306,7 @@ def test_integridade_divergente_e_sinalizada_na_pagina_de_qualidade(tmp_path):
     resultado = _executar_no_clone(tmp_path, """
         from streamlit.testing.v1 import AppTest
         app = AppTest.from_file("dashboard/pages/quality.py", default_timeout=120).run()
-        assert not app.exception and any("não coincidem com o manifesto" in e.value for e in app.error), [e.value for e in app.error]
+        assert not app.exception and any("não coincidem com o registro da versão" in e.value for e in app.error), [e.value for e in app.error]
         print("OK")
     """)
     assert resultado.returncode == 0 and "OK" in resultado.stdout, resultado.stdout[-500:] + resultado.stderr[-1500:]
@@ -338,12 +342,13 @@ def test_paginas_mostram_versao_fonte_ultima_competencia_e_como_se_atualiza():
     assert "janeiro/2020 a setembro/2026" in " ".join(c.value for c in sinesp.caption)  # período na legenda da fonte, derivado dos dados
     qualidade = _pagina("quality")
     legendas = " ".join(c.value for c in qualidade.caption)
-    assert manifesto["versao"] in legendas and "última competência disponível: 2026-09" in legendas and "2026 é parcial" in legendas
+    assert "última atualização em 27/10/2026" in legendas and "a última competência disponível é setembro/2026" in legendas and "2026 é parcial" in legendas
+    assert manifesto["versao"] in " ".join(m.value for m in qualidade.markdown)  # o identificador técnico fica só no bloco recolhido
     corpo = " ".join(m.value for m in qualidade.markdown) + " ".join(m.value for e in qualidade.expander for m in e.markdown)
     assert "MJSP" in corpo
     texto = _texto(qualidade) + " ".join(e.label for e in qualidade.expander)
-    assert manifesto["versao"] in texto and "Aprovação" in texto and "aprovada em" in texto
-    assert "verificar" in texto and "preparar" in texto and "aprovar" in texto and "README.md" in texto
+    assert "27/10/2026" in texto and "conferência" in texto.lower() and "não é uma aprovação ou certificação oficial do governo" in texto
+    assert "verificar" not in texto and "preparar" not in texto and "README" not in texto  # sem passo a passo técnico para o visitante
 
 
 def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(tmp_path):
@@ -380,7 +385,7 @@ def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(t
         home = AppTest.from_file("dashboard/pages/home.py", default_timeout=120).run()
         assert "outubro/2026" in texto_dos_cartoes(home)  # período lido do manifesto (agora nos cards)
         quality = AppTest.from_file("dashboard/pages/quality.py", default_timeout=120).run()
-        assert any("2026-10" in m.value for m in quality.markdown)
+        assert any("outubro/2026" in m.value for m in quality.markdown) or "out/2026" in " ".join(str(v) for t in quality.dataframe for v in t.value["Última competência"])
         print("OK")
     """)
     assert resultado.returncode == 0 and "OK" in resultado.stdout, resultado.stdout[-800:] + resultado.stderr[-1500:]

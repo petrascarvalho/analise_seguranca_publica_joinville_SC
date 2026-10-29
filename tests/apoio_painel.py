@@ -36,3 +36,19 @@ def escolher_serie(app, evento: str, abrangencia: str = "Estadual"):
     """Seleciona a série "Indicador — Abrangência" (o filtro de abrangência não existe mais) e executa o app de novo."""
     app.selectbox(key="serie").select(f"{evento} — {abrangencia}").run()
     return app
+
+
+def textos_visiveis(app) -> list:
+    """Todo o texto que o visitante lê no estado atual do app: títulos, textos, avisos, legendas, rótulos, dicas, cards e tabelas."""
+    textos = []
+    for lista in (app.title, app.header, app.subheader, app.markdown, app.caption, app.info, app.warning, app.success, app.error):
+        textos += [e.value for e in lista]
+    textos += [e.label for e in app.expander] + [t.label for t in app.tabs]
+    for w in list(app.selectbox) + list(app.select_slider) + list(app.toggle) + list(app.button) + list(app.radio) + list(app.multiselect):
+        textos += [w.label, getattr(w, "help", None) or ""]
+    textos += [f"{c.titulo} {c.detalhe} {c.valor} {c.delta} {c.base} {c.ajuda}" for c in cartoes(app)]
+    for d in app.dataframe:
+        tabela = d.value
+        textos += [str(c) for c in tabela.columns]
+        textos += [str(v) for v in tabela.to_numpy().ravel()]
+    return [t for t in textos if t]

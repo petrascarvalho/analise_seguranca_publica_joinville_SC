@@ -628,8 +628,9 @@ def figura_boxplot_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: 
     unidade = serie["unidade"].iloc[0]
     maximo = float(max(tabela["maximo"].max(), 1))
     figura, eixo = _preparar_sinesp(_titulo(evento), f"Boxplot dos valores mensais de cada ano — abrangência {abrangencia}",
-                                    "Caixa: 1º a 3º quartil; traço: mediana; bigodes: menor e maior valor dentro de Q1 − 1,5·IQR e Q3 + 1,5·IQR; pontos: fora desses limites "
-                                    "(atípicos estatísticos, não anomalias). Anos com IQR = 0 não mostram pontos atípicos. n = meses com valor; ano parcial tem menos meses.",
+                                    "Caixa: de Q1 a Q3 (1º e 3º quartis); traço: mediana; hastes: menor e maior valor dentro dos limites de referência (Q1 − 1,5 × IQR e Q3 + 1,5 × IQR); "
+                                    "pontos: meses fora desses limites (incomuns, não anomalias comprovadas). Em anos com IQR = 0 não há pontos destacados. "
+                                    "n = meses com valor; o ano parcial tem menos meses.",
                                     max(maximo * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize())
     estatisticas = [{"label": f"{int(r.ano)}\nn={int(r.n)}", "med": r.mediana, "q1": r.q1, "q3": r.q3, "whislo": r.bigode_inferior, "whishi": r.bigode_superior,
                      "fliers": [] if r.iqr_zero else list(r.valores_fora)} for r in tabela.itertuples()]
@@ -653,7 +654,7 @@ def figura_boxplot_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: 
                           rotation=90 if esta_compacto() else 0, fontsize=10, color="#555555")  # compacto: vertical, para os rótulos não se tocarem
     eixo.set_xlabel("Ano", fontsize=11)
     if bool(tabela["iqr_zero"].all()):
-        _banner(eixo, "Distribuição concentrada: IQR = 0 em todos os anos (caixas degeneradas)")
+        _banner(eixo, "Valores muito concentrados: IQR = 0 em todos os anos (a caixa vira um traço)")
     return figura
 
 
@@ -672,7 +673,7 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     zeros = int(serie["valor"].eq(0).sum())
     total = int(serie["valor"].count())
     largura = int(tabela.attrs.get("largura", 1))
-    regra = ("Cada faixa é um valor inteiro" if largura == 1 else f"Faixas de {largura} valores de largura igual (regra de Sturges: {calculos.numero_de_faixas(total)} faixas)")
+    regra = ("Cada faixa é um valor inteiro" if largura == 1 else f"Faixas de {largura} valores cada ({calculos.numero_de_faixas(total)} faixas)")
     figura, eixo = _preparar_sinesp(_titulo(evento), f"Distribuição: quantos meses tiveram cada faixa de valor — abrangência {abrangencia}",
                                     f"{regra}; barras categóricas com a contagem de meses (n = {total}). Barra hachurada: zero publicado ({zeros} {'mês' if zeros == 1 else 'meses'}, {zeros / total * 100:.0f}%), "
                                     "faixa própria — zero é observação, não ausência. O maior valor observado está na última faixa; faixas vazias são mantidas.",
@@ -726,7 +727,7 @@ def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
 
 
 def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
-    """Série mensal com mediana, Q1–Q3 e limites de Tukey, calculados SEMPRE sobre os meses da série e do período selecionados.
+    """Série mensal com mediana, Q1–Q3 e limites de referência (Tukey), calculados SEMPRE sobre os meses da série e do período selecionados.
 
     Os pontos só são destacados quando o método é informativo; senão a figura diz por quê. O limite inferior só é desenhado se for maior
     que zero (uma contagem não pode ficar abaixo de zero); a legenda informa seu valor mesmo assim.
@@ -742,8 +743,11 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     primeiro, ultimo = serie.iloc[0], serie.iloc[-1]
     referencia = (f"{d['n']} meses, {ABREV_MESES[int(primeiro['mes']) - 1].lower()}/{int(primeiro['ano'])} a "
                   f"{ABREV_MESES[int(ultimo['mes']) - 1].lower()}/{int(ultimo['ano'])}")
-    figura, eixo = _preparar_sinesp(_titulo(evento), f"Pontos fora dos limites (IQR) — abrangência {abrangencia}",
-                                    f"Conjunto de referência: {referencia}. {d['mensagem']}", max(topo * 1.2, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Ano (cada marca = janeiro)")
+    figura, eixo = _preparar_sinesp(_titulo(evento), f"Meses fora dos limites de referência (IQR) — abrangência {abrangencia}",
+                                    f"Conjunto de referência: {referencia}. " + (
+                                        "Meses fora dos limites são incomuns em relação aos demais; não são prova de erro, de anomalia ou de mudança real."
+                                        if d["interpretavel"] else
+                                        f"Os limites de referência não ajudam a interpretar esta série ({d['rotulo']}): nenhum mês é apontado como incomum."), max(topo * 1.2, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Ano (cada marca = janeiro)")
     x = _x_mensal(serie)
     pontos, = eixo.plot(x, _valores_float(serie["valor"]), color="#7A7A7A", linewidth=1, marker="o", markersize=4, label="Valor mensal")
     pontos.set_gid("pontos")
@@ -774,7 +778,7 @@ def figura_outliers_iqr_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
                                        textcoords="offset points", xytext=(-8 if a_direita else 8, 8 + 16 * nivel), ha="right" if a_direita else "left", fontsize=10, color="#C0392B")
                 rotulo.set_gid("rotulo_atipico")
     else:
-        _banner(eixo, f"Método IQR não informativo: {d['rotulo']}")
+        _banner(eixo, f"Limites de referência (IQR) pouco úteis nesta série: {d['rotulo']}")
     _eixo_anos(eixo, serie)
     _legenda(eixo, 3)
     return figura

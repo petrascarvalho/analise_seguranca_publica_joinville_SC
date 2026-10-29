@@ -141,7 +141,7 @@ def test_series_com_muitos_zeros_no_modo_compacto(sinesp):
     matriz = zerada.axes[0].images[0].get_array()
     assert np.ma.getmaskarray(matriz).sum() == 3 and (np.ma.filled(matriz, -1)[~np.ma.getmaskarray(matriz)] == 0).all()  # 78 zeros publicados; 3 meses sem valor (cinza)
     latrocinio = _construir(sinesp, "outliers_iqr", "Roubo seguido de morte (latrocínio)", "Estadual", True)
-    assert any("não informativo" in t.get_text().replace("\n", " ") for t in latrocinio.axes[0].texts)
+    assert any("pouco úteis" in t.get_text().replace("\n", " ") for t in latrocinio.axes[0].texts)
     assert not [l for l in latrocinio.axes[0].lines if l.get_gid() in ("limite_superior", "pontos_atipicos")]
     distribuicao = _construir(sinesp, "distribuicao", "Mortes a esclarecer (sem indício de crime)", "Estadual", True)
     assert [int(b.get_height()) for b in distribuicao.axes[0].patches if b.get_gid() == "frequencia"] == [81]
@@ -234,7 +234,7 @@ def test_modo_compacto_na_pagina_move_o_texto_explicativo_para_componentes_nativ
     for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
         assert not aba.exception and not aba.error, nome
         legendas += " ".join(c.value for c in aba.caption)
-        tukey |= any("Limites de Tukey" in c.value or "limites de Tukey" in c.value for c in aba.caption)
+        tukey |= any("limites de referência" in c.value for c in aba.caption)
         tabelas += sum(1 for e in aba.expander if e.label == "Valores usados neste gráfico (tabela)")
     assert "Cada linha acumula os meses de um ano" in legendas and "Fonte: MJSP / Sinesp VDE | Abrangência: Estadual | Unidade: vítimas" in legendas
     assert tukey

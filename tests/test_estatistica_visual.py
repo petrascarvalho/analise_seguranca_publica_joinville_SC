@@ -276,7 +276,7 @@ def test_figura_de_outliers_destaca_so_quando_o_metodo_e_informativo(sinesp):
                     ("Mandado de prisão cumprido", "Polícia Federal"), ("Mortes a esclarecer (sem indício de crime)", "Estadual")):
         sem_metodo = graficos.figura_outliers_iqr_sinesp(sinesp, *estavel, ANOS)
         assert not _linhas_por_gid(sem_metodo, "pontos_atipicos") and not _linhas_por_gid(sem_metodo, "limite_superior"), estavel
-        assert any("não informativo" in t.get_text() for t in sem_metodo.axes[0].texts), estavel
+        assert any("pouco úteis" in t.get_text() for t in sem_metodo.axes[0].texts), estavel
 
 
 def test_ranking_destaca_a_serie_selecionada_sem_mudar_valores(sinesp):
@@ -389,7 +389,7 @@ def test_figura_do_histograma_desenha_as_faixas_da_tabela_e_cita_a_regra(sinesp)
     assert [int(b.get_height()) for b in barras] == tabela["n_meses"].tolist() and sum(int(b.get_height()) for b in barras) == 81
     assert [t.get_text() for t in figura.axes[0].get_xticklabels()] == tabela["rotulo"].tolist()
     texto = " ".join(t.get_text() for t in figura.texts)
-    assert "Sturges" in texto and "n = 81" in texto and "faixa própria" in texto and "faixas vazias são mantidas" in texto
+    assert "8 faixas" in texto and "n = 81" in texto and "faixa própria" in texto and "faixas vazias são mantidas" in texto
 
 
 def test_acumulado_rotulos_finais_sem_colisao_e_com_ano_parcial_identificado(sinesp):
