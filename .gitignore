@@ -1,7 +1,6 @@
-# Ambientes e segredos (o exemplo sem credenciais permanece versionável).
+# Ambientes e segredos.
 .env
 .env.*
-!.env.example
 .venv/
 venv/
 .streamlit/secrets.toml

@@ -419,7 +419,7 @@ def processar() -> dict:
 def exportar(pasta: Path = PASTA_PROCESSADOS, pasta_graficos: Path | None = PASTA_GRAFICOS) -> dict:
     """Grava as bases tratadas em dados/processados/ssp_sc/ e o gráfico em documentacao/graficos/analises/.
 
-    Os arquivos brutos são conferidos por SHA-256 antes e depois. Retorno: o resumo usado no README e nos testes.
+    Os arquivos brutos são conferidos por SHA-256 antes e depois. Retorno: o resumo das contagens e verificações (citado no README).
     """
     # Guarda o hash de todos os originais antes do processamento, para provar depois que nenhum mudou.
     hashes_antes = {p: sha256_arquivo(p) for p in sorted(PASTA_BRUTOS.rglob("*")) if p.is_file()}

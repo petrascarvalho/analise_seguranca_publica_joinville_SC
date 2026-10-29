@@ -313,7 +313,7 @@ def _barras_e_linha_anual(eixo, valores: list[int], gid_linha: str, gid_barras: 
     barras). Usada só em séries de poucos pontos (anos), para não sobrecarregar o gráfico.
     """
     x = list(range(len(valores)))
-    # Gráfico combinado: primeiro as barras azul-claras; set_gid dá um nome a cada elemento (os testes conferem os valores desenhados).
+    # Gráfico combinado: primeiro as barras azul-claras; set_gid dá um nome a cada elemento (permite conferir os valores desenhados).
     barras = eixo.bar(x, valores, width=0.62, color=COR_BARRA_ANUAL, zorder=2)
     for barra in barras:
         barra.set_gid(gid_barras)
@@ -481,8 +481,8 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
 
 # ===================================================================================================================
 # Etapa 20 — figuras de visão geral, evolução temporal, estatística descritiva e outliers.
-# Cada figura desenha EXATAMENTE a tabela devolvida pela função homônima de calculos.py (os elementos recebem gid para
-# que os testes comparem o desenhado com a tabela). Elas usam a série selecionada (um indicador × uma abrangência × uma unidade).
+# Cada figura desenha EXATAMENTE a tabela devolvida pela função homônima de calculos.py (os elementos recebem um nome, gid,
+# que permite conferir o desenhado com a tabela). Elas usam a série selecionada (um indicador × uma abrangência × uma unidade).
 # ===================================================================================================================
 NOME_CURTO = {
     "Morte no trânsito ou em decorrência dele (exceto homicídio doloso)": "Mortalidade no trânsito",

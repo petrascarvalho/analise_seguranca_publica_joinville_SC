@@ -52,7 +52,7 @@ from src.pipeline import versionamento_dados as vv  # noqa: E402
 # Pasta de trabalho da atualização (candidatas, versões anteriores, histórico) e pasta ativa (base publicada no painel).
 BASE_ATUALIZACAO = RAIZ / "atualizacao"
 ATIVA_PADRAO = dp.DIRETORIO_DADOS
-_renomear = os.replace  # indireção para testes (simulação de falha na troca)
+_renomear = os.replace  # renomeia pastas; a variável permitiu simular uma falha na troca durante o desenvolvimento
 
 
 class ErroAtualizacao(Exception):
@@ -60,7 +60,7 @@ class ErroAtualizacao(Exception):
 
 
 @dataclass
-# Classe de dados (@dataclass) que junta erros, avisos e informações de uma validação; mantida porque vários módulos e testes a usam.
+# Classe de dados (@dataclass) que junta erros, avisos e informações de uma validação; mantida porque várias funções da atualização a usam.
 class Validacao:
     erros: list[str] = field(default_factory=list)
     avisos: list[str] = field(default_factory=list)
