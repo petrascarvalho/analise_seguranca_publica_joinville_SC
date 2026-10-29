@@ -1,7 +1,7 @@
 """Acervo SSP/SC de Joinville: inventário, extração, auditoria e bases tratadas (investigação; não entra no painel).
 
 Fonte: SSP/SC, "Segurança em Números" — 42 boletins mensais e 3 relatórios de violência doméstica, em PDF, com todos os
-municípios de SC. Cada PDF tem um CSV extraído (``dados/brutos/ssp_sc/csv_extraidos/``) com a posição de cada célula:
+municípios de SC. Cada PDF tem um CSV extraído (dados/brutos/ssp_sc/csv_extraidos/) com a posição de cada célula:
 página, tabela e linha. O CSV localiza os valores; o PDF continua sendo o documento oficial.
 
 O que este módulo faz, em ordem:
@@ -13,7 +13,7 @@ O que este módulo faz, em ordem:
        4 acumulados do ano). Resultado: 294 valores publicados, um por edição.
     4. Republicações: agrupa o mesmo número publicado em várias edições e marca os grupos com versões diferentes.
        Nenhuma versão é escolhida.
-    5. Confere cada célula usada contra a tabela do próprio PDF e exporta para ``dados/processados/ssp_sc/``.
+    5. Confere cada célula usada contra a tabela do próprio PDF e exporta para dados/processados/ssp_sc/.
 
 Situação: "Fato Comunicado" não tem definição nos PDFs, por isso a violência doméstica fica "em validação" e não é somada a
 vítimas nem a outras fontes. Os homicídios têm grupos com versões divergentes.
@@ -85,6 +85,7 @@ def texto_pagina(nome_pdf: str, pagina: int) -> str:
 
 @lru_cache(maxsize=None)
 def paginas_pdf(nome_pdf: str) -> int:
+    """Quantidade de páginas de um PDF do acervo."""
     from pypdf import PdfReader
 
     return len(PdfReader(PASTA_BRUTOS / "pdfs" / nome_pdf).pages)
@@ -92,6 +93,7 @@ def paginas_pdf(nome_pdf: str) -> int:
 
 @lru_cache(maxsize=None)
 def _tabelas_da_pagina(nome_pdf: str, pagina: int) -> tuple:
+    """Tabelas encontradas pelo pdfplumber em uma página do PDF."""
     import pdfplumber
 
     with pdfplumber.open(PASTA_BRUTOS / "pdfs" / nome_pdf) as pdf:
@@ -104,6 +106,7 @@ def linha_da_tabela_no_pdf(nome_pdf: str, pagina: int, tabela: int, linha: int) 
 
 
 def _celulas(linha: pd.Series) -> list[str]:
+    """Valores das colunas celula_* de uma linha do CSV extraído."""
     return [linha[c] for c in linha.index if c.startswith("celula_")]
 
 
@@ -391,7 +394,7 @@ def processar() -> dict:
 
 
 def exportar(pasta: Path = PASTA_PROCESSADOS, pasta_graficos: Path | None = PASTA_GRAFICOS) -> dict:
-    """Grava as bases tratadas em ``dados/processados/ssp_sc/`` e o gráfico em ``documentacao/graficos/analises/``.
+    """Grava as bases tratadas em dados/processados/ssp_sc/ e o gráfico em documentacao/graficos/analises/.
 
     Os arquivos brutos são conferidos por SHA-256 antes e depois. Retorno: o resumo usado no README e nos testes.
     """

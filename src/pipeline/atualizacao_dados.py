@@ -1,14 +1,14 @@
 """Atualização controlada dos dados mínimos do dashboard, em três operações separadas.
 
-A — VERIFICAR   consulta as fontes e relata possíveis novidades (``src.pipeline.fontes_oficiais``); NÃO altera dados.
-B — PREPARAR    monta uma versão CANDIDATA isolada em ``atualizacao/staging/<id>/`` a partir dos originais oficiais
+A — VERIFICAR   consulta as fontes e relata possíveis novidades (src.pipeline.fontes_oficiais); NÃO altera dados.
+B — PREPARAR    monta uma versão CANDIDATA isolada em atualizacao/staging/<id>/ a partir dos originais oficiais
                 baixados/colocados manualmente, executa o ETL e valida; NÃO altera os dados ativos.
-C — APROVAR     promove a candidata à versão ativa somente com aprovação explícita (``--confirmo <id>``), depois de
+C — APROVAR     promove a candidata à versão ativa somente com aprovação explícita (--confirmo <id>), depois de
                 preservar a versão anterior e com troca segura de diretório (com reversão automática em caso de falha).
     REVERTER    restaura uma versão anterior preservada, também com confirmação explícita.
 
 Nada aqui desativa validações. Uma atualização inválida (erros de validação) jamais pode ser promovida; revisões de
-valores históricos exigem ``--aceitar-revisoes``. A fonte única é o Sinesp/MJSP: o fluxo não depende de nenhum outro acervo.
+valores históricos exigem --aceitar-revisoes. A fonte única é o Sinesp/MJSP: o fluxo não depende de nenhum outro acervo.
 
 Uso (a partir da raiz do projeto)::
 
@@ -64,9 +64,11 @@ class Validacao:
 
     @property
     def status(self) -> str:
+        """Estado da validação: bloqueado (há erros), requer_revisao (há avisos) ou validado."""
         return "bloqueado" if self.erros else ("requer_revisao" if self.avisos else "validado")
 
     def para_dict(self) -> dict:
+        """A validação em formato de dicionário, para gravar no relatório."""
         return {"status": self.status, "erros": self.erros, "avisos": self.avisos, "informacoes": self.informacoes}
 
 
@@ -80,10 +82,12 @@ class Candidato:
 
 # ---------------------------------------------------------------------------------------- utilidades
 def _csv_bytes(quadro: pd.DataFrame) -> bytes:
+    """Texto CSV da tabela, com quebra de linha LF e vazio para ausente (o mesmo formato dos arquivos publicados)."""
     return quadro.to_csv(index=False, lineterminator="\n", na_rep="").encode("utf-8")
 
 
 def _sha256_arquivo(caminho: Path) -> str:
+    """SHA-256 de um arquivo, lido em blocos de 1 MB."""
     resumo = hashlib.sha256()
     with caminho.open("rb") as fluxo:
         for bloco in iter(lambda: fluxo.read(1024 * 1024), b""):
@@ -92,10 +96,12 @@ def _sha256_arquivo(caminho: Path) -> str:
 
 
 def _ler_csv_bytes(conteudo: bytes) -> pd.DataFrame:
+    """Lê um CSV (em bytes) tudo como texto, sem converter nem preencher valores."""
     return pd.read_csv(io.BytesIO(conteudo), dtype=str, keep_default_na=False, na_filter=False, encoding="utf-8")
 
 
 def _registrar_historico(base: Path, evento: dict) -> None:
+    """Acrescenta uma linha com data e operação ao arquivo historico.jsonl."""
     base.mkdir(parents=True, exist_ok=True)
     with (base / "historico.jsonl").open("a", encoding="utf-8", newline="\n") as fluxo:
         fluxo.write(json.dumps({"em_utc": vv.agora_utc().strftime("%Y-%m-%dT%H:%M:%SZ"), **evento}, ensure_ascii=False) + "\n")
@@ -103,6 +109,7 @@ def _registrar_historico(base: Path, evento: dict) -> None:
 
 # --------------------------------------------------------------------------------- leitura do Sinesp
 def _cabecalho_xlsx(caminho: Path) -> tuple[list, bool]:
+    """Lê o cabeçalho (linha 1) do XLSX e diz se existem colunas além das 14 esperadas."""
     with ZipFile(caminho) as pacote:
         textos = transform._shared_strings(pacote)
         xml = pacote.read("xl/worksheets/sheet1.xml")
@@ -128,6 +135,7 @@ def ler_sinesp_xlsx(caminho: Path) -> pd.DataFrame:
 
 
 def _inteiro_nao_negativo(valor, descricao: str):
+    """Confere a contagem publicada: inteiro não negativo ou vazio (ausência continua ausência)."""
     if pd.isna(valor):
         return pd.NA
     if isinstance(valor, bool) or not isinstance(valor, (int, float)) or float(valor) != int(valor) or valor < 0:
@@ -138,7 +146,7 @@ def _inteiro_nao_negativo(valor, descricao: str):
 def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd.DataFrame, list[str]]:
     """Séries mensais (ano, mes, evento, abrangencia, unidade, valor) e catálogo, a partir dos recortes de Joinville.
 
-    Regras (as mesmas das Etapas 5–9 do roteiro): vítimas em ``total_vitima``; mandados em ``total``; ausência é preservada;
+    Regras (as mesmas das Etapas 5–9 do roteiro): vítimas em total_vitima; mandados em total; ausência é preservada;
     evento desconhecido, abrangência ausente, data inválida ou ano diferente do arquivo interrompem a preparação.
     Linhas múltiplas na mesma competência só são aceitas (somadas) nos indicadores com nota metodológica oficial.
     """
@@ -175,7 +183,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
             raise ErroAtualizacao(f"Linhas repetidas na mesma competência em indicador sem nota oficial de soma: {sorted(proibidos)}. Sem deduplicação genérica.")
         avisos.append(f"Linhas múltiplas na mesma competência somadas conforme nota metodológica oficial em: {sorted(eventos_repetidos)} "
                       f"({len(repetidas)} linhas; requer conferência).")
-        agrupado = bruto.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].agg(lambda s: s.sum(min_count=1))
+        agrupado = bruto.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].sum(min_count=1)  # soma as parcelas; devolve vazio (e não 0) se todas forem vazias
         bruto = agrupado
     mensal = bruto.sort_values(["evento", "abrangencia", "ano", "mes"], kind="stable").reset_index(drop=True)
     mensal["valor"] = mensal["valor"].astype("Int64")
@@ -220,6 +228,7 @@ def comparar_sinesp(ativa: pd.DataFrame, candidata: pd.DataFrame) -> pd.DataFram
 
 
 def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, ativa: pd.DataFrame | None, comparacao: pd.DataFrame | None) -> Validacao:
+    """Aplica as regras de qualidade à versão candidata e classifica: validado, requer revisão ou bloqueado."""
     validacao = Validacao()
     series_cand = set(zip(candidata["evento"], candidata["abrangencia"]))
     if ativa is not None:
@@ -261,6 +270,7 @@ def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, at
 
 # --------------------------------------------------------------------------------- operação B: PREPARAR
 def localizar_entradas_sinesp(pasta: Path, anos: list[int]) -> dict[int, Path]:
+    """Encontra exatamente um bancovde-ANO.xlsx por ano; qualquer ambiguidade interrompe."""
     encontrados = {}
     for ano in anos:
         candidatos = sorted(Path(pasta).rglob(f"bancovde-{ano}.xlsx"))
@@ -273,7 +283,7 @@ def localizar_entradas_sinesp(pasta: Path, anos: list[int]) -> dict[int, Path]:
 
 def preparar(*, ativa: Path = ATIVA_PADRAO, staging_root: Path | None = None, entradas_sinesp: Path | None = None,
              relatorio_verificacao: dict | None = None, agora: datetime | None = None, anos_adicionais: list[int] | None = None) -> Candidato:
-    """Operação B: gera a versão candidata isolada. Não altera ``ativa``; em caso de falha remove a candidata parcial."""
+    """Operação B: gera a versão candidata isolada. Não altera ativa; em caso de falha remove a candidata parcial."""
     staging_alvo = Path(staging_root) if staging_root else BASE_ATUALIZACAO / "staging"
     antes = set(staging_alvo.iterdir()) if staging_alvo.is_dir() else set()
     try:
@@ -288,6 +298,7 @@ def preparar(*, ativa: Path = ATIVA_PADRAO, staging_root: Path | None = None, en
 
 def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path | None, relatorio_verificacao: dict | None,
               agora: datetime | None, anos_adicionais: list[int] | None) -> Candidato:
+    """Monta a versão candidata isolada: lê os XLSX, constrói as tabelas, compara com a versão ativa e valida."""
     staging_root = Path(staging_root) if staging_root else BASE_ATUALIZACAO / "staging"
     agora = agora or vv.agora_utc()
     id_candidata = vv.id_versao(agora)
@@ -366,12 +377,13 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
 
 
 def origem_ativa_hash(manifesto: dict, ano: str):
+    """SHA-256 do XLSX de um ano, registrado no manifesto da versão ativa."""
     return (manifesto.get("origem_dos_dados", {}).get("sinesp_xlsx_sha256", {}) or {}).get(str(ano))
 
 
 # ------------------------------------------------------------------- operação C: APROVAR / REVERTER
 def _trocar_diretorio(novo: Path, ativa: Path) -> Path:
-    """Troca ``ativa`` por ``novo`` (renomeações), com reversão se a segunda renomeação falhar. Devolve o diretório antigo."""
+    """Troca ativa por novo (renomeações), com reversão se a segunda renomeação falhar. Devolve o diretório antigo."""
     antigo = ativa.with_name(ativa.name + ".antigo")
     if antigo.exists():
         shutil.rmtree(antigo)
@@ -385,6 +397,7 @@ def _trocar_diretorio(novo: Path, ativa: Path) -> Path:
 
 
 def _validar_diretorio(diretorio: Path) -> None:
+    """Confere a consistência e a integridade (SHA-256) de uma pasta de dados antes de promovê-la."""
     dp.validar_consistencia(dp.carregar_sinesp(diretorio), dp.carregar_catalogo_sinesp(diretorio))
     integridade = dp.verificar_integridade(diretorio)
     if not integridade["integro"].all():
@@ -392,7 +405,7 @@ def _validar_diretorio(diretorio: Path) -> None:
 
 
 def _promover_diretorio(origem: Path, ativa: Path, versoes_root: Path, *, aprovacao: dict | None = None) -> str:
-    """Preserva a versão ativa em ``versoes_root`` e promove ``origem`` com troca segura. Devolve o id da versão preservada."""
+    """Preserva a versão ativa em versoes_root e promove origem com troca segura. Devolve o id da versão preservada."""
     manifesto_ativo = dp.carregar_manifesto(ativa)
     id_anterior = manifesto_ativo.get("versao") or "sem_versao_" + vv.id_versao(vv.agora_utc())
     backup = versoes_root / id_anterior
@@ -456,6 +469,7 @@ def aprovar(id_candidata: str, *, confirmacao: str | None, aceitar_revisoes: boo
 
 
 def listar_versoes(versoes_root: Path | None = None) -> list[dict]:
+    """Lista as versões anteriores preservadas, lidas do manifesto de cada uma."""
     versoes_root = Path(versoes_root) if versoes_root else BASE_ATUALIZACAO / "versoes"
     saida = []
     for pasta in sorted(p for p in versoes_root.iterdir() if p.is_dir()) if versoes_root.is_dir() else []:
@@ -491,9 +505,9 @@ def reverter(versao: str, *, confirmacao: str | None, ativa: Path = ATIVA_PADRAO
 
 # ---------------------------------------------------------------------------------------------- CLI
 def baixar_sinesp(anos: list[int], destino: Path, cliente: fo.Cliente | None = None, tentativas: int = 3) -> dict[int, Path]:
-    """Baixa os XLSX oficiais (GET integral) para ``destino``.
+    """Baixa os XLSX oficiais (GET integral) para destino.
 
-    Bloqueios (HTTP 403 etc.) NÃO são contornados nem repetidos. Só quedas de conexão (``ErroConsulta``) são repetidas, até ``tentativas`` vezes.
+    Bloqueios (HTTP 403 etc.) NÃO são contornados nem repetidos. Só quedas de conexão (ErroConsulta) são repetidas, até tentativas vezes.
     O arquivo baixado precisa ser um XLSX (ZIP) íntegro; caso contrário o download é recusado.
     """
     cliente = cliente or fo.ClienteHTTP()
@@ -519,6 +533,7 @@ def baixar_sinesp(anos: list[int], destino: Path, cliente: fo.Cliente | None = N
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Interpreta o comando digitado no terminal (verificar, preparar, comparar, aprovar, versoes, reverter) e o executa."""
     analisador = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = analisador.add_subparsers(dest="comando", required=True)
     p = sub.add_parser("verificar", help="A: consulta as fontes (não altera dados)")

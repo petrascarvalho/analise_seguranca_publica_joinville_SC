@@ -2,7 +2,7 @@
 #
 # Este roteiro lê os arquivos oficiais, trata, confere e grava as tabelas de Joinville/SC.
 # Como executar (na pasta do projeto, com o ambiente virtual criado):
-#   - VS Code: abra este arquivo e use "Run Cell" em cada bloco "# %%" (Python Interactive).
+#   - VS Code: abra este arquivo e execute o código por partes (selecione um trecho e use Shift+Enter) ou o arquivo inteiro.
 #   - Terminal: .\.venv\Scripts\python.exe scripts\etl_joinville.py
 #
 # Fontes (sempre separadas; nunca somadas entre si):
@@ -13,7 +13,7 @@
 # (dashboard/data_publica/) nunca é alterada aqui; ela só muda pela atualização controlada do projeto.
 
 
-# %% ETAPA 01 - IMPORTAÇÃO DAS BIBLIOTECAS
+# 1. IMPORTAÇÃO DAS BIBLIOTECAS
 import hashlib
 import json
 import os
@@ -47,7 +47,7 @@ except ImportError:
 print(f"Pandas {pd.__version__}")
 
 
-# %% ETAPA 02 - DEFINIÇÃO DAS PASTAS
+# 2. DEFINIÇÃO DAS PASTAS
 anos = list(range(2020, 2027))  # anos dos arquivos do Sinesp
 pasta_xlsx = Path(os.environ.get("SINESP_PASTA_XLSX", raiz / "dados" / "brutos" / "sinesp"))
 pasta_saida = Path(os.environ.get("ETL_PASTA_SAIDA", raiz / "dados" / "processados" / "etl_joinville"))
@@ -57,7 +57,7 @@ print(f"Arquivos da SSP/SC: {ssp_sc.PASTA_BRUTOS}")
 print(f"Saída do ETL:       {pasta_saida}")
 
 
-# %% ETAPA 03 - LEITURA DOS DADOS BRUTOS DO SINESP
+# 3. LEITURA DOS DADOS BRUTOS DO SINESP
 # O manifesto da versão aprovada guarda o SHA-256 ("impressão digital") de cada XLSX oficial.
 # Só é usado o arquivo cujo hash é igual ao registrado: assim o ETL reproduz exatamente a base aprovada.
 manifesto = dp.carregar_manifesto()
@@ -80,7 +80,7 @@ for ano, caminho in arquivos.items():
     print(f"{ano}: {caminho.name} -> {len(recortes[ano])} linhas de Joinville")
 
 
-# %% ETAPA 04 - INSPEÇÃO DOS DATAFRAMES
+# 4. INSPEÇÃO DOS DATAFRAMES
 # pd.concat() empilha as tabelas dos sete anos; ignore_index=True renumera as linhas.
 dados_brutos = pd.concat(recortes.values(), ignore_index=True)
 print(f"Dados brutos de Joinville: {dados_brutos.shape[0]} linhas x {dados_brutos.shape[1]} colunas")
@@ -91,7 +91,7 @@ print("Indicadores:", sorted(dados_brutos["evento"].unique()))
 print("Classificações institucionais (abrangência):", sorted(dados_brutos["abrangencia"].unique()))
 
 
-# %% ETAPA 05 - VERIFICAÇÃO DE DUPLICIDADES
+# 5. VERIFICAÇÃO DE DUPLICIDADES
 # Nenhuma linha é apagada. A nota oficial do Sinesp diz que "Tentativa de homicídio" e "Estupro" podem ter
 # mais de uma linha no mesmo mês (parcelas que devem ser somadas, na etapa 09). Em outro indicador, repetição é erro.
 linhas_identicas = int(dados_brutos.duplicated().sum())
@@ -100,7 +100,7 @@ print(f"Linhas totalmente idênticas: {linhas_identicas}")
 print(f"Linhas que repetem indicador + abrangência + mês: {repeticoes_de_chave}")
 
 
-# %% ETAPA 06 - VERIFICAÇÃO DE VALORES AUSENTES
+# 6. VERIFICAÇÃO DE VALORES AUSENTES
 # Zero publicado é uma informação (a fonte disse "0"); valor ausente é a falta de informação e nunca vira zero.
 # Na camada original, os campos vazios de total_vitima e total só mostram que cada linha usa uma das duas medidas.
 ausencias = dados_brutos.isna().sum().rename("ausências").to_frame()
@@ -108,7 +108,7 @@ ausencias["%"] = (ausencias["ausências"] / len(dados_brutos) * 100).round(2)
 display(ausencias)
 
 
-# %% ETAPA 07 - TRATAMENTO DOS DADOS
+# 7. TRATAMENTO DOS DADOS
 # Cada linha original vira uma observação padronizada: ano, mes, evento, abrangencia, unidade e valor.
 observacoes = []
 for ano, recorte in recortes.items():
@@ -144,14 +144,14 @@ print(f"Valores ausentes: {int(dados_tratados['valor'].isna().sum())} | zeros pu
 display(dados_tratados.head())
 
 
-# %% ETAPA 08 - FILTRO DO MUNICÍPIO DE JOINVILLE
+# 8. FILTRO DO MUNICÍPIO DE JOINVILLE
 # O filtro foi feito na leitura (etapa 03), porque o arquivo nacional tem milhões de linhas. Aqui conferimos o resultado.
 print(f"Todas as linhas são de SC: {bool(dados_brutos['uf'].eq('SC').all())}")
 print(f"Todas as linhas são de JOINVILLE: {bool(dados_brutos['municipio'].eq('JOINVILLE').all())}")
 print(f"Linhas de outros municípios: {int((~dados_brutos['municipio'].eq('JOINVILLE')).sum())}")
 
 
-# %% ETAPA 09 - ORGANIZAÇÃO DOS INDICADORES SINESP
+# 9. ORGANIZAÇÃO DOS INDICADORES SINESP
 # Objetivo: uma linha por série (indicador + classificação) e mês.
 # groupby() junta as linhas de mesma chave e soma os valores; sum(min_count=1) devolve <NA> (e não 0) se todas as parcelas são vazias.
 chave = ["evento", "abrangencia", "ano", "mes"]
@@ -161,7 +161,7 @@ if nao_permitidos:
     raise ValueError(f"Repetição sem nota oficial de soma em: {sorted(nao_permitidos)}")
 print(f"Linhas repetidas somadas conforme a nota oficial: {len(repetidas)}")
 
-dados_processados = dados_tratados.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].agg(lambda parcelas: parcelas.sum(min_count=1))
+dados_processados = dados_tratados.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].sum(min_count=1)
 dados_processados = dados_processados[dp.COLUNAS_SINESP]  # volta à ordem oficial das colunas
 dados_processados = dados_processados.sort_values(chave, kind="stable").reset_index(drop=True)
 dados_processados["valor"] = dados_processados["valor"].astype("Int64")
@@ -169,14 +169,14 @@ dados_processados[["ano", "mes"]] = dados_processados[["ano", "mes"]].astype("in
 
 # Catálogo: resumo de cada série (início, fim, meses, meses com valor, zeros publicados e ausências).
 competencia = dados_processados["ano"].astype(str) + "-" + dados_processados["mes"].astype(str).str.zfill(2)
-catalogo = (dados_processados.assign(competencia=competencia).groupby(["evento", "abrangencia", "unidade"])
-            .agg(inicio=("competencia", "min"), fim=("competencia", "max"), meses=("valor", "size"), com_valor=("valor", "count"),
-                 zeros=("valor", lambda valores: int((valores == 0).sum()))).reset_index())
+dados_catalogo = dados_processados.assign(competencia=competencia, zero=dados_processados["valor"].eq(0))  # zero = True quando a fonte publicou 0
+catalogo = dados_catalogo.groupby(["evento", "abrangencia", "unidade"]).agg(
+    inicio=("competencia", "min"), fim=("competencia", "max"), meses=("valor", "size"), com_valor=("valor", "count"), zeros=("zero", "sum")).reset_index()
 catalogo["sem_valor"] = catalogo["meses"] - catalogo["com_valor"]
 display(catalogo)
 
 
-# %% ETAPA 10 - CONFERÊNCIA DOS RESULTADOS
+# 10. CONFERÊNCIA DOS RESULTADOS
 # Regras de qualidade da base mensal. Índice contínuo de meses = ano x 12 + mês (para ver se alguma série pula meses).
 indice_mes = dados_processados["ano"] * 12 + dados_processados["mes"] - 1
 sem_lacuna = all((indices.sort_values().diff().dropna() == 1).all()
@@ -210,7 +210,7 @@ print(f"Catálogo igual ao publicado: {catalogo_igual}")
 assert all(regras.values()) and base_igual and hash_gerado == hash_aprovado and catalogo_igual, "A reconstrução diverge da base aprovada: revisar."
 
 
-# %% ETAPA 11 - LEITURA DOS DADOS SSP/SC
+# 11. LEITURA DOS DADOS SSP/SC
 # Fonte: 45 relatórios em PDF (42 boletins mensais e 3 relatórios de violência doméstica), cada um com um CSV que indica a
 # página, a tabela e a linha de cada célula. O CSV localiza os valores; o PDF continua sendo o documento oficial.
 if not ssp_sc.acervo_disponivel():
@@ -220,7 +220,7 @@ print(f"PDFs: {len(inventario)} | pares PDF + CSV completos: {int(inventario['pa
 display(inventario[["arquivo_pdf", "tipo_documento", "bytes_pdf", "par_completo"]].head())
 
 
-# %% ETAPA 12 - TRATAMENTO E CONFERÊNCIA DA SSP/SC
+# 12. TRATAMENTO E CONFERÊNCIA DA SSP/SC
 # processar() lê o bloco de JOINVILLE de cada relatório, trata e confere cada célula usada contra a tabela do próprio PDF.
 # Cada valor é rastreável até o PDF, a página, a tabela e a linha.
 resultado = ssp_sc.processar()
@@ -240,7 +240,7 @@ assert len(violencia) == 216 and violencia["indicador"].nunique() == 9 and viole
 assert list(violencia["unidade"].unique()) == [ssp_sc.UNIDADE_VD] and bool(verificacoes["ok"].all())
 
 
-# %% ETAPA 13 - EXPORTAÇÃO DOS DADOS TRATADOS
+# 13. EXPORTAÇÃO DOS DADOS TRATADOS
 # Sinesp e SSP/SC são gravados em pastas separadas: as duas fontes não são misturadas nem somadas.
 pasta_sinesp = pasta_saida / "sinesp"
 pasta_ssp = pasta_saida / "ssp_sc"
@@ -279,7 +279,7 @@ for arquivo in sorted(pasta_saida.rglob("*.*")):
     print(f"  {arquivo.relative_to(pasta_saida).as_posix()} ({arquivo.stat().st_size} bytes)")
 
 
-# %% ETAPA 14 - VALIDAÇÕES FINAIS
+# 14. VALIDAÇÕES FINAIS
 # Relê os arquivos gravados (não as variáveis em memória) e confere os números de referência.
 mensal_gravado = pd.read_csv(pasta_sinesp / "etl_sinesp_joinville_mensal.csv")
 vd_gravada = pd.read_csv(pasta_ssp / "violencia_domestica_joinville_tratada.csv")

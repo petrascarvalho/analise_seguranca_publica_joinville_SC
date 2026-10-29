@@ -1,4 +1,4 @@
-"""Notebook ``notebooks/analise_seguranca_publica_joinville.ipynb``: roteiro de 16 etapas comentadas com ``#``, sem saídas gravadas e com execução de todas as células de código, em ordem."""
+"""Notebook notebooks/analise_seguranca_publica_joinville.ipynb: roteiro de 16 etapas comentadas com #, sem saídas gravadas e com execução de todas as células de código, em ordem."""
 
 import json
 import sys
@@ -9,6 +9,7 @@ from jupyter_client import KernelManager
 
 from src.pipeline.utils import project_path
 
+# Caminho do notebook e títulos esperados das 16 etapas (cada célula de código abre com "# ETAPA n — nome").
 NOTEBOOK = project_path("notebooks", "analise_seguranca_publica_joinville.ipynb")
 ETAPAS = ["Bibliotecas e pastas", "Leitura da base Sinesp aprovada", "XLSX oficial de 2026", "Tratamento", "Verificação de duplicidades",
           "Valores ausentes e zeros", "Recorte de Joinville", "Estatísticas descritivas", "Totais anuais e períodos equivalentes",

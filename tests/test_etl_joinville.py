@@ -1,4 +1,4 @@
-"""ETL único ``scripts/etl_joinville.py``: roteiro básico em 14 etapas, sem funções próprias, que reproduz a base aprovada do Sinesp e o
+"""ETL único scripts/etl_joinville.py: roteiro básico em 14 etapas, sem funções próprias, que reproduz a base aprovada do Sinesp e o
 tratamento da SSP/SC e grava somente em uma pasta de saída própria (nunca na base publicada no painel).
 
 A execução completa depende do acervo local (XLSX do Sinesp e PDFs da SSP/SC) e é pulada em um clone limpo.
@@ -34,9 +34,9 @@ def _hashes_publicados() -> dict:
     return {p.name: dp.sha256_normalizado(p.read_bytes()) for p in sorted(dp.DIRETORIO_DADOS.iterdir()) if p.is_file()}
 
 
-def test_etl_tem_14_etapas_em_celulas_interativas_e_e_um_roteiro_basico():
+def test_etl_tem_14_etapas_com_comentarios_numerados_e_e_um_roteiro_basico():
     texto = ETL.read_text(encoding="utf-8")
-    titulos = re.findall(r"^# %% ETAPA (\d{2}) - (.+)$", texto, re.MULTILINE)
+    titulos = re.findall(r"^# (\d{1,2})\. ([A-ZÀ-Ú /]+)$", texto, re.MULTILINE)  # comentários numerados: "# 1. IMPORTAÇÃO DAS BIBLIOTECAS"
     assert [int(n) for n, _ in titulos] == list(range(1, 15)), titulos
     assert [t for _, t in titulos] == ETAPAS
     arvore = ast.parse(texto)
@@ -101,3 +101,13 @@ def test_etl_reproduz_a_base_aprovada_do_sinesp_e_a_ssp_sc_e_grava_so_na_saida(t
     assert auditoria["verificacoes_aprovadas"] == "159 de 159" and auditoria["originais_inalterados"] is True
     assert auditoria["homicidios"]["grupos_republicados"] == 58 and auditoria["homicidios"]["grupos_divergentes"] == 41
     assert _hashes_publicados() == antes  # a base publicada no painel não foi tocada
+
+
+def test_nenhum_python_ativo_usa_marcador_de_celula_nem_markdown_nos_comentarios():
+    marcador = "# " + "%%"  # montado em duas partes para este arquivo não contar a si mesmo
+    arquivos = [ETL, *project_path("scripts").glob("*.py"), *project_path("dashboard").rglob("*.py"), *project_path("src").rglob("*.py")]
+    for arquivo in arquivos:
+        texto = arquivo.read_text(encoding="utf-8")
+        assert marcador not in texto, arquivo.name  # comentários comuns com #, sem marcadores de célula
+        comentarios = [linha for linha in texto.splitlines() if linha.lstrip().startswith("#")]
+        assert not [c for c in comentarios if "**" in c or "`" in c or c.lstrip().startswith("# #")], arquivo.name  # sem Markdown nos comentários

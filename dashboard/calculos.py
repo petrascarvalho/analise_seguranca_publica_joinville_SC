@@ -2,8 +2,8 @@
 
 Regras herdadas do roteiro acadêmico (Etapa 9) e do fluxo de atualização:
 - soma só existe quando TODOS os meses presentes têm valor publicado (soma incompleta nunca é apresentada como total);
-- desvio-padrão descritivo com ``ddof=0``;
-- variação percentual só com base positiva; caso contrário ``<NA>`` (não aplicável);
+- desvio-padrão descritivo com ddof=0;
+- variação percentual só com base positiva; caso contrário <NA> (não aplicável);
 - o último ano de cada série pode ser parcial (hoje 2026, até setembro; a PRF pode terminar antes): períodos só são
   comparados quando equivalentes (mesmos meses nos dois anos);
 - nenhum total geral é produzido pela soma de indicadores, abrangências ou unidades diferentes (vítimas × mandados).
@@ -21,6 +21,7 @@ CHAVE_SERIE = ["evento", "abrangencia", "unidade"]
 
 
 def _nome_mes(mes: int) -> str:
+    """Nome do mês (1 = janeiro)."""
     return NOMES_MESES[mes - 1]
 
 
@@ -52,7 +53,7 @@ def tabela_anual_sinesp(sinesp: pd.DataFrame) -> pd.DataFrame:
 
 
 def comparacao_periodo_sinesp(sinesp: pd.DataFrame, mes_final: int = 8) -> pd.DataFrame:
-    """Soma de janeiro até ``mes_final`` em cada ano; só anos com todos esses meses publicados."""
+    """Soma de janeiro até mes_final em cada ano; só anos com todos esses meses publicados."""
     linhas = []
     for chave, grupo in sinesp.groupby(CHAVE_SERIE + ["ano"], sort=False):
         recorte = grupo.loc[grupo["mes"].le(mes_final)]
@@ -80,6 +81,7 @@ def variacao(anterior, atual) -> tuple[object, object]:
 
 
 def serie_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str) -> pd.DataFrame:
+    """Linhas de uma única série (indicador + classificação institucional), em ordem de ano e mês."""
     return sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)].sort_values(["ano", "mes"])
 
 
@@ -90,11 +92,12 @@ def mes_final_da_serie(serie: pd.DataFrame) -> int:
 
 
 def ultima_competencia_da_serie(serie: pd.DataFrame) -> tuple[int, int]:
+    """Ano e mês do último valor publicado da série."""
     return int(serie["ano"].max()), mes_final_da_serie(serie)
 
 
 def comparacao_ultimo_periodo_sinesp(serie: pd.DataFrame) -> dict | None:
-    """Último ano parcial da série × ano anterior no MESMO período (janeiro até o último mês publicado), ou ``None``."""
+    """Último ano parcial da série × ano anterior no MESMO período (janeiro até o último mês publicado), ou None."""
     ano, mes_final = ultima_competencia_da_serie(serie)
     if mes_final == 12:
         return None
@@ -161,7 +164,7 @@ def variacoes_anuais(serie: pd.DataFrame) -> pd.DataFrame:
 
 
 def comparar_anos_completos(serie: pd.DataFrame, ano_a: int, ano_b: int) -> dict | None:
-    """Comparação entre dois anos COMPLETOS quaisquer da série (``None`` se algum não for completo ou não tiver soma)."""
+    """Comparação entre dois anos COMPLETOS quaisquer da série (None se algum não for completo ou não tiver soma)."""
     anual = tabela_anual_sinesp(serie).set_index("ano")
     for ano in (ano_a, ano_b):
         if ano not in anual.index or anual.loc[ano, "cobertura"] != "ano completo" or pd.isna(anual.loc[ano, "soma"]):
@@ -172,7 +175,7 @@ def comparar_anos_completos(serie: pd.DataFrame, ano_a: int, ano_b: int) -> dict
 
 
 def ranking_por_unidade(sinesp: pd.DataFrame, ano: int, unidade: str) -> pd.DataFrame:
-    """Séries (indicador × abrangência) ordenadas pela soma do ANO COMPLETO ``ano``, SOMENTE dentro de uma mesma unidade.
+    """Séries (indicador × abrangência) ordenadas pela soma do ANO COMPLETO ano, SOMENTE dentro de uma mesma unidade.
 
     É uma ordenação, não um total: nada é somado entre séries. Séries sem o ano completo ficam fora.
     """
@@ -228,7 +231,7 @@ def achados_principais(sinesp: pd.DataFrame) -> list[dict]:
 # ===================================================================================================================
 # Etapa 20 — distribuição, outliers (IQR), sazonalidade, médias móveis e acumulados.
 # Todas as funções recebem a série de UM indicador × UMA abrangência (uma única unidade) e devolvem tabelas numéricas;
-# as figuras de ``graficos.py`` desenham exatamente essas tabelas.
+# as figuras de graficos.py desenham exatamente essas tabelas.
 # ===================================================================================================================
 FATOR_TUKEY = 1.5
 MESES_MINIMOS_IQR = 12          # menos meses com valor: o método IQR não é aplicado
@@ -246,6 +249,7 @@ _ROTULOS_DIAGNOSTICO = {
 
 
 def _exigir_uma_serie(serie: pd.DataFrame) -> None:
+    """Interrompe o cálculo se a tabela misturar séries ou unidades diferentes."""
     if serie[["evento", "abrangencia", "unidade"]].drop_duplicates().shape[0] > 1:
         raise ValueError("Cálculo exige uma única série (indicador × abrangência × unidade): não se misturam séries nem unidades.")
 
@@ -253,7 +257,7 @@ def _exigir_uma_serie(serie: pd.DataFrame) -> None:
 def quartis_iqr(valores) -> dict:
     """Quartis (interpolação linear, método 7: padrão do pandas/NumPy), IQR e limites de Tukey (Q1 − 1,5·IQR; Q3 + 1,5·IQR).
 
-    Valores ausentes são ignorados (nunca viram zero). Sem valores, tudo é ``<NA>`` e ``n`` = 0.
+    Valores ausentes são ignorados (nunca viram zero). Sem valores, tudo é <NA> e n = 0.
     """
     v = pd.Series(valores).dropna().astype("float64")
     if v.empty:
@@ -266,6 +270,7 @@ def quartis_iqr(valores) -> dict:
 
 
 def _fora_dos_limites(serie: pd.DataFrame, inferior: float, superior: float) -> pd.DataFrame:
+    """Meses com valor abaixo do limite inferior ou acima do superior, com a direção de cada um."""
     valor = serie["valor"].astype("Float64")
     abaixo, acima = valor.notna() & (valor < inferior), valor.notna() & (valor > superior)
     selecao = (abaixo | acima).to_numpy(dtype=bool)
@@ -277,10 +282,10 @@ def _fora_dos_limites(serie: pd.DataFrame, inferior: float, superior: float) -> 
 def diagnostico_outliers_iqr(serie: pd.DataFrame) -> dict:
     """Aplica o critério de Tukey aos valores MENSAIS da série e diz se o método é informativo.
 
-    Classificações: ``informativo``; ``dados_insuficientes`` (< 12 meses com valor); ``distribuicao_degenerada`` (todos os valores
-    iguais); ``iqr_zero`` (Q1 = Q3: qualquer valor diferente seria "atípico"); ``maioria_zeros`` (≥ 50% de zeros publicados);
-    ``contagens_baixas`` (Q3 ≤ 1: oscilações de 0 a 3 eventos são comuns e não são anomalias).
-    Fora do caso ``informativo`` nenhum ponto deve ser apresentado como anomalia (``interpretavel`` é falso).
+    Classificações: informativo; dados_insuficientes (< 12 meses com valor); distribuicao_degenerada (todos os valores
+    iguais); iqr_zero (Q1 = Q3: qualquer valor diferente seria "atípico"); maioria_zeros (≥ 50% de zeros publicados);
+    contagens_baixas (Q3 ≤ 1: oscilações de 0 a 3 eventos são comuns e não são anomalias).
+    Fora do caso informativo nenhum ponto deve ser apresentado como anomalia (interpretavel é falso).
     """
     _exigir_uma_serie(serie)
     serie = serie.sort_values(["ano", "mes"])
@@ -331,7 +336,7 @@ def diagnostico_outliers_todas_as_series(sinesp: pd.DataFrame) -> pd.DataFrame:
 def quartis_por_ano(serie: pd.DataFrame) -> pd.DataFrame:
     """Resumo de cinco números por ano (valores mensais), com limites de Tukey, bigodes e pontos fora, para o boxplot.
 
-    Bigodes: menor e maior valor DENTRO dos limites. Em anos com IQR = 0 o boxplot é degenerado (``iqr_zero`` verdadeiro) e os
+    Bigodes: menor e maior valor DENTRO dos limites. Em anos com IQR = 0 o boxplot é degenerado (iqr_zero verdadeiro) e os
     pontos fora não são interpretados.
     """
     _exigir_uma_serie(serie)
@@ -352,7 +357,7 @@ def quartis_por_ano(serie: pd.DataFrame) -> pd.DataFrame:
 
 
 def quadro_ano_mes(serie: pd.DataFrame) -> pd.DataFrame:
-    """Valores publicados em grade ano × mês (``<NA>`` onde não há valor observado; nunca zero)."""
+    """Valores publicados em grade ano × mês (<NA> onde não há valor observado; nunca zero)."""
     _exigir_uma_serie(serie)
     quadro = serie.pivot(index="ano", columns="mes", values="valor").reindex(columns=range(1, 13)).sort_index()
     return quadro.astype("Int64")
@@ -366,10 +371,10 @@ def anos_completos_da_serie(serie: pd.DataFrame) -> list[int]:
 
 
 def perfil_sazonal(serie: pd.DataFrame, anos: list[int] | None = None) -> pd.DataFrame:
-    """Perfil por mês-calendário usando SOMENTE anos completos (e, se informados, apenas entre ``anos``).
+    """Perfil por mês-calendário usando SOMENTE anos completos (e, se informados, apenas entre anos).
 
-    Colunas: mes, n_anos, media, mediana, minimo, maximo, indice (média do mês ÷ média de todos os meses usados; ``<NA>`` se a média geral
-    for zero). Os anos usados ficam em ``perfil.attrs["anos_usados"]``. Poucos anos completos tornam o perfil descritivo, sem poder de
+    Colunas: mes, n_anos, media, mediana, minimo, maximo, indice (média do mês ÷ média de todos os meses usados; <NA> se a média geral
+    for zero). Os anos usados ficam em perfil.attrs["anos_usados"]. Poucos anos completos tornam o perfil descritivo, sem poder de
     provar sazonalidade.
     """
     _exigir_uma_serie(serie)
@@ -390,9 +395,9 @@ def perfil_sazonal(serie: pd.DataFrame, anos: list[int] | None = None) -> pd.Dat
 
 
 def media_movel(serie: pd.DataFrame, janela: int = 12) -> pd.DataFrame:
-    """Média móvel (janela de ``janela`` meses consecutivos, alinhada ao último mês da janela).
+    """Média móvel (janela de janela meses consecutivos, alinhada ao último mês da janela).
 
-    Só existe quando TODOS os meses da janela têm valor; meses ausentes ou lacunas geram ``<NA>`` (nada é interpolado).
+    Só existe quando TODOS os meses da janela têm valor; meses ausentes ou lacunas geram <NA> (nada é interpolado).
     """
     _exigir_uma_serie(serie)
     indice = serie["ano"].astype(int) * 12 + serie["mes"].astype(int) - 1
@@ -405,7 +410,7 @@ def media_movel(serie: pd.DataFrame, janela: int = 12) -> pd.DataFrame:
 
 
 def acumulado_no_ano(serie: pd.DataFrame) -> pd.DataFrame:
-    """Soma acumulada de janeiro até cada mês, por ano; ``<NA>`` depois de um mês sem valor (nunca soma parcial como total)."""
+    """Soma acumulada de janeiro até cada mês, por ano; <NA> depois de um mês sem valor (nunca soma parcial como total)."""
     _exigir_uma_serie(serie)
     linhas = []
     for ano, grupo in serie.sort_values(["ano", "mes"]).groupby("ano", sort=True):
@@ -428,14 +433,14 @@ def numero_de_faixas(n: int) -> int:
 def distribuicao_frequencias(serie: pd.DataFrame) -> pd.DataFrame:
     """Frequência dos valores mensais em faixas de contagem (barras categóricas), com regra simples e documentada.
 
-    Regra: (1) o **zero publicado é sempre uma faixa própria** (``0``), nunca misturado a outros valores; (2) os valores positivos
-    (ou todos, se não houver zero) são agrupados em faixas de **largura inteira igual** ``w = ⌈amplitude / k⌉``, onde a amplitude vai do
-    menor ao maior valor positivo observado e ``k`` vem da regra de Sturges (``numero_de_faixas``; uma faixa a menos quando há faixa de
+    Regra: (1) o zero publicado é sempre uma faixa própria (0), nunca misturado a outros valores; (2) os valores positivos
+    (ou todos, se não houver zero) são agrupados em faixas de largura inteira igual w = ⌈amplitude / k⌉, onde a amplitude vai do
+    menor ao maior valor positivo observado e k vem da regra de Sturges (numero_de_faixas; uma faixa a menos quando há faixa de
     zero). Assim não surge uma faixa vazia entre o zero e o menor valor positivo (que pode estar longe de 1, como nos mandados).
-    Se ``w`` = 1, cada inteiro é uma faixa. O valor extremo nunca é removido: ele cai na última faixa, que termina no máximo observado.
+    Se w = 1, cada inteiro é uma faixa. O valor extremo nunca é removido: ele cai na última faixa, que termina no máximo observado.
 
-    Colunas: rotulo, inicio, fim (inclusivos), n_meses, percentual. A soma de ``n_meses`` é o número de meses com valor; ausências
-    ficam de fora (e são contadas na página/roteiro). ``tabela.attrs["largura"]`` guarda ``w``.
+    Colunas: rotulo, inicio, fim (inclusivos), n_meses, percentual. A soma de n_meses é o número de meses com valor; ausências
+    ficam de fora (e são contadas na página/roteiro). tabela.attrs["largura"] guarda w.
     """
     _exigir_uma_serie(serie)
     v = serie["valor"].dropna().astype("int64")
@@ -448,6 +453,7 @@ def distribuicao_frequencias(serie: pd.DataFrame) -> pd.DataFrame:
     linhas = []
 
     def faixa(inicio: int, fim: int) -> dict:
+        """Conta os meses com valor entre início e fim e calcula o percentual sobre o total de meses."""
         quantos = int(v.between(inicio, fim).sum())
         return {"rotulo": str(inicio) if inicio == fim else f"{inicio}–{fim}", "inicio": inicio, "fim": fim, "n_meses": quantos,
                 "percentual": round(quantos / n * 100, 2)}
@@ -470,8 +476,8 @@ def distribuicao_frequencias(serie: pd.DataFrame) -> pd.DataFrame:
 
 
 def soma_no_periodo(serie: pd.DataFrame, mes_inicial: int, mes_final: int) -> pd.DataFrame:
-    """Soma, por ano, dos meses ``mes_inicial``–``mes_final``. Só entra o ano em que TODOS esses meses foram publicados e têm valor
-    (nunca soma parcial como total). Colunas: ano, soma (``Int64``), meses_com_valor."""
+    """Soma, por ano, dos meses mes_inicial–mes_final. Só entra o ano em que TODOS esses meses foram publicados e têm valor
+    (nunca soma parcial como total). Colunas: ano, soma (Int64), meses_com_valor."""
     _exigir_uma_serie(serie)
     esperado = mes_final - mes_inicial + 1
     linhas = []

@@ -75,7 +75,9 @@ else:
     if categoria is None:
         tabela = totais.reset_index().rename(columns={"categoria": "Categoria", 2023: "2023", 2024: "2024"})
         tabela["Diferença 2024 − 2023"] = (totais[2024] - totais[2023]).map(fmt_dif).to_numpy()
-        tabela = tabela.sort_values("2024", ascending=False).assign(**{"2023": lambda t: t["2023"].map(fmt_int), "2024": lambda t: t["2024"].map(fmt_int)})
+        tabela = tabela.sort_values("2024", ascending=False)  # ordena pelo número; só depois formata o texto
+        tabela["2023"] = tabela["2023"].map(fmt_int)
+        tabela["2024"] = tabela["2024"].map(fmt_int)
         legenda = "Total anual de cada categoria (soma dos 12 meses). As categorias não são somadas entre si."
     else:
         mensal = vd.loc[vd["categoria"].eq(categoria)].pivot(index="mes", columns="ano", values="valor").reindex(range(1, 13))

@@ -1,7 +1,7 @@
 """Leitura dos XLSX anuais do Sinesp/MJSP: percorre o XML da planilha e devolve só as linhas de SC/JOINVILLE.
 
-Cada XLSX nacional tem cerca de 24 MB; ``pd.read_excel`` carregaria o país inteiro. Estas funções são usadas por
-``atualizacao_dados.ler_sinesp_xlsx``, que o ETL (``scripts/etl_joinville.py``) e a atualização controlada chamam.
+Cada XLSX nacional tem cerca de 24 MB; pd.read_excel carregaria o país inteiro. Estas funções são usadas por
+atualizacao_dados.ler_sinesp_xlsx, que o ETL (scripts/etl_joinville.py) e a atualização controlada chamam.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 
 def _cell_value(cell, shared_strings: list[str]):
+    """Valor de uma célula do XML da planilha (texto, número ou verdadeiro/falso)."""
     kind = cell.get("t")
     if kind == "inlineStr":
         return "".join(cell.itertext())
@@ -42,6 +43,7 @@ def _cell_value(cell, shared_strings: list[str]):
 
 
 def _parse_sheet_row(raw_row: bytes):
+    """Transforma o texto XML de uma linha da planilha em um elemento que pode ser lido."""
     # Atributos de extensão como x14ac:dyDescent dependem de declarações
     # herdadas do XML da planilha; o fragmento isolado não precisa deles.
     raw_row = re.sub(rb'\s+x14ac:[\w]+="[^"]*"', b"", raw_row)
@@ -55,6 +57,7 @@ def _parse_sheet_row(raw_row: bytes):
 
 
 def _shared_strings(archive: ZipFile) -> list[str]:
+    """Lista dos textos compartilhados do XLSX (a planilha guarda cada texto uma vez e as células apontam para ele)."""
     if "xl/sharedStrings.xml" not in archive.namelist():
         return []
     root = etree.fromstring(archive.read("xl/sharedStrings.xml"))

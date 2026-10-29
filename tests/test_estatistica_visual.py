@@ -1,7 +1,7 @@
 """Etapa 20 — testes numéricos de quartis, IQR, outliers, períodos parciais, zeros, filtros e correspondência figura × tabela.
 
-Os valores esperados são calculados de forma independente (NumPy ou contas manuais) e comparados com ``dashboard/calculos.py`` e com os
-elementos desenhados pelas figuras de ``dashboard/graficos.py`` (identificados por ``gid``).
+Os valores esperados são calculados de forma independente (NumPy ou contas manuais) e comparados com dashboard/calculos.py e com os
+elementos desenhados pelas figuras de dashboard/graficos.py (identificados por gid).
 """
 
 import numpy as np
@@ -20,7 +20,7 @@ def sinesp():
 
 
 def _serie(valores, evento="Evento sintético", abrangencia="Estadual", unidade="vítimas", ano_inicial=2020):
-    """Série mensal sintética (meses consecutivos); ``None`` vira ausência (<NA>)."""
+    """Série mensal sintética (meses consecutivos); None vira ausência (<NA>)."""
     linhas = [{"ano": ano_inicial + i // 12, "mes": i % 12 + 1, "evento": evento, "abrangencia": abrangencia, "unidade": unidade, "valor": v}
               for i, v in enumerate(valores)]
     quadro = pd.DataFrame(linhas)

@@ -1,11 +1,11 @@
 """Carregamento e validação dos arquivos mínimos do dashboard — fonte única: Sinesp/MJSP (sem Streamlit).
 
-Os arquivos ficam em ``dashboard/data_publica/`` e são contagens municipais agregadas de Joinville/SC, já
-auditadas no roteiro acadêmico e no fluxo de atualização controlada. Nenhuma função aqui lê ``dados/`` (acervo
+Os arquivos ficam em dashboard/data_publica/ e são contagens municipais agregadas de Joinville/SC, já
+auditadas no roteiro acadêmico e no fluxo de atualização controlada. Nenhuma função aqui lê dados/ (acervo
 bruto local): o dashboard deve funcionar em um clone limpo.
 
-Qualquer arquivo ausente, esquema divergente ou valor inválido gera ``ErroDados`` com mensagem explícita;
-nada é preenchido ou corrigido. Ausência de valor é preservada (``<NA>``) e nunca vira zero.
+Qualquer arquivo ausente, esquema divergente ou valor inválido gera ErroDados com mensagem explícita;
+nada é preenchido ou corrigido. Ausência de valor é preservada (<NA>) e nunca vira zero.
 """
 
 from __future__ import annotations
@@ -16,8 +16,10 @@ from pathlib import Path
 
 import pandas as pd
 
+# Pasta com os arquivos aprovados que o painel lê (a base publicada; somente leitura).
 DIRETORIO_DADOS = Path(__file__).resolve().parent / "data_publica"
 
+# Nomes dos arquivos e colunas esperadas: se algo mudar, a leitura para com erro (nada é corrigido em silêncio).
 ARQ_SINESP = "sinesp_joinville_mensal.csv"
 ARQ_SINESP_CATALOGO = "sinesp_catalogo_indicadores.csv"
 ARQ_MANIFESTO = "manifesto_dados_publicos.json"
@@ -46,6 +48,7 @@ def sha256_normalizado(conteudo: bytes) -> str:
 
 
 def _ler_texto(nome: str, diretorio: Path) -> pd.DataFrame:
+    """Lê um CSV da base publicada como texto (sem converter nada); erro claro se faltar ou estiver malformado."""
     caminho = Path(diretorio) / nome
     if not caminho.is_file():
         raise ErroDados(
@@ -59,11 +62,13 @@ def _ler_texto(nome: str, diretorio: Path) -> pd.DataFrame:
 
 
 def _exigir_colunas(quadro: pd.DataFrame, colunas: list[str], nome: str) -> None:
+    """Confere se as colunas do arquivo são exatamente as esperadas, na mesma ordem."""
     if list(quadro.columns) != colunas:
         raise ErroDados(f"Esquema inesperado em {nome}: esperado {colunas}, encontrado {list(quadro.columns)}.")
 
 
 def _inteiro(serie: pd.Series, campo: str, nome: str, *, permitir_vazio: bool) -> pd.Series:
+    """Converte uma coluna de texto em inteiros; vazio vira ausente (se permitido) e qualquer outro valor inválido interrompe."""
     valores = []
     for posicao, texto in enumerate(serie.tolist()):
         if texto == "":
@@ -78,12 +83,15 @@ def _inteiro(serie: pd.Series, campo: str, nome: str, *, permitir_vazio: bool) -
 
 
 def validar_sinesp(quadro: pd.DataFrame, nome: str = ARQ_SINESP) -> pd.DataFrame:
-    """Valida e tipa a série mensal Sinesp (texto → tipos). Ausência permanece ``<NA>``."""
+    """Valida e tipa a série mensal Sinesp (texto → tipos). Ausência permanece <NA>."""
+    # 1. Colunas certas e tipos: ano e mês são inteiros; "valor" vazio continua vazio (ausência não vira zero).
     _exigir_colunas(quadro, COLUNAS_SINESP, nome)
     saida = quadro.copy()
     saida["ano"] = _inteiro(saida["ano"], "ano", nome, permitir_vazio=False)
     saida["mes"] = _inteiro(saida["mes"], "mes", nome, permitir_vazio=False)
     saida["valor"] = _inteiro(saida["valor"], "valor", nome, permitir_vazio=True)
+    # 2. Regras de qualidade: textos preenchidos, ano e mês válidos, sem competência repetida,
+    #    sem lacuna de meses em cada série e uma única unidade por série.
     for campo in ("evento", "abrangencia", "unidade"):
         if (saida[campo].str.strip() == "").any():
             raise ErroDados(f"{nome}: campo '{campo}' vazio.")
@@ -103,6 +111,7 @@ def validar_sinesp(quadro: pd.DataFrame, nome: str = ARQ_SINESP) -> pd.DataFrame
 
 
 def validar_catalogo(quadro: pd.DataFrame, nome: str = ARQ_SINESP_CATALOGO) -> pd.DataFrame:
+    """Confere as colunas do catálogo e se não há série repetida (indicador + classificação)."""
     _exigir_colunas(quadro, COLUNAS_CATALOGO, nome)
     if quadro.duplicated(["evento", "abrangencia"]).any():
         raise ErroDados(f"{nome}: combinação evento/abrangência repetida.")
@@ -111,6 +120,7 @@ def validar_catalogo(quadro: pd.DataFrame, nome: str = ARQ_SINESP_CATALOGO) -> p
 
 def validar_consistencia(sinesp: pd.DataFrame, catalogo: pd.DataFrame) -> None:
     """Catálogo e série mensal devem descrever exatamente as mesmas séries, unidades e contagens."""
+    # Mesmas séries nos dois arquivos; depois, as contagens do catálogo são recalculadas e comparadas com a série mensal.
     series_dados = set(zip(sinesp["evento"], sinesp["abrangencia"]))
     series_catalogo = set(zip(catalogo["evento"], catalogo["abrangencia"]))
     if series_dados != series_catalogo:
@@ -127,14 +137,17 @@ def validar_consistencia(sinesp: pd.DataFrame, catalogo: pd.DataFrame) -> None:
 
 
 def carregar_sinesp(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
+    """Lê e valida a série mensal do Sinesp publicada no painel."""
     return validar_sinesp(_ler_texto(ARQ_SINESP, diretorio))
 
 
 def carregar_catalogo_sinesp(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
+    """Lê e valida o catálogo de indicadores do Sinesp."""
     return validar_catalogo(_ler_texto(ARQ_SINESP_CATALOGO, diretorio))
 
 
 def carregar_manifesto(diretorio: Path = DIRETORIO_DADOS) -> dict:
+    """Lê o manifesto da versão publicada (hashes, cobertura e origem dos dados)."""
     caminho = Path(diretorio) / ARQ_MANIFESTO
     if not caminho.is_file():
         raise ErroDados(f"Manifesto não encontrado: {ARQ_MANIFESTO}.")
@@ -146,6 +159,7 @@ def carregar_manifesto(diretorio: Path = DIRETORIO_DADOS) -> dict:
 
 def verificar_integridade(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
     """Compara linhas/colunas e SHA-256 dos arquivos de dados com o manifesto."""
+    # Para cada arquivo do manifesto: ele existe? O SHA-256 de agora é igual ao registrado?
     manifesto = carregar_manifesto(diretorio)
     linhas = []
     for ficha in manifesto.get("arquivos", []):

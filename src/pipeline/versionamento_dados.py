@@ -2,12 +2,12 @@
 
 O manifesto distingue, de forma verificável, quatro datas que NÃO devem ser confundidas:
 
-* **data de consulta** — quando as fontes foram consultadas (verificação);
-* **data de publicação** — informada pela própria fonte (p.ex. "Atualizado em" da página);
-* **competência estatística** — período a que os dados se referem (p.ex. 2026-08);
-* **data de geração** — quando esta versão derivada foi gerada.
+* data de consulta — quando as fontes foram consultadas (verificação);
+* data de publicação — informada pela própria fonte (p.ex. "Atualizado em" da página);
+* competência estatística — período a que os dados se referem (p.ex. 2026-08);
+* data de geração — quando esta versão derivada foi gerada.
 
-Nenhum metadado ausente é inventado: o que a fonte não informa fica ``null``/"não informado".
+Nenhum metadado ausente é inventado: o que a fonte não informa fica null/"não informado".
 """
 
 from __future__ import annotations
@@ -35,24 +35,29 @@ EVENTOS_COM_LINHAS_MULTIPLAS = ("Tentativa de homicídio", "Estupro")
 
 
 def limitacoes(mandado: bool) -> str:
+    """Texto padrão de limitações de uma série (mandados ou vítimas)."""
     base = ("Não representa pessoas únicas; estadual e PF separados; exclusividade não demonstrada." if mandado else
             "Não somar às parcelas de sexo; manter categoria e abrangência; sobreposição entre indicadores/fontes requer definição.")
     return base + " 2026 parcial; linha tabular não equivale a ocorrência individual."
 
 
 def agora_utc() -> datetime:
+    """Data e hora atuais em UTC, sem microssegundos."""
     return datetime.now(timezone.utc).replace(microsecond=0)
 
 
 def id_versao(agora: datetime) -> str:
+    """Identificador de versão a partir da data e hora (ex.: 20261027T114400Z)."""
     return agora.strftime("%Y%m%dT%H%M%SZ")
 
 
 def competencia_texto(ano: int, mes: int) -> str:
+    """Competência no formato 2026-09."""
     return f"{int(ano)}-{int(mes):02d}"
 
 
 def primeira_e_ultima_competencia(quadro: pd.DataFrame) -> tuple[str, str]:
+    """Primeira e última competência (ano-mês) de uma tabela."""
     chaves = quadro["ano"].astype(int) * 100 + quadro["mes"].astype(int)
     primeira, ultima = int(chaves.min()), int(chaves.max())
     return competencia_texto(primeira // 100, primeira % 100), competencia_texto(ultima // 100, ultima % 100)
@@ -75,15 +80,19 @@ FONTES_BASE = [
                 "url": "https://dados.mj.gov.br/dataset/sistema-nacional-de-estatisticas-de-seguranca-publica",
                 "licenca": "Creative Commons Atribuição (informada pelo responsável do projeto)",
                 "confirmada_na_consulta": False,
-                "observacao": "O domínio dados.mj.gov.br não foi resolvido (NXDOMAIN; também falhou no WebFetch) nas consultas de 27/10/2026; o catálogo não pôde ser lido e a licença NÃO foi confirmada por esta verificação.",
+                "observacao": "O domínio dados.mj.gov.br não foi resolvido (NXDOMAIN; também falhou no WebFetch) nas consultas de 27/10/2026; o catálogo não "
+                              "pôde ser lido e a licença NÃO foi confirmada por esta verificação.",
             },
             "site": {
                 "licenca": "Creative Commons Atribuição-SemDerivações 3.0 Não Adaptada (CC BY-ND 3.0)",
                 "url": "https://creativecommons.org/licenses/by-nd/3.0/deed.pt_BR",
-                "escopo": "Rodapé do portal gov.br: 'Todo o conteúdo deste site está publicado sob a licença...' (licença geral do site, não específica do conjunto de dados).",
+                "escopo": "Rodapé do portal gov.br: 'Todo o conteúdo deste site está publicado sob a licença...' (licença geral do site, não específica do conjunto "
+                          "de dados).",
                 "confirmada_na_consulta": True,
             },
-            "condicoes_especificas_do_recurso": "Nenhuma proibição, restrição de uso ou exigência de citação específica foi encontrada na página da base VDE nem no Termo de Uso do portal; a página traz notas metodológicas (p.ex. linhas múltiplas em 'Tentativa de Homicídio' e 'Estupro').",
+            "condicoes_especificas_do_recurso": "Nenhuma proibição, restrição de uso ou exigência de citação específica foi encontrada na página da base VDE "
+                                                "nem no Termo de Uso do portal; a página traz notas metodológicas (p.ex. linhas múltiplas em 'Tentativa de Homicídio' "
+                                                "e 'Estupro').",
         },
     },
 ]
@@ -112,8 +121,10 @@ REGRAS_ETL = [
     "Medida: vítimas em `total_vitima`; mandados cumpridos em `total` — conceitos distintos, nunca somados.",
     "Ausências são preservadas (campo vazio) e nunca convertidas em zero; zeros publicados são mantidos como zero.",
     "Valores devem ser inteiros não negativos; indicador novo, abrangência ausente ou esquema alterado interrompem o ETL.",
-    "Sem deduplicação genérica: linhas repetidas na mesma competência só são somadas em 'Tentativa de homicídio' e 'Estupro', conforme nota metodológica oficial, com aviso.",
-    "Cobertura contígua por série; competência histórica removida, unidade alterada ou série nova bloqueiam a promoção; revisão de valor histórico exige aprovação específica.",
+    "Sem deduplicação genérica: linhas repetidas na mesma competência só são somadas em 'Tentativa de homicídio' e 'Estupro', conforme nota metodológica oficial, "
+    "com aviso.",
+    "Cobertura contígua por série; competência histórica removida, unidade alterada ou série nova bloqueiam a promoção; revisão de valor histórico exige aprovação "
+    "específica.",
     "Séries podem terminar em competências diferentes (p.ex. PRF); isso é informado, não corrigido nem preenchido.",
     "SHA-256 (fins de linha normalizados para LF) de cada arquivo derivado e dos XLSX de origem registrados no manifesto.",
 ]
@@ -142,15 +153,18 @@ def montar_fontes(consulta: dict | None = None) -> list[dict]:
 def montar_manifesto(*, versao: str, versao_anterior: str | None, gerado_em: datetime, gerador: str, roteiro_sha256: str | None,
                      validacao: dict, cobertura: dict, revisoes_historicas: dict, origem: dict, arquivos: list[dict],
                      criterios: list[str], consulta: dict | None = None, aprovacao: dict | None = None) -> dict:
+    """Monta o dicionário do manifesto: versão, hashes, cobertura, origem dos dados e critérios."""
     return {
         "schema_manifesto": SCHEMA_MANIFESTO,
         "versao": versao,
         "versao_anterior": versao_anterior,
-        "descricao": "Arquivos mínimos do dashboard Segurança Pública de Joinville: contagens municipais agregadas do Sinesp/MJSP, derivadas de bases analíticas validadas.",
+        "descricao": "Arquivos mínimos do dashboard Segurança Pública de Joinville: contagens municipais agregadas do Sinesp/MJSP, derivadas de bases analíticas "
+                     "validadas.",
         "datas": {
             "gerado_em_utc": gerado_em.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "ultima_consulta_as_fontes_utc": (consulta or {}).get("consultado_em_utc"),
-            "nota": "Data de consulta à fonte, data de publicação (informada pela fonte), competência estatística (período dos dados) e data de geração são informações distintas.",
+            "nota": "Data de consulta à fonte, data de publicação (informada pela fonte), competência estatística (período dos dados) e data de geração são informações "
+                    "distintas.",
         },
         "gerador": gerador,
         "roteiro_sha256": roteiro_sha256,

@@ -28,7 +28,7 @@ def test_readme_has_all_16_academic_items_and_real_results():
 
 def test_etl_e_notebook_sao_os_roteiros_principais_e_o_antigo_e_historico():
     etl = _ler("scripts", "etl_joinville.py")
-    assert "# %% ETAPA 01" in etl and "# %% ETAPA 14" in etl
+    assert "# 1. IMPORTAÇÃO DAS BIBLIOTECAS" in etl and "# 14. VALIDAÇÕES FINAIS" in etl
     assert project_path("notebooks", "analise_seguranca_publica_joinville.ipynb").is_file()
     assert not project_path("scripts", "analise_sinesp.py").exists() and not project_path("scripts", "etl_sinesp.py").exists()  # substituídos pelo ETL único
     assert project_path("src", "pipeline", "ssp_sc.py").is_file()  # extração autônoma

@@ -1,8 +1,8 @@
 """Esquema comum, UNION (pd.concat) auditável e matriz de compatibilidade entre as fontes de Joinville.
 
 Regra do projeto: cada fonte é tratada e validada separadamente; só depois as linhas podem ser empilhadas (UNION,
-``pd.concat``), e só quando cada linha mantém o seu significado (mesma granularidade, unidade identificada,
-situação de validação explícita). Nada é somado entre fontes, e nenhum ``merge`` por município/mês/ano é usado para
+pd.concat), e só quando cada linha mantém o seu significado (mesma granularidade, unidade identificada,
+situação de validação explícita). Nada é somado entre fontes, e nenhum merge por município/mês/ano é usado para
 "juntar" indicadores — isso multiplicaria linhas e misturaria conceitos.
 
 Situação atual (Etapa 24):
@@ -12,7 +12,7 @@ Situação atual (Etapa 24):
     • SSP/SC, homicídios dos boletins: totais anuais e acumulados, publicados em várias edições, 41 grupos divergentes →
       granularidade incompatível; fora da união.
 
-Execução: ``python -m src.pipeline.consolidacao`` grava a Sinesp no esquema comum e a matriz de compatibilidade.
+Execução: python -m src.pipeline.consolidacao grava a Sinesp no esquema comum e a matriz de compatibilidade.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def sinesp_no_esquema_comum(sinesp: pd.DataFrame | None = None, versao: str | No
 
 
 def unir(*fontes: pd.DataFrame) -> pd.DataFrame:
-    """UNION das fontes já tratadas (``pd.concat``), com conferências que interrompem o processo se algo estiver errado.
+    """UNION das fontes já tratadas (pd.concat), com conferências que interrompem o processo se algo estiver errado.
 
     Conferências: mesmas colunas em todas as fontes; nenhuma linha criada ou perdida; nenhuma chave repetida
     (fonte + série + período); cada série com uma única unidade. Os valores não são agregados.

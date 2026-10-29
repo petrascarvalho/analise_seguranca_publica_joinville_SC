@@ -91,7 +91,7 @@ def cartoes_html(cartoes: list[dict]) -> None:
 
 
 def direcao_da_seta(diferenca) -> str:
-    """Seta do ``st.metric`` de acordo com o sinal da diferença: "up" (aumento), "down" (queda) ou "off" (sem diferença).
+    """Seta do st.metric de acordo com o sinal da diferença: "up" (aumento), "down" (queda) ou "off" (sem diferença).
 
     O texto do delta usa o sinal tipográfico "−" (ex.: "−7 vs 2024"); como o Streamlit decide a seta pelo primeiro caractere, ela é
     informada explicitamente para não mostrar seta para cima ao lado de um valor negativo.
@@ -102,6 +102,7 @@ def direcao_da_seta(diferenca) -> str:
 
 
 def aviso_ano_parcial(ano: int, mes_final: int) -> str:
+    """Texto de aviso para um ano que só tem os primeiros meses publicados."""
     mes = NOMES_MESES[mes_final - 1]
     return f"{ano} contém apenas janeiro a {mes}. Totais de {ano} não são comparados com anos completos; use o período janeiro–{mes}."
 
@@ -111,6 +112,7 @@ def periodo_sinesp_texto(manifesto: dict) -> str:
     cobertura = manifesto.get("cobertura", {}).get("sinesp", {})
 
     def texto(competencia: str) -> str:
+        """Competência '2026-09' escrita como 'setembro/2026'."""
         ano, mes = competencia.split("-")
         return f"{NOMES_MESES[int(mes) - 1]}/{ano}"
 
@@ -122,21 +124,25 @@ def periodo_sinesp_texto(manifesto: dict) -> str:
 
 @st.cache_data(show_spinner=False)
 def _sinesp():
+    """Lê a série mensal do Sinesp (guardada em cache pelo Streamlit)."""
     return dp.carregar_sinesp()
 
 
 @st.cache_data(show_spinner=False)
 def _catalogo():
+    """Lê o catálogo de indicadores (guardado em cache pelo Streamlit)."""
     return dp.carregar_catalogo_sinesp()
 
 
 @st.cache_data(show_spinner=False)
 def _manifesto():
+    """Lê o manifesto da versão publicada (guardado em cache pelo Streamlit)."""
     return dp.carregar_manifesto()
 
 
 @st.cache_data(show_spinner=False)
 def _integridade():
+    """Confere o SHA-256 dos arquivos de dados com o manifesto (guardado em cache pelo Streamlit)."""
     return dp.verificar_integridade()
 
 
@@ -152,18 +158,22 @@ def exigir(carregar):
 
 
 def carregar_sinesp():
+    """Série mensal do Sinesp; se houver erro nos dados, mostra a mensagem e para o painel."""
     return exigir(_sinesp)
 
 
 def carregar_catalogo():
+    """Catálogo de indicadores; se houver erro nos dados, mostra a mensagem e para o painel."""
     return exigir(_catalogo)
 
 
 def carregar_manifesto():
+    """Manifesto da versão; se houver erro nos dados, mostra a mensagem e para o painel."""
     return exigir(_manifesto)
 
 
 def verificar_integridade():
+    """Resultado da conferência de integridade; se houver erro, mostra a mensagem e para o painel."""
     return exigir(_integridade)
 
 
@@ -179,7 +189,7 @@ def carregar_dados_consistentes():
 
 
 def modo_compacto() -> bool:
-    """Estado do seletor "Visualização compacta (celular)" (``st.session_state['modo_compacto']``; falso por padrão)."""
+    """Estado do seletor "Visualização compacta (celular)" (st.session_state['modo_compacto']; falso por padrão)."""
     return bool(st.session_state.get("modo_compacto", False))
 
 
@@ -187,7 +197,7 @@ def mostrar_figura(figura, legenda: str | None = None, tabela=None):
     """Mostra a figura, a legenda e, opcionalmente, a tabela numérica que a sustenta (os valores desenhados vêm dela).
 
     No modo compacto a imagem não traz o texto interpretativo nem a fonte completa; eles aparecem aqui como texto nativo do Streamlit
-    (``figura.sinesp_notas``), que se adapta à largura da tela.
+    (figura.sinesp_notas), que se adapta à largura da tela.
     """
     if modo_compacto():
         graficos.ajustar_compacto(figura)  # sem espaço em branco abaixo de gráficos sem legenda

@@ -42,12 +42,12 @@ def catalogo():
 
 
 def _compacta(linha: str) -> str:
-    """Tira os espaços de alinhamento das tabelas Markdown (``| A    | B |`` e ``|A|B|`` valem o mesmo)."""
+    """Tira os espaços de alinhamento das tabelas Markdown (| A    | B | e |A|B| valem o mesmo)."""
     return re.sub(r"\s*\|\s*", "|", linha.strip())
 
 
 def _e_separador(linha: str) -> bool:
-    """Linha de separação do cabeçalho (``|---|---:|`` ou ``| --- | ---: |``)."""
+    """Linha de separação do cabeçalho (|---|---:| ou | --- | ---: |)."""
     return re.fullmatch(r"\|[\s:|-]+", linha.strip()) is not None
 
 

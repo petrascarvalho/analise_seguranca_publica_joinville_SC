@@ -3,13 +3,13 @@
 O acervo bruto não é versionado: sem ele, estes testes são pulados (por exemplo, em um clone limpo).
 """
 
-import pandas as pd
 import pytest
 
 from dashboard import dados_publicos as dp
 from src.pipeline import atualizacao_dados as au
 from src.pipeline.utils import project_path
 
+# Pasta (dentro de dados/brutos/sinesp) de cada XLSX auditado; vazio = fica na raiz da pasta.
 ARQUIVOS_AUDITADOS = {
     2020: ("pendente_validacao_origem",), 2021: ("pendente_validacao_origem",), 2022: ("pendente_validacao_origem",),
     2023: (), 2024: (), 2025: (), 2026: (),
@@ -18,6 +18,7 @@ ARQUIVOS_AUDITADOS = {
 
 @pytest.fixture(scope="module")
 def reconstrucao():
+    # Sem os XLSX no computador, o teste é pulado; com eles, a base é reconstruída e comparada com a publicada.
     raiz = project_path("dados", "brutos", "sinesp")
     caminhos = {ano: raiz.joinpath(*sub, f"bancovde-{ano}.xlsx") for ano, sub in ARQUIVOS_AUDITADOS.items()}
     if not all(c.is_file() for c in caminhos.values()):

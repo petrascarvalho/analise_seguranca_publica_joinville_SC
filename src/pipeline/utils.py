@@ -1,6 +1,7 @@
 from pathlib import Path
 
 
+# Raiz do projeto: duas pastas acima deste arquivo (src/pipeline/utils.py).
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 

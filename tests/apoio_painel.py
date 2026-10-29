@@ -1,19 +1,21 @@
 """Apoio comum dos testes do painel de página única.
 
-Os cards do painel são HTML (``ui.cartoes_html``), não ``st.metric``. Aqui eles são lidos de volta como objetos simples, com os mesmos
-nomes que os testes já usavam (``label``, ``value``, ``delta``) e mais ``detalhe``, ``base``, ``ajuda`` e ``direction``.
+Os cards do painel são HTML (ui.cartoes_html), não st.metric. Aqui eles são lidos de volta como objetos simples, com os mesmos
+nomes que os testes já usavam (label, value, delta) e mais detalhe, base, ajuda e direction.
 """
 
 import html
 import re
 from types import SimpleNamespace
 
+# Direção da seta do card (texto do HTML) -> nome usado nos testes.
 ROTULO_DIRECAO = {"up": "UP", "down": "DOWN", "off": "NONE"}
 
 
 def cartoes(app) -> list:
     """Todos os cards do app, na ordem em que aparecem na página."""
     lista = []
+    # Cada card é um bloco <div class="cartao">; as partes (título, valor...) são lidas pelo nome da classe.
     for elemento in app.get("html"):
         corpo = elemento.proto.body
         for pedaco in corpo.split('<div class="cartao" ')[1:]:

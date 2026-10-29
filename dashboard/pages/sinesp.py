@@ -170,6 +170,7 @@ abas = st.tabs(["Evolução", "Comparações", "Meses e tendência", "Estatísti
 
 # ------------------------------------------------------------------------------ tabelas verificáveis dos gráficos
 def _num(valor) -> str:
+    """Formata como inteiro quando o número é inteiro; senão, com duas casas decimais."""
     return fmt_int(valor) if pd.notna(valor) and float(valor) == int(float(valor)) else fmt_dec(valor)
 
 
@@ -185,19 +186,28 @@ def _texto_das_faixas(frequencias: pd.DataFrame) -> str:
 
 
 def tabela_ano_mes(quadro: pd.DataFrame) -> pd.DataFrame:
+    """Tabela ano x mês com os números formatados e os meses como colunas."""
     exibicao = quadro.copy()
     exibicao.columns = list(ABREV_MESES)
-    exibicao = exibicao.apply(lambda coluna: coluna.map(fmt_int))
+    exibicao = exibicao.map(fmt_int)  # formata cada número da tabela (milhar com ponto; vazio vira "—")
     return exibicao.rename_axis("Ano").reset_index()
 
 
 def tabela_quartis(quadro: pd.DataFrame) -> pd.DataFrame:
+    """Tabela de quartis e limites por ano, com os meses fora dos limites escritos em texto."""
+    # Texto da coluna "Meses fora": os valores fora dos limites de cada ano (ou o aviso de que o IQR é zero).
+    meses_fora = []
+    for _, linha in quadro.iterrows():
+        if linha["iqr_zero"]:
+            meses_fora.append("IQR = 0 (não interpretado)")
+        else:
+            meses_fora.append(", ".join(_num(v) for v in linha["valores_fora"]) or "—")
     return pd.DataFrame({
         "Ano": quadro["ano"], "Cobertura": quadro["cobertura"], "Meses": quadro["n"], "Mín.": quadro["minimo"].map(_num), "Q1": quadro["q1"].map(_num),
         "Mediana": quadro["mediana"].map(_num), "Q3": quadro["q3"].map(_num), "Máx.": quadro["maximo"].map(_num), "IQR": quadro["iqr"].map(_num),
         "Limite inferior": quadro["limite_inferior"].map(_num), "Limite superior": quadro["limite_superior"].map(_num),
         "Menor valor dentro dos limites": quadro["bigode_inferior"].map(_num), "Maior valor dentro dos limites": quadro["bigode_superior"].map(_num),
-        "Meses fora": quadro.apply(lambda r: "IQR = 0 (não interpretado)" if r["iqr_zero"] else (", ".join(_num(v) for v in r["valores_fora"]) or "—"), axis=1)})
+        "Meses fora": meses_fora})
 
 
 
@@ -211,7 +221,9 @@ with abas[0]:
         if figura is None:
             st.info("Não há ano completo no período selecionado para a série anual. Use a série mensal, a média móvel ou o acumulado abaixo.")
         else:
-            tabela = completos[["ano", "soma"]].assign(soma=lambda t: t["soma"].map(fmt_int)).rename(columns={"ano": "Ano", "soma": f"Soma ({unidade_curta})"})
+            tabela = completos[["ano", "soma"]].copy()
+            tabela["soma"] = tabela["soma"].map(fmt_int)
+            tabela = tabela.rename(columns={"ano": "Ano", "soma": f"Soma ({unidade_curta})"})
             ui.mostrar_figura(figura, "Evolução anual — somente anos completos (12 meses). Eixo vertical iniciado em zero.", tabela)
         st.divider()
         st.markdown("**Valores mensais**")
@@ -239,12 +251,14 @@ with abas[0]:
                 f"Total ({unidade_curta})": variacoes["valor"].map(fmt_int), "Diferença absoluta": variacoes["diferenca_absoluta"].map(fmt_dif),
                 "Variação %": variacoes["variacao_percentual"].map(fmt_pct)})
             st.dataframe(tabela, hide_index=True)
-            st.caption("A variação percentual só é calculada quando o ponto de partida é maior que zero (n/a = não se aplica). Em contagens pequenas, observe a diferença em números absolutos. Não indica causa.")
+            st.caption("A variação percentual só é calculada quando o ponto de partida é maior que zero (n/a = não se aplica). Em contagens pequenas, observe a diferença em números "
+                       "absolutos. Não indica causa.")
 
 # ------------------------------------------------------------------------------------------------ 2. comparações
 with abas[1]:
     if abas[1].open:
-        st.caption("Comparações entre anos completos, entre períodos de igual duração (o ano parcial só se compara com o mesmo intervalo dos anos anteriores) e com as demais séries da mesma unidade.")
+        st.caption("Comparações entre anos completos, entre períodos de igual duração (o ano parcial só se compara com o mesmo intervalo dos anos anteriores) e com as demais séries "
+                   "da mesma unidade.")
         aviso_ano_completo()
         st.markdown("**Anos completos**")
         tabela = anual_sel[["ano", "cobertura", "meses_presentes", "meses_com_valor", "soma"]].copy()
@@ -350,12 +364,15 @@ with abas[3]:
         st.caption("Estatísticas dos valores mensais (média, mediana, variação), distribuição dos valores e meses incomuns. Descrevem os números publicados; não explicam causas.")
         with st.expander("O que significam estes termos?"):
             st.markdown(
-                "- **Média:** soma dos valores dividida pelo número de meses. **Mediana:** valor do meio quando os meses são colocados em ordem; é menos afetada por meses muito altos.\n"
+                "- **Média:** soma dos valores dividida pelo número de meses. **Mediana:** valor do meio quando os meses são colocados em ordem; é menos afetada "
+                "por meses muito altos.\n"
                 "- **Desvio-padrão:** mede o quanto os meses variam em torno da média (quanto maior, mais os valores oscilam).\n"
                 "- **Quartis (Q1 e Q3):** Q1 deixa 25% dos meses abaixo dele e Q3 deixa 75% abaixo. **IQR:** a distância entre Q1 e Q3.\n"
                 "- **Limites de referência:** Q1 − 1,5 × IQR e Q3 + 1,5 × IQR (critério estatístico de Tukey). Servem para destacar meses diferentes dos demais "
-                "**da própria série**. **Não são metas, limites legais nem parâmetros oficiais de segurança pública**, e um mês fora deles não prova erro, anomalia ou mudança real.\n"
-                "- **“Meses incomuns”:** são os meses que ficam fora dos limites de referência. É apenas um critério estatístico: **não indica, por si só, erro de registro "
+                "**da própria série**. **Não são metas, limites legais nem parâmetros oficiais de segurança pública**, e um mês fora deles não prova erro, anomalia "
+                "ou mudança real.\n"
+                "- **“Meses incomuns”:** são os meses que ficam fora dos limites de referência. É apenas um critério estatístico: **não indica, por si só, erro "
+                "de registro "
                 "nem risco extraordinário**.\n"
                 "- **Gráfico de caixa (boxplot):** a caixa vai de Q1 a Q3, o traço é a mediana e os pontos são meses fora dos limites de referência.\n"
                 "- **Média móvel de 12 meses:** média do mês e dos 11 anteriores; suaviza as oscilações."
@@ -421,8 +438,8 @@ with abas[4]:
     cat = catalogo.rename(columns={
         "evento": "Indicador", "abrangencia": "Classificação institucional", "unidade": "Unidade", "natureza": "Tipo", "meses_observados": "Meses", "meses_com_valor": "Com valor",
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor", "limitacoes": "Cuidados de leitura"})
-    cat["Início"] = catalogo["inicio"].map(lambda c: fmt_competencia(c, curto=True))
-    cat["Fim"] = catalogo["fim"].map(lambda c: fmt_competencia(c, curto=True))
+    cat["Início"] = [fmt_competencia(c, curto=True) for c in catalogo["inicio"]]  # "2020-01" vira "jan/2020"
+    cat["Fim"] = [fmt_competencia(c, curto=True) for c in catalogo["fim"]]
     st.dataframe(cat[["Indicador", "Classificação institucional", "Unidade", "Tipo", "Início", "Fim", "Meses", "Com valor", "Zeros informados", "Sem valor", "Cuidados de leitura"]], hide_index=True)
     st.markdown("**Como interpretar estes números**")
     st.markdown(
@@ -431,7 +448,8 @@ with abas[4]:
         "- **Contagens pequenas:** uma diferença de poucas unidades pode ser só oscilação natural; observe sempre os números absolutos.\n"
         "- **Vítimas e mandados** são medidas diferentes e nunca são somados. Feminicídio e tentativa são séries separadas e não se somam a homicídio.\n"
         "- **Zero informado** é um número publicado; a falta de uma série (por exemplo, a Polícia Federal antes de 2025) não significa zero.\n"
-        "- **Meses fora dos limites de referência** são apenas incomuns em comparação com os demais; o **perfil por mês do ano**, com poucos anos completos, é só exploratório.\n"
+        "- **Meses fora dos limites de referência** são apenas incomuns em comparação com os demais; o **perfil por mês do ano**, com poucos anos completos, "
+        "é só exploratório.\n"
         "- Cada linha dos dados é um total mensal, não uma ocorrência individual."
     )
 

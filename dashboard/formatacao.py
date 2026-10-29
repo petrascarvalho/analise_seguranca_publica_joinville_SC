@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import pandas as pd
 
+# Traço mostrado no lugar de um número ausente (o painel nunca troca ausência por zero).
 TRACO = "—"
 
 
 def _ausente(valor) -> bool:
+    """Diz se o valor é vazio (None ou NaN); texto nunca conta como ausente."""
     return valor is None or (not isinstance(valor, str) and bool(pd.isna(valor)))
 
 
@@ -42,6 +44,7 @@ def fmt_dif(valor) -> str:
     return f"+{fmt_int(numero)}" if numero > 0 else (f"−{fmt_int(abs(numero))}" if numero < 0 else "0")
 
 
+# Nomes dos meses (índice 0 = janeiro), usados em textos e rótulos.
 NOMES_MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 ABREV_MESES = ("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
 

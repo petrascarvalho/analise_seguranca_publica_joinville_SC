@@ -3,20 +3,20 @@
 Este módulo NÃO baixa arquivos de dados, NÃO executa ETL e NÃO altera nenhum arquivo usado pelo dashboard.
 Ele só consulta metadados e registra evidências, com classificação prudente:
 
-* ``nenhuma_novidade_identificada``
-* ``possivel_nova_competencia``
-* ``possivel_revisao_de_competencia_historica``
-* ``alteracao_de_esquema_ou_fonte``
-* ``falha_de_consulta``
+* nenhuma_novidade_identificada
+* possivel_nova_competencia
+* possivel_revisao_de_competencia_historica
+* alteracao_de_esquema_ou_fonte
+* falha_de_consulta
 
 Princípios:
 
-* Mudança na página (data "Atualizado em") ou no tamanho de um arquivo é **indício**, nunca prova de que
+* Mudança na página (data "Atualizado em") ou no tamanho de um arquivo é indício, nunca prova de que
   valores mudaram. Só a operação B (preparar), com o conteúdo do arquivo, confirma nova competência ou revisão.
 * Nenhuma competência é inventada a partir de datas do site.
-* Preferem-se APIs documentadas (CKAN do catálogo; ``Range`` HTTP para obter o tamanho). Onde não há consulta automática confiável (datas dos arquivos do Sinesp no
+* Preferem-se APIs documentadas (CKAN do catálogo; Range HTTP para obter o tamanho). Onde não há consulta automática confiável (datas dos arquivos do Sinesp no
   gov.br), a limitação é registrada e a verificação manual assistida é recomendada.
-* Bloqueios de acesso (HTTP 403 etc.) NÃO são contornados: viram ``falha_de_consulta``. O cliente se
+* Bloqueios de acesso (HTTP 403 etc.) NÃO são contornados: viram falha_de_consulta. O cliente se
   identifica honestamente (User-Agent do projeto).
 """
 
@@ -66,6 +66,7 @@ class Resposta:
     corpo: bytes = b""
 
     def texto(self) -> str:
+        """Corpo da resposta como texto."""
         return self.corpo.decode("utf-8", errors="replace")
 
 
@@ -74,9 +75,10 @@ class Cliente(Protocol):
 
 
 class ClienteHTTP:
-    """Cliente padrão (``urllib``), com identificação honesta e sem tentativa de contornar bloqueios."""
+    """Cliente padrão (urllib), com identificação honesta e sem tentativa de contornar bloqueios."""
 
     def obter(self, url: str, cabecalhos: dict[str, str] | None = None, timeout: float = 30.0) -> Resposta:
+        """Pede uma página ou arquivo pela internet (somente leitura)."""
         pedido = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, **(cabecalhos or {})}, method="GET")
         try:
             with urllib.request.urlopen(pedido, timeout=timeout) as resposta:  # noqa: S310 — URLs fixas e https
@@ -100,6 +102,7 @@ class Achado:
     requer_verificacao_manual: bool = False
 
     def para_dict(self) -> dict:
+        """O achado em formato de dicionário, para gravar no relatório."""
         dados = asdict(self)
         dados["classificacao"] = self.classificacao.value
         return dados
@@ -112,12 +115,14 @@ class Relatorio:
     manifesto_versao: str | None
 
     def resumo(self) -> dict[str, int]:
+        """Quantos achados há em cada classificação."""
         contagem = {c.value: 0 for c in Classificacao}
         for achado in self.achados:
             contagem[achado.classificacao.value] += 1
         return contagem
 
     def acao_recomendada(self) -> str:
+        """Frase com o próximo passo sugerido, conforme o pior achado; a verificação nunca altera dados."""
         r = self.resumo()
         if r[Classificacao.ALTERACAO_ESQUEMA_OU_FONTE.value]:
             return "Há alteração de esquema, formato ou fonte: auditar manualmente antes de qualquer incorporação (não automatizável)."
@@ -130,6 +135,7 @@ class Relatorio:
         return "Nenhuma novidade identificada nas consultas realizadas (limitada ao que cada fonte expõe)."
 
     def para_dict(self) -> dict:
+        """O relatório inteiro em formato de dicionário (achados agrupados por fonte), para gravar em JSON."""
         por_fonte: dict[str, dict] = {}
         for achado in self.achados:
             ficha = por_fonte.setdefault(achado.fonte, {"achados": [], "publicacao": None})
@@ -154,6 +160,7 @@ LIMITACOES = [
 
 # --------------------------------------------------------------------------------------- utilidades
 def _agora_texto(agora: datetime) -> str:
+    """Data e hora UTC em texto (ex.: 2026-10-27T11:40:58Z)."""
     return agora.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -170,6 +177,7 @@ def _tamanho_remoto(cliente: Cliente, url: str) -> tuple[int | None, Resposta]:
 
 
 def _referencia(manifesto: dict, chave: str) -> dict:
+    """Dados de uma fonte registrados no manifesto; erro claro se ainda não houver versão aprovada."""
     origem = manifesto.get("origem_dos_dados", {})
     if chave not in origem or not origem[chave]:
         raise ErroReferencia(f"O manifesto não registra '{chave}'; prepare e aprove uma versão atual com `python -m src.pipeline.atualizacao_dados preparar` antes de verificar.")
@@ -177,11 +185,13 @@ def _referencia(manifesto: dict, chave: str) -> dict:
 
 
 def _falha(fonte, recurso, url, identificador, instante, erro) -> Achado:
+    """Registro de uma consulta que não pôde ser concluída (exige verificação manual)."""
     return Achado(fonte, recurso, url, identificador, instante, Classificacao.FALHA_CONSULTA, f"Consulta não concluída: {erro}",
                   {"erro": str(erro)}, requer_verificacao_manual=True)
 
 
 def _data_pagina(texto: str, rotulo_regex: str) -> str | None:
+    """Extrai da página a data e a hora de publicação ou atualização."""
     encontrado = re.search(rotulo_regex, texto)
     return f"{encontrado.group(1)} {encontrado.group(2)}h{encontrado.group(3)}" if encontrado else None
 
@@ -256,13 +266,15 @@ def verificar_sinesp_arquivos(cliente: Cliente, manifesto: dict, instante: str) 
                                   "ou de revisão; confirmar no PREPARAR.", evidencia, True))
         else:
             achados.append(Achado(ID_SINESP, "arquivo_sinesp", url, identificador, instante, Classificacao.POSSIVEL_REVISAO,
-                                  f"Tamanho diferente do auditado ({remoto} ≠ {tamanhos[ano]} bytes) em arquivo de ano já coberto: indício de revisão; confirmar no PREPARAR.",
+                                  f"Tamanho diferente do auditado ({remoto} ≠ {tamanhos[ano]} bytes) em arquivo de ano já coberto: indício de revisão; confirmar "
+                                  "no PREPARAR.",
                                   evidencia, True))
     return achados
 
 
 # ----------------------------------------------------------------------------------------- catálogos
 def verificar_catalogo_ckan(cliente: Cliente, url: str, fonte: str, recurso: str, licenca_esperada: str | None, instante: str) -> list[Achado]:
+    """Consulta o catálogo do governo e compara licença e datas dos recursos com o que está registrado."""
     try:
         resposta = cliente.obter(url, {"Accept": "application/json"}, 30.0)
     except ErroConsulta as erro:
@@ -281,7 +293,8 @@ def verificar_catalogo_ckan(cliente: Cliente, url: str, fonte: str, recurso: str
         return [Achado(fonte, recurso, url, "catalogo_ckan", instante, Classificacao.ALTERACAO_ESQUEMA_OU_FONTE,
                        f"Licença do catálogo mudou: esperada '{licenca_esperada}', encontrada '{evidencia['license_id']}'. Rever as condições de reutilização.", evidencia, True)]
     return [Achado(fonte, recurso, url, "catalogo_ckan", instante, Classificacao.NENHUMA_NOVIDADE,
-                   f"Catálogo consultado (licença '{evidencia['license_id']}'; metadados modificados em {evidencia['metadata_modified']}). Data dos metadados do catálogo não prova nova competência.",
+                   f"Catálogo consultado (licença '{evidencia['license_id']}'; metadados modificados em {evidencia['metadata_modified']}). Data dos metadados "
+                   "do catálogo não prova nova competência.",
                    evidencia)]
 
 
@@ -298,6 +311,7 @@ def verificar_fontes(manifesto: dict, cliente: Cliente | None = None, agora: dat
 
 
 def salvar_relatorio(relatorio: Relatorio, diretorio: Path) -> Path:
+    """Grava o relatório de verificação em JSON, com data e hora no nome do arquivo."""
     diretorio.mkdir(parents=True, exist_ok=True)
     caminho = diretorio / f"verificacao_{relatorio.consultado_em_utc.replace(':', '').replace('-', '')}.json"
     caminho.write_text(json.dumps(relatorio.para_dict(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")

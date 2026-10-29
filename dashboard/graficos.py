@@ -1,9 +1,9 @@
-"""Figuras Matplotlib reutilizáveis do dashboard Sinesp/MJSP (sem Streamlit e sem ``pyplot``).
+"""Figuras Matplotlib reutilizáveis do dashboard Sinesp/MJSP (sem Streamlit e sem pyplot).
 
 Recriam, a partir dos dados curados, as quatro figuras da Etapa 10 (Sinesp) e oferecem gráficos filtráveis por indicador,
 abrangência e período. Todas começam o eixo vertical em zero, usam valores inteiros, identificam fonte, município, período e
-unidade, e nunca somam indicadores, abrangências ou unidades diferentes. As figuras são objetos ``matplotlib.figure.Figure``
-(use ``st.pyplot(figura)``) e não gravam arquivos.
+unidade, e nunca somam indicadores, abrangências ou unidades diferentes. As figuras são objetos matplotlib.figure.Figure
+(use st.pyplot(figura)) e não gravam arquivos.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ FONTE_SINESP = "Fonte: MJSP / Sinesp VDE"
 # ---------------------------------------------------------------------------------------------------- modo compacto
 # No modo compacto as figuras são criadas já estreitas (4,4 × 6,4 pol.; ~358 px na tela de um celular), com fontes de 10–13 pt, títulos
 # quebrados em linhas, legenda abaixo do gráfico, menos marcas nos eixos e SEM os textos longos dentro da imagem (a interpretação e a
-# fonte completa ficam em ``figura.sinesp_notas`` e são exibidas pela interface como texto nativo). Os valores desenhados são os mesmos.
+# fonte completa ficam em figura.sinesp_notas e são exibidas pela interface como texto nativo). Os valores desenhados são os mesmos.
 _COMPACTO: ContextVar[bool] = ContextVar("sinesp_modo_compacto", default=False)
 
 
@@ -56,12 +56,13 @@ def definir_modo_compacto(ativo: bool) -> None:
 
 
 def esta_compacto() -> bool:
+    """Diz se as figuras desta execução estão no modo compacto (celular)."""
     return _COMPACTO.get()
 
 
 @contextmanager
 def modo_compacto(ativo: bool = True):
-    """``with modo_compacto(): figura = ...`` — cria figuras compactas só dentro do bloco."""
+    """with modo_compacto(): figura = ... — cria figuras compactas só dentro do bloco."""
     token = _COMPACTO.set(bool(ativo))
     try:
         yield
@@ -70,10 +71,12 @@ def modo_compacto(ativo: bool = True):
 
 
 def _milhar(valor, _posicao=None) -> str:
+    """Formata o número do eixo com ponto de milhar (função usada pelo Matplotlib)."""
     return fmt_int(valor)
 
 
 def _estilo_eixo(eixo, *, grade_y=True):
+    """Aplica o estilo comum aos eixos: grade horizontal suave, sem bordas superior e direita, valores inteiros."""
     eixo.set_axisbelow(True)
     if grade_y:
         eixo.grid(axis="y", color="#D9E5F2", linewidth=0.8)
@@ -85,7 +88,7 @@ def _estilo_eixo(eixo, *, grade_y=True):
 
 # --------------------------------------------------------------------------- Sinesp (Etapa 10)
 def _preparar_compacto(titulo: str, periodo: str, interpretacao: str, limite_y: float, rodape: str, ylabel: str, xlabel: str):
-    """Figura estreita para celular: título e subtítulo quebrados, só a fonte curta na imagem; o resto vai para ``figura.sinesp_notas``."""
+    """Figura estreita para celular: título e subtítulo quebrados, só a fonte curta na imagem; o resto vai para figura.sinesp_notas."""
     figura = Figure(figsize=(4.4, 6.4), dpi=120)
     linhas_titulo, linhas_subtitulo = textwrap.wrap(titulo, 30), textwrap.wrap(periodo, 42)
     y = 0.985
@@ -106,6 +109,7 @@ def _preparar_compacto(titulo: str, periodo: str, interpretacao: str, limite_y: 
 
 
 def _preparar_sinesp(titulo: str, periodo: str, interpretacao: str, limite_y: float, rodape: str, ylabel: str, xlabel: str = "Ano"):
+    """Cria a figura-padrão (título, período, texto de interpretação e rodapé) e devolve a figura e o eixo."""
     if esta_compacto():
         return _preparar_compacto(titulo, periodo, interpretacao, limite_y, rodape, ylabel, xlabel)
     figura = Figure(figsize=(10, 6.2), dpi=120)
@@ -176,7 +180,7 @@ def ajustar_completo(figura):
 
 
 def _legenda(eixo, ncol: int, handles=None, **desktop):
-    """Legenda acima do gráfico (desktop) ou abaixo dele, em até 2 colunas (compacto). ``handles`` fixa a ordem das entradas."""
+    """Legenda acima do gráfico (desktop) ou abaixo dele, em até 2 colunas (compacto). handles fixa a ordem das entradas."""
     extra = {"handles": handles} if handles is not None else {}
     if esta_compacto():
         return eixo.legend(loc="upper center", bbox_to_anchor=(0.565, 0.205), bbox_transform=eixo.figure.transFigure, ncol=min(ncol, 2), frameon=False, fontsize=10, **extra)
@@ -192,6 +196,7 @@ def _eixo_meses(eixo) -> None:
 
 
 def _linhas_sinesp(eixo, quadro: pd.DataFrame, cores: dict[str, str]):
+    """Desenha uma linha com marcadores para cada coluna da tabela e escreve o valor de cada ponto."""
     for numero, nome in enumerate(quadro.columns):
         valores = [int(v) for v in quadro[nome].tolist()]
         eixo.plot(quadro.index.tolist(), valores, label=nome, color=cores[nome], marker="o" if numero == 0 else "s",
@@ -204,6 +209,7 @@ def _linhas_sinesp(eixo, quadro: pd.DataFrame, cores: dict[str, str]):
 
 
 def _barras_sinesp(eixo, quadro: pd.DataFrame, cores: dict[str, str]):
+    """Desenha barras lado a lado para cada coluna da tabela e escreve o valor sobre cada barra."""
     posicoes = list(range(len(quadro)))
     largura = 0.34
     for numero, nome in enumerate(quadro.columns):
@@ -242,10 +248,15 @@ def figuras_sinesp_etapa10(sinesp: pd.DataFrame) -> dict[str, Figure]:
     homicidios_ja = quadro_eventos(sinesp, ["Homicídio doloso", "Tentativa de homicídio"], list(range(2020, 2027)), mes_final=8)
     mulher_ja = quadro_eventos(sinesp, ["Feminicídio", "Tentativa de feminicídio"], [2025, 2026], mes_final=8)
     textos = {
-        "homicidio_anual": f"O total publicado passou de {homicidio.loc[2020, 'Homicídio doloso']} vítimas em 2020 para {homicidio.loc[2025, 'Homicídio doloso']} em 2025, com oscilações intermediárias. A série não demonstra causas.",
-        "mulher_anual": f"Feminicídios variaram de {mulher['Feminicídio'].min()} a {mulher['Feminicídio'].max()} vítimas anuais; tentativas, de {mulher['Tentativa de feminicídio'].min()} a {mulher['Tentativa de feminicídio'].max()}. São pequenas contagens de categorias distintas, sem soma entre elas.",
-        "homicidios_jan_ago": f"De janeiro a agosto, homicídios passaram de {homicidios_ja.loc[2025, 'Homicídio doloso']} em 2025 para {homicidios_ja.loc[2026, 'Homicídio doloso']} em 2026; tentativas, de {homicidios_ja.loc[2025, 'Tentativa de homicídio']} para {homicidios_ja.loc[2026, 'Tentativa de homicídio']}. Os períodos têm a mesma duração.",
-        "mulher_jan_ago": f"Tentativas passaram de {mulher_ja.loc[2025, 'Tentativa de feminicídio']} para {mulher_ja.loc[2026, 'Tentativa de feminicídio']} vítimas. Feminicídio tem zero publicado nos dois recortes; isso não comprova eliminação do fenômeno.",
+        "homicidio_anual": f"O total publicado passou de {homicidio.loc[2020, 'Homicídio doloso']} vítimas em 2020 para {homicidio.loc[2025, 'Homicídio doloso']} "
+                           "em 2025, com oscilações intermediárias. A série não demonstra causas.",
+        "mulher_anual": f"Feminicídios variaram de {mulher['Feminicídio'].min()} a {mulher['Feminicídio'].max()} vítimas anuais; tentativas, de {mulher['Tentativa de feminicídio'].min()} "
+                        f"a {mulher['Tentativa de feminicídio'].max()}. São pequenas contagens de categorias distintas, sem soma entre elas.",
+        "homicidios_jan_ago": f"De janeiro a agosto, homicídios passaram de {homicidios_ja.loc[2025, 'Homicídio doloso']} em 2025 para {homicidios_ja.loc[2026, 'Homicídio doloso']} "
+                              f"em 2026; tentativas, de {homicidios_ja.loc[2025, 'Tentativa de homicídio']} para {homicidios_ja.loc[2026, 'Tentativa de homicídio']}. "
+                              "Os períodos têm a mesma duração.",
+        "mulher_jan_ago": f"Tentativas passaram de {mulher_ja.loc[2025, 'Tentativa de feminicídio']} para {mulher_ja.loc[2026, 'Tentativa de feminicídio']} vítimas. "
+                          "Feminicídio tem zero publicado nos dois recortes; isso não comprova eliminação do fenômeno.",
     }
     figuras = {}
     f, e = _preparar_sinesp("Homicídio doloso em Joinville/SC", "Anos completos: 2020–2025", textos["homicidio_anual"], 70, rodape, "Vítimas")
@@ -266,7 +277,7 @@ def figuras_sinesp_etapa10(sinesp: pd.DataFrame) -> dict[str, Figure]:
 
 
 def _fonte_no_subtitulo() -> str:
-    """Fonte no subtítulo da figura. No modo compacto ela aparece uma única vez, em texto nativo abaixo da imagem (ver ``ui.mostrar_figura``)."""
+    """Fonte no subtítulo da figura. No modo compacto ela aparece uma única vez, em texto nativo abaixo da imagem (ver ui.mostrar_figura)."""
     return "" if esta_compacto() else " · MJSP/Sinesp VDE"
 
 
@@ -303,7 +314,8 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
     unidade = tabela["unidade"].iloc[0]
     maximo = int(tabela["soma"].max())
     figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", _subtitulo(unidade, f"por ano completo ({int(tabela['ano'].min()) if tabela['ano'].min() == tabela['ano'].max() else str(int(tabela['ano'].min())) + '–' + str(int(tabela['ano'].max()))})"),
-                                    "Barras e linha mostram a mesma soma dos 12 meses de cada ano, na mesma escala (iniciada em zero); o valor está escrito acima de cada ponto. "
+                                    "Barras e linha mostram a mesma soma dos 12 meses de cada ano, na mesma escala (iniciada em zero); o valor está escrito acima "
+                                    "de cada ponto. "
                                     "Um ano parcial (ainda incompleto) não entra em séries anuais.", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
     anos_plot = tabela["ano"].astype(int).tolist()
@@ -315,7 +327,7 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
 
 
 def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int], mes_final: int = 8) -> Figure | None:
-    """Gráfico combinado (barras claras + linha com marcadores) dos períodos equivalentes (janeiro até ``mes_final``) por ano para um indicador."""
+    """Gráfico combinado (barras claras + linha com marcadores) dos períodos equivalentes (janeiro até mes_final) por ano para um indicador."""
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
     tabela = calculos.comparacao_periodo_sinesp(serie, mes_final)
     tabela = tabela.loc[tabela["ano"].isin(anos) & tabela["soma"].notna()].sort_values("ano")
@@ -343,7 +355,9 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
     unidade = serie["unidade"].iloc[0]
     maximo = int(serie["valor"].max()) if serie["valor"].notna().any() else 1
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, "por mês, uma barra por ano"),
-                                    "Barras agrupadas por mês, uma cor por ano; o último ano pode estar parcial. Zero publicado é uma observação (barra sem altura; no celular, um traço na base) e mês sem valor publicado fica sem barra (no celular, ×). Ano parcial: 2026 vai até o último mês disponível; nenhum mês é preenchido.",
+                                    "Barras agrupadas por mês, uma cor por ano; o último ano pode estar parcial. Zero publicado é uma observação (barra sem altura; "
+                                    "no celular, um traço na base) e mês sem valor publicado fica sem barra (no celular, ×). Ano parcial: 2026 vai até o último "
+                                    "mês disponível; nenhum mês é preenchido.",
                                     max(maximo * 1.25, 1), f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}",
                                     unidade.split(" (")[0].capitalize(), xlabel="Mês")
     anos_barras = sorted(set(serie["ano"].astype(int)))
@@ -385,9 +399,9 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
 
 
 def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, str] | None = None) -> Figure | None:
-    """Barras horizontais das séries ordenadas pela soma do ano completo ``ano`` (uma única unidade; sem total entre séries).
+    """Barras horizontais das séries ordenadas pela soma do ano completo ano (uma única unidade; sem total entre séries).
 
-    ``destaque`` = (indicador, abrangência) da série selecionada, que recebe cor de destaque.
+    destaque = (indicador, abrangência) da série selecionada, que recebe cor de destaque.
     """
     if ranking.empty:
         return None
@@ -436,7 +450,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
 
 # ===================================================================================================================
 # Etapa 20 — figuras de visão geral, evolução temporal, estatística descritiva e outliers.
-# Cada figura desenha EXATAMENTE a tabela devolvida pela função homônima de ``calculos.py`` (os elementos recebem ``gid`` para
+# Cada figura desenha EXATAMENTE a tabela devolvida pela função homônima de calculos.py (os elementos recebem gid para
 # que os testes comparem o desenhado com a tabela). Elas usam a série selecionada (um indicador × uma abrangência × uma unidade).
 # ===================================================================================================================
 NOME_CURTO = {
@@ -449,6 +463,7 @@ NOME_CURTO = {
 
 
 def _titulo(evento: str) -> str:
+    """Título da figura: nome curto do indicador seguido de Joinville/SC."""
     return f"{NOME_CURTO.get(evento, evento)} em Joinville/SC"
 
 
@@ -495,11 +510,13 @@ def _aviso_sem_variacao(eixo, valores, *, acima_do_eixo: bool = False) -> None:
 
 
 def _serie_figura(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> pd.DataFrame:
+    """Linhas da série escolhida nos anos pedidos."""
     serie = calculos.serie_sinesp(sinesp, evento, abrangencia)
     return serie.loc[serie["ano"].isin(anos)]
 
 
 def _rodape(abrangencia: str, unidade: str) -> str:
+    """Texto de rodapé da figura: fonte, classificação institucional e unidade."""
     return f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}"
 
 
@@ -509,12 +526,14 @@ def _x_mensal(quadro: pd.DataFrame) -> list[float]:
 
 
 def _eixo_anos(eixo, quadro: pd.DataFrame) -> None:
+    """Marca no eixo horizontal só os anos que existem na tabela."""
     anos = sorted({int(a) for a in quadro["ano"]})
     eixo.set_xticks(anos, [str(a) for a in anos])
     eixo.set_xlim(min(anos) - 0.2, max(anos) + 1.0)
 
 
 def _valores_float(coluna) -> list[float]:
+    """Converte uma coluna em lista de números decimais (ausente vira NaN, sem virar zero)."""
     return pd.Series(coluna).astype("Float64").to_numpy(dtype="float64", na_value=float("nan")).tolist()
 
 
@@ -530,7 +549,8 @@ def figura_mapa_calor_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str
     matriz = np.ma.masked_invalid(grade.astype("float64").to_numpy())
     maximo = max(float(matriz.max()), 1.0) if matriz.count() else 1.0
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, f"por mês, de {int(tabela.index.min())} a {int(tabela.index.max())} (mapa de calor)"),
-                                    "Cada célula é um mês; quanto mais escura, maior o valor. Cinza: mês sem valor publicado (não preenchido). O número na célula é o valor da tabela.",
+                                    "Cada célula é um mês; quanto mais escura, maior o valor. Cinza: mês sem valor publicado (não preenchido). O número na célula "
+                                    "é o valor da tabela.",
                                     1, _rodape(abrangencia, unidade), "Mês" if compacto else "Ano", xlabel="Ano" if compacto else "Mês")
     paleta = colormaps["Blues"].with_extremes(bad="#E6E6E6")  # mês sem valor: cinza
     imagem = eixo.imshow(matriz, cmap=paleta, vmin=0, vmax=maximo, aspect="auto")
@@ -557,7 +577,7 @@ def figura_mapa_calor_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str
 
 
 def figura_media_movel_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
-    """Valores mensais e média móvel de 12 meses (só onde os 12 meses têm valor). ``None`` se não houver nenhuma janela completa."""
+    """Valores mensais e média móvel de 12 meses (só onde os 12 meses têm valor). None se não houver nenhuma janela completa."""
     serie = _serie_figura(sinesp, evento, abrangencia, anos)
     if serie.empty:
         return None
@@ -567,7 +587,8 @@ def figura_media_movel_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
     unidade = serie["unidade"].iloc[0]
     maximo = float(np.nanmax(_valores_float(tabela["valor"])))
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, "por mês e média móvel de 12 meses"),
-                                    "A média móvel é a média dos 12 meses até o mês indicado e só existe quando os 12 meses têm valor. Suaviza oscilações; não indica causa.",
+                                    "A média móvel é a média dos 12 meses até o mês indicado e só existe quando os 12 meses têm valor. Suaviza oscilações; não "
+                                    "indica causa.",
                                     max(maximo * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Ano (cada marca = janeiro)")
     x = _x_mensal(tabela)
     mensal, = eixo.plot(x, _valores_float(tabela["valor"]), color="#8FA9C4", linewidth=1.2, marker="o", markersize=3.5, label="Valor mensal")
@@ -604,7 +625,8 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
     maximo = float(np.nanmax(_valores_float(tabela["acumulado"])))
     limite_y = max(maximo * 1.25, 1)
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, "acumuladas de janeiro até cada mês, em cada ano"),
-                                    "Cada linha acumula os meses de um ano; o valor do último mês disponível de cada ano está nos rótulos (ou na legenda) e na tabela de apoio. "
+                                    "Cada linha acumula os meses de um ano; o valor do último mês disponível de cada ano está nos rótulos (ou na legenda) e na "
+                                    "tabela de apoio. "
                                     "Ano parcial termina antes de dezembro: compare os anos no mesmo mês, nunca o total de um ano parcial com o de um ano completo.",
                                     limite_y, _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
     finais = []
@@ -645,9 +667,9 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
 
 
 def figura_boxplot_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
-    """Boxplot dos valores MENSAIS de cada ano (resumo de cinco números e critério de Tukey, calculados em ``quartis_por_ano``).
+    """Boxplot dos valores MENSAIS de cada ano (resumo de cinco números e critério de Tukey, calculados em quartis_por_ano).
 
-    Anos com IQR = 0 têm caixa degenerada: não mostram pontos atípicos e são rotulados. ``n`` = meses com valor do ano.
+    Anos com IQR = 0 têm caixa degenerada: não mostram pontos atípicos e são rotulados. n = meses com valor do ano.
     """
     serie = _serie_figura(sinesp, evento, abrangencia, anos)
     if serie.empty:
@@ -658,7 +680,8 @@ def figura_boxplot_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: 
     unidade = serie["unidade"].iloc[0]
     maximo = float(max(tabela["maximo"].max(), 1))
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, "por mês, resumidas em um gráfico de caixa para cada ano"),
-                                    "Caixa: de Q1 a Q3 (1º e 3º quartis); traço: mediana; hastes: menor e maior valor dentro dos limites de referência (Q1 − 1,5 × IQR e Q3 + 1,5 × IQR); "
+                                    "Caixa: de Q1 a Q3 (1º e 3º quartis); traço: mediana; hastes: menor e maior valor dentro dos limites de referência (Q1 − "
+                                    "1,5 × IQR e Q3 + 1,5 × IQR); "
                                     "pontos: meses fora desses limites (incomuns, não anomalias comprovadas). Em anos com IQR = 0 não há pontos destacados. "
                                     "n = meses com valor; o ano parcial tem menos meses.",
                                     max(maximo * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize())
@@ -689,7 +712,7 @@ def figura_boxplot_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: 
 
 
 def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
-    """Frequência dos valores mensais em faixas de contagem (barras categóricas; regra em ``calculos.distribuicao_frequencias``).
+    """Frequência dos valores mensais em faixas de contagem (barras categóricas; regra em calculos.distribuicao_frequencias).
 
     O zero publicado é uma faixa própria (hachurada) e o valor extremo fica na última faixa. A soma das barras é o número de meses com valor.
     """
@@ -705,7 +728,8 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     largura = int(tabela.attrs.get("largura", 1))
     regra = ("Cada valor inteiro forma uma faixa" if largura == 1 else f"Valores positivos agrupados em intervalos de {largura}; a última faixa pode ser menor")
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, "por mês: quantos meses tiveram valores em cada faixa"),
-                                    f"{regra}; barras categóricas com a contagem de meses (n = {total}). Barra hachurada: zero informado ({zeros} {'mês' if zeros == 1 else 'meses'}, {zeros / total * 100:.0f}%), "
+                                    f"{regra}; barras categóricas com a contagem de meses (n = {total}). Barra hachurada: zero informado ({zeros} {'mês' if zeros == 1 else 'meses'}, "
+                                    f"{zeros / total * 100:.0f}%), "
                                     "faixa própria. O maior valor observado está na última faixa; faixas vazias são mantidas.",
                                     max(float(tabela["n_meses"].max()) * 1.25, 1), _rodape(abrangencia, unidade), "Número de meses",
                                     xlabel=f"Faixa do valor mensal ({unidade.split(' (')[0]})")
@@ -721,7 +745,7 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
 
 
 def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
-    """Perfil por mês-calendário em BARRAS: mediana de cada mês nos anos completos (traço fino = mínimo a máximo). ``None`` com menos de 2 anos.
+    """Perfil por mês-calendário em BARRAS: mediana de cada mês nos anos completos (traço fino = mínimo a máximo). None com menos de 2 anos.
 
     Usa somente anos completos (12 meses com valor); anos parciais, como 2026, ficam de fora, e nenhum mês é inventado. Os anos usados
     aparecem no subtítulo.
@@ -738,7 +762,8 @@ def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
              else "Com poucos anos completos, o quadro descreve esses anos e não prova um padrão sazonal.")
     anos_texto = _anos_em_texto(usados)
     figura, eixo = _preparar_sinesp(_titulo(evento), _subtitulo(unidade, f"· mediana de cada mês nos anos completos {anos_texto} (n = {len(usados)})"),
-                                    f"Barras: mediana do mês nos anos completos usados ({anos_texto}); traço fino: mínimo a máximo desses anos. Anos parciais (como 2026) ficam de fora. {aviso}",
+                                    f"Barras: mediana do mês nos anos completos usados ({anos_texto}); traço fino: mínimo a máximo desses anos. Anos parciais "
+                                    f"(como 2026) ficam de fora. {aviso}",
                                     max(float(perfil["maximo"].max()) * 1.25, 1), _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
     meses = perfil["mes"].astype(int).tolist()
     medianas = perfil["mediana"].astype("float64").tolist()
@@ -821,8 +846,8 @@ COR_SSP_2023, COR_SSP_2024 = "#8FBBE3", "#074EA2"   # dois tons de azul para os 
 def figura_violencia_domestica_ssp(vd: pd.DataFrame, categoria: str | None = None) -> Figure | None:
     """Fatos comunicados de violência doméstica (SSP/SC, Joinville), 2023 × 2024.
 
-    Sem ``categoria``: barras horizontais, uma por categoria e ano (cada categoria só se compara com ela mesma; nada é somado).
-    Com ``categoria``: barras mensais dessa categoria, janeiro a dezembro, um tom de azul por ano.
+    Sem categoria: barras horizontais, uma por categoria e ano (cada categoria só se compara com ela mesma; nada é somado).
+    Com categoria: barras mensais dessa categoria, janeiro a dezembro, um tom de azul por ano.
     A unidade "Fato Comunicado" está em validação: o gráfico diz isso e não sugere comparação com o Sinesp.
     """
     if vd is None or vd.empty:

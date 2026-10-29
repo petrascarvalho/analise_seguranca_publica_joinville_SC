@@ -1,4 +1,4 @@
-"""Testes automatizados da interface Streamlit (``streamlit.testing.v1.AppTest``).
+"""Testes automatizados da interface Streamlit (streamlit.testing.v1.AppTest).
 
 Verificam carregamento, filtros e mensagens da página única e de cada uma das suas quatro seções (Apresentação, Indicadores Sinesp,
 Violência doméstica SSP/SC e Qualidade/metodologia). Não substituem a inspeção visual no navegador, que não é executada por estes testes.

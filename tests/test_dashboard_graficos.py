@@ -7,6 +7,7 @@ from dashboard import calculos, graficos
 from dashboard import dados_publicos as dp
 
 
+# A base aprovada é carregada uma vez e reaproveitada pelos testes deste arquivo.
 @pytest.fixture(scope="module")
 def sinesp():
     return dp.carregar_sinesp()
@@ -19,6 +20,7 @@ def _texto_da_figura(figura) -> str:
 
 
 def test_quatro_figuras_da_etapa_10_preservam_valores_aprovados(sinesp):
+    # Os números desenhados (linhas e barras) precisam ser exatamente os valores aprovados.
     figuras = graficos.figuras_sinesp_etapa10(sinesp)
     assert list(figuras) == ["fig_homicidio_anual_sinesp", "fig_mulher_anual_sinesp", "fig_homicidios_jan_ago_sinesp", "fig_mulher_jan_ago_sinesp"]
     linhas = figuras["fig_homicidio_anual_sinesp"].axes[0].lines

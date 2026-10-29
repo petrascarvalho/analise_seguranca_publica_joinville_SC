@@ -91,8 +91,8 @@ with abas[0]:
     tabela = catalogo.rename(columns={
         "evento": "Indicador", "abrangencia": "Classificação institucional", "unidade": "Unidade", "meses_observados": "Meses", "meses_com_valor": "Com valor",
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor"})
-    tabela["Início"] = tabela["inicio"].map(lambda c: fmt_competencia(c, curto=True))
-    tabela["Última competência"] = tabela["fim"].map(lambda c: fmt_competencia(c, curto=True))
+    tabela["Início"] = [fmt_competencia(c, curto=True) for c in tabela["inicio"]]  # "2020-01" vira "jan/2020"
+    tabela["Última competência"] = [fmt_competencia(c, curto=True) for c in tabela["fim"]]
     st.dataframe(tabela[["Indicador", "Classificação institucional", "Unidade", "Início", "Última competência", "Meses", "Com valor", "Zeros informados", "Sem valor"]], hide_index=True)
     st.markdown(
         f"- **Total:** {fmt_int(len(sinesp))} registros mensais em {len(catalogo)} séries; **valores ausentes:** {int(sinesp['valor'].isna().sum())} "
