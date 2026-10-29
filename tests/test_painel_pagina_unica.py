@@ -212,7 +212,7 @@ def test_transparencia_preservada_no_texto_publico():
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
     corpo = " ".join(textos for textos in [m.value for m in app.markdown] + [c.value for c in app.caption] + [i.value for i in app.info] + [w.value for w in app.warning])
     for trecho in ("2026 é parcial", "Zero informado e ausência são diferentes", "Fato Comunicado", "em validação", "não é uma aprovação ou certificação oficial do governo",
-                   "nunca somadas", "Sinesp/MJSP", "não equivale a vítimas"):
+                   "nunca somadas", "Sinesp/MJSP", "não deve ser lida como vítimas, pessoas ou ocorrências únicas"):
         assert trecho in corpo or trecho.replace("nunca somadas", "nunca são somadas") in corpo, trecho
 
 
@@ -257,7 +257,7 @@ def test_textos_condicionais_de_todos_os_filtros_seguem_a_linguagem_publica():
         assert not app.exception and not app.error, categoria
         textos = [x for x in textos_visiveis(app) if not x.startswith("Identificador da versão dos dados") and "SHA-256" not in x and not re.fullmatch(r"[0-9a-f]{64}", x)]
         _conferir_linguagem(textos, f"SSP/SC {categoria}")
-        assert any("Fato Comunicado" in t and "não tem definição oficial confirmada" in t for t in textos), categoria  # a ressalva nunca some
+        assert any("Fato Comunicado" in t and "não foi identificada uma definição operacional de “Fato Comunicado”" in t for t in textos), categoria  # a ressalva nunca some
 
 
 def test_ressalvas_preservadas_em_cada_estado_dos_filtros():
@@ -270,3 +270,29 @@ def test_ressalvas_preservadas_em_cada_estado_dos_filtros():
     assert "2026 contém apenas janeiro a agosto" in avisos(app) and "sem preencher os meses que faltam" in avisos(app)
     cartao = [c for c in cartoes(app) if c.titulo == "Meses com valor publicado"][0]
     assert "Meses sem informação: 0 (nunca preenchidos)" in cartao.base and "Zeros informados:" in cartao.base  # zero ≠ ausência
+
+
+# ------------------------------------------------------------------------------------------------- gráficos temporais e títulos
+def test_serie_mensal_ssp_e_linha_com_marcadores_e_rotulos_so_no_modo_completo(tmp_path, monkeypatch):
+    monkeypatch.setattr(dados_ssp, "CAMINHOS", [_csv_ssp(tmp_path / "vd.csv")])
+    dados = dados_ssp.carregar_violencia_domestica()
+    figura = graficos.figura_violencia_domestica_ssp(dados, "Ameaça")
+    linhas = {l.get_gid(): l for l in figura.axes[0].lines}
+    assert set(linhas) == {"linha_ssp_2023", "linha_ssp_2024"} and all(l.get_marker() == "o" for l in linhas.values())
+    assert [int(v) for v in linhas["linha_ssp_2023"].get_ydata()] == list(range(1, 13))  # os 12 valores publicados, sem preencher nada
+    assert not figura.axes[0].patches
+    rotulos = [t.get_text() for t in figura.axes[0].texts if t.get_text().isdigit()]
+    assert len(rotulos) == 24  # 2 anos × 12 meses, escritos nos pontos
+    with graficos.modo_compacto():
+        compacta = graficos.figura_violencia_domestica_ssp(dados, "Ameaça")
+    assert not [t for t in compacta.axes[0].texts if t.get_text().isdigit()]  # no celular, sem rótulos para não sobrecarregar
+
+
+def test_icone_de_ancora_dos_titulos_fica_oculto_e_os_links_do_indice_continuam():
+    assert '[data-testid="stHeaderActionElements"] { display: none !important; }' in ui.CSS
+    entrada = project_path("scripts", "painel_streamlit.py").read_text(encoding="utf-8")
+    for ancora in ("#apresentacao", "#indicadores", "#violencia-domestica", "#qualidade", "#metodologia"):
+        assert f"]({ancora})" in entrada
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    titulos = [h.value for h in app.title] + [h.value for h in app.header]
+    assert not [t for t in titulos if re.search(r"\bT\b|🔗|#", t)], titulos  # nenhum "T" solto nem símbolo de âncora no texto

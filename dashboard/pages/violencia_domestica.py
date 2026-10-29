@@ -22,8 +22,8 @@ from dashboard.formatacao import ABREV_MESES, fmt_dif, fmt_int  # noqa: E402
 
 ui.secao("VIOLÊNCIA DOMÉSTICA — SSP/SC", "violencia-domestica",
          "Exploração separada do Sinesp: dados da Secretaria de Estado da Segurança Pública de SC (SSP/SC) para o município de Joinville, de janeiro/2023 a dezembro/2024.")
-st.warning("**Fonte em validação.** “Fato Comunicado” não tem definição oficial confirmada: não equivale a vítimas, pessoas ou ocorrências únicas. "
-           "Não some categorias nem compare estes números com os do Sinesp.")
+st.warning("**Fonte em validação.** Não foi identificada uma definição operacional de “Fato Comunicado” nos documentos analisados; por isso a unidade não deve "
+           "ser lida como vítimas, pessoas ou ocorrências únicas. Não some categorias nem compare estes números com os do Sinesp.")
 
 try:
     vd = dados_ssp.carregar_violencia_domestica()
@@ -52,7 +52,7 @@ else:
             {"titulo": "Período", "valor": "2023–2024", "detalhe": "SSP/SC · Joinville", "base": "Janeiro/2023 a dezembro/2024 (24 meses)."},
             {"titulo": "Registros", "valor": fmt_int(len(vd)), "detalhe": f"{len(categorias)} categorias × 24 meses", "base": "Sem registros repetidos e sem valores ausentes."},
             {"titulo": "Zeros informados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": "meses com 0 fatos comunicados", "base": "Zero informado é um número publicado, não ausência."},
-            {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Sem definição oficial nos documentos da fonte."},
+            {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Definição não identificada nos documentos analisados."},
         ])
     else:
         a23, a24 = int(totais.loc[categoria, 2023]), int(totais.loc[categoria, 2024])
@@ -85,8 +85,8 @@ with st.expander("Fonte, procedência e limitações da SSP/SC"):
         "- **Fonte:** SSP/SC — Segurança em Números, relatórios de violência doméstica (1º e 2º semestres de 2023 e ano de 2024), bloco do município de Joinville.\n"
         "- **Conferência:** os 216 registros (9 categorias × 24 meses, com 27 zeros) foram extraídos dos relatórios em PDF e **conferidos um a um** com as tabelas "
         "oficiais (159 verificações, todas aprovadas).\n"
-        "- **Unidade em validação:** “Fato Comunicado” não tem definição oficial confirmada; por isso não é interpretado como vítimas, pessoas ou "
-        "ocorrências únicas, e não se soma entre categorias.\n"
+        "- **Unidade em validação:** não foi identificada uma definição operacional de “Fato Comunicado” nos documentos analisados (isso não significa que a "
+        "definição não exista na SSP/SC); por isso a unidade não é interpretada como vítimas, pessoas ou ocorrências únicas e não se soma entre categorias.\n"
         "- **Separação metodológica:** estes números não são comparáveis automaticamente com as vítimas do Sinesp e não existe união das duas fontes.\n"
         "- **Reutilização:** as condições de reutilização da SSP/SC não foram avaliadas formalmente; os relatórios completos (inclusive boletins de homicídio, "
         "com versões divergentes entre si) não são publicados neste painel."

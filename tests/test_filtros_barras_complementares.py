@@ -96,9 +96,12 @@ def test_etapa_10_e_identificada_como_material_historico_independente_dos_filtro
 
 
 # --------------------------------------------------------------------------------------------------- barras
-def test_evolucao_anual_e_mensal_sao_barras_com_os_valores_da_tabela(sinesp):
+def test_evolucao_anual_e_linha_com_marcadores_e_mensal_e_barras_com_os_valores_da_tabela(sinesp):
     anual = graficos.figura_serie_anual_sinesp(sinesp, "Homicídio doloso", "Estadual", ANOS)
-    assert not anual.axes[0].lines and [b.get_height() for b in anual.axes[0].patches if b.get_gid() == "barra_anual"] == [62, 62, 49, 55, 36, 29]
+    linha = [l for l in anual.axes[0].lines if l.get_gid() == "linha_anual"]
+    assert len(linha) == 1 and [int(v) for v in linha[0].get_ydata()] == [62, 62, 49, 55, 36, 29] and linha[0].get_marker() == "o"  # poucos pontos: linha com marcadores
+    assert [t.get_text() for t in anual.axes[0].texts if t.get_text().isdigit()] == ["62", "62", "49", "55", "36", "29"]  # e o valor escrito em cada ponto
+    assert not anual.axes[0].patches
     mensal = graficos.figura_mensal_sinesp(sinesp, "Homicídio doloso", "Estadual", [2025, 2026])
     assert not mensal.axes[0].lines
     serie = calculos.serie_sinesp(sinesp, "Homicídio doloso", "Estadual")

@@ -103,8 +103,8 @@ with abas[0]:
     st.markdown(
         "- **Origem:** relatórios oficiais de violência doméstica da Secretaria de Estado da Segurança Pública de SC (“Segurança em Números”), com os "
         "números do município de Joinville em 2023 e 2024. Os números foram lidos dos relatórios em PDF e conferidos nas tabelas oficiais.\n"
-        "- **Situação:** fonte **em validação**. A unidade “Fato Comunicado” não tem definição oficial confirmada: não equivale a vítimas, pessoas ou ocorrências "
-        "únicas e não é comparável com o Sinesp.\n"
+        "- **Situação:** fonte **em validação**. Não foi identificada uma definição operacional de “Fato Comunicado” nos documentos analisados; por isso a unidade não é "
+        "lida como vítimas, pessoas ou ocorrências únicas e não é comparável com o Sinesp.\n"
         "- **Uso:** as categorias não são somadas e os números são mostrados em seção separada. As condições de reutilização da fonte não foram avaliadas "
         "formalmente; por isso os relatórios completos não são publicados."
     )
@@ -143,8 +143,8 @@ with abas[2]:
         "- As séries “Estadual”, “Polícia Federal” e “Polícia Rodoviária Federal” têm coberturas diferentes e não são somadas. Mandados não são pessoas únicas.\n"
         "- A fonte pode revisar números já publicados; revisões só entram no painel depois de conferidas.\n"
         "- Contagens pequenas geram variações percentuais instáveis: observe sempre a diferença em números absolutos.\n"
-        "- **SSP/SC (violência doméstica):** fonte separada e em validação; “Fato Comunicado” não tem definição oficial confirmada, não é vítima nem ocorrência "
-        "única e não se soma ao Sinesp. Detalhes na seção própria."
+        "- **SSP/SC (violência doméstica):** fonte separada e em validação; não foi identificada uma definição operacional de “Fato Comunicado” nos documentos "
+        "analisados, então a unidade não é lida como vítima nem como ocorrência única e não se soma ao Sinesp. Detalhes na seção própria."
     )
 
 # ------------------------------------------------------------------------------------------ fonte, atualização e condições de uso

@@ -35,6 +35,7 @@ h1, h2, h3, h4 {{ color: {TITULO} !important; }}
 [data-testid="stImage"] img {{ border: 1px solid {BORDA}; border-radius: 12px; background: {CARTAO}; }}
 /* contêineres com borda e expansores viram cards brancos */
 [data-testid="stVerticalBlockBorderWrapper"], [data-testid="stExpander"] {{ background: {CARTAO}; border-color: {BORDA} !important; }}
+[data-testid="stHeaderActionElements"] {{ display: none !important; }}   /* sem o ícone de link ao lado dos títulos (os links do índice continuam funcionando) */
 .st-key-cabecalho {{ background: {CARTAO}; border: 1px solid {BORDA}; border-bottom: 4px solid {AZUL_BANDEIRA}; border-radius: 12px; padding: 0.9rem 1.2rem; }}
 .st-key-cabecalho h1 {{ padding: 0; }}
 .grade-cartoes {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 1rem; margin: 0.25rem 0 0; }}

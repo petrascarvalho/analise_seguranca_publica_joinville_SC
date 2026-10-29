@@ -51,12 +51,17 @@ def test_valor_ausente_nao_vira_zero_nem_soma_parcial_nas_figuras(sinesp):
     assert graficos.figura_serie_anual_sinesp(ausente, "Homicídio doloso", "Estadual", [2021]) is None
 
 
+def _y(figura, gid):
+    """Valores desenhados na linha com marcadores de gid dado (gráficos de poucos pontos: anual e períodos equivalentes)."""
+    return [int(v) for v in next(l for l in figura.axes[0].lines if l.get_gid() == gid).get_ydata()]
+
+
 def test_figuras_filtraveis_usam_cores_por_ano_e_eixo_em_zero(sinesp):
     figura = graficos.figura_periodo_sinesp(sinesp, "Homicídio doloso", "Estadual", list(range(2020, 2027)), 8)
-    assert [b.get_height() for b in figura.axes[0].patches] == [50, 40, 29, 40, 21, 18, 22] and figura.axes[0].get_ylim()[0] == 0
+    assert _y(figura, "linha_periodo") == [50, 40, 29, 40, 21, 18, 22] and figura.axes[0].get_ylim()[0] == 0  # linha com marcadores e rótulos; eixo em zero
     setembro = graficos.figura_periodo_sinesp(sinesp, "Homicídio doloso", "Estadual", list(range(2020, 2027)), 9)
     esperado = [int(sinesp[(sinesp["evento"] == "Homicídio doloso") & (sinesp["ano"] == a) & (sinesp["mes"] <= 9)]["valor"].sum()) for a in range(2020, 2027)]
-    assert [b.get_height() for b in setembro.axes[0].patches] == esperado and esperado[-1] == 25  # janeiro–setembro: 2026 já comparável
+    assert _y(setembro, "linha_periodo") == esperado and esperado[-1] == 25  # janeiro–setembro: 2026 já comparável
     mensal = graficos.figura_mensal_sinesp(sinesp, "Tentativa de homicídio", "Estadual", [2025, 2026])
     assert [len([b for b in mensal.axes[0].patches if b.get_gid() == f"mensal_{a}"]) for a in (2025, 2026)] == [12, 9]  # 2026 tem 9 meses (até setembro)
     assert graficos.cor_ano(2023) == "#2A73B8" and graficos.cor_ano(2024) == "#074EA2"  # tons de azul; anos continuam distintos
@@ -73,9 +78,8 @@ def test_figuras_filtraveis_usam_cores_por_ano_e_eixo_em_zero(sinesp):
 
 def test_figura_serie_anual_apenas_anos_completos(sinesp):
     figura = graficos.figura_serie_anual_sinesp(sinesp, "Suicídio", "Estadual", list(range(2020, 2027)))
-    barras = [b for b in figura.axes[0].patches if b.get_gid() == "barra_anual"]
     assert [t.get_text() for t in figura.axes[0].get_xticklabels()] == ["2020", "2021", "2022", "2023", "2024", "2025"]  # 2026 parcial fora da série anual
-    assert [b.get_height() for b in barras] == [43, 52, 67, 44, 48, 39]
+    assert _y(figura, "linha_anual") == [43, 52, 67, 44, 48, 39]
     assert graficos.figura_serie_anual_sinesp(sinesp, "Suicídio", "Estadual", [2026]) is None
 
 

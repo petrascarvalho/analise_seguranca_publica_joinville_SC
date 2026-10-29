@@ -46,7 +46,7 @@ def test_readme_separa_o_sinesp_validado_do_acervo_ssp_em_validacao():
         "fonte única", "Sinesp/MJSP", "Joinville/SC", "SSP/SC e Prefeitura/SEPROT", "fora do escopo", "bad9723",
         "Indicadores Sinesp", "Qualidade dos dados", "página única",
         # Etapa 24: SSP/SC preservada e em validação, fora do painel; nada apresentado como definitivo
-        "em validação", "Fato Comunicado", "não tem definição oficial", "41 têm versões diferentes", "src/pipeline/ssp_sc.py",
+        "em validação", "Fato Comunicado", "não foi identificada uma definição operacional", "41 têm versões diferentes", "src/pipeline/ssp_sc.py",
         "src/pipeline/consolidacao.py", "pd.concat", "não foi gravada", "1.127 linhas",
     ):
         assert esperado in readme, esperado

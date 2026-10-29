@@ -345,6 +345,8 @@ with abas[3]:
                 "- **Quartis (Q1 e Q3):** Q1 deixa 25% dos meses abaixo dele e Q3 deixa 75% abaixo. **IQR:** a distância entre Q1 e Q3.\n"
                 "- **Limites de referência:** Q1 − 1,5 × IQR e Q3 + 1,5 × IQR (critério estatístico de Tukey). Servem para destacar meses diferentes dos demais "
                 "**da própria série**. **Não são metas, limites legais nem parâmetros oficiais de segurança pública**, e um mês fora deles não prova erro, anomalia ou mudança real.\n"
+                "- **“Meses incomuns”:** são os meses que ficam fora dos limites de referência. É apenas um critério estatístico: **não indica, por si só, erro de registro "
+                "nem risco extraordinário**.\n"
                 "- **Gráfico de caixa (boxplot):** a caixa vai de Q1 a Q3, o traço é a mediana e os pontos são meses fora dos limites de referência.\n"
                 "- **Média móvel de 12 meses:** média do mês e dos 11 anteriores; suaviza as oscilações."
             )
@@ -376,8 +378,8 @@ with abas[3]:
                                       f"A soma das faixas é {int(frequencias['n_meses'].sum())} meses.", tabela)
         st.divider()
         st.markdown("**Meses fora dos limites de referência (IQR)**")
-        st.caption("Meses fora do comportamento típico da própria série, segundo um critério estatístico (limites de referência), no período escolhido. "
-                   "Não são parâmetros oficiais de segurança pública nem anomalias comprovadas; o critério só é destacado quando é útil para a série.")
+        st.caption("“Meses incomuns” são meses fora do comportamento típico da própria série, segundo um critério estatístico (limites de referência), no período escolhido. "
+                   "Isso não indica, por si só, erro de registro nem risco extraordinário, e não são parâmetros oficiais de segurança pública.")
         diagnostico = calculos.diagnostico_outliers_iqr(serie_mes)
         if diagnostico["interpretavel"]:
             st.info("Para esta série, o critério estatístico é útil: meses fora dos limites de referência são incomuns em relação aos demais. "

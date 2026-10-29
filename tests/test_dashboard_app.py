@@ -222,7 +222,7 @@ def test_qualidade_mostra_integridade_cobertura_fonte_e_limitacoes():
     assert "Do dado oficial ao painel" in [s.value for s in app.subheader] and "Procedimento de atualização dos dados" not in [s.value for s in app.subheader]
     assert "não busca informações sozinho" in corpo
     assert "Prefeitura" not in corpo
-    assert "fonte separada e em validação" in corpo and "não tem definição oficial confirmada" in corpo  # a SSP/SC aparece só como limitação
+    assert "fonte separada e em validação" in corpo and "não foi identificada uma definição operacional de “Fato Comunicado”" in corpo  # a SSP/SC aparece só como limitação
     assert not app.error
 
 

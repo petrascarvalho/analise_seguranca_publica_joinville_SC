@@ -264,6 +264,16 @@ def figuras_sinesp_etapa10(sinesp: pd.DataFrame) -> dict[str, Figure]:
     return figuras
 
 
+def _linha_com_marcadores(eixo, valores: list[int], gid: str):
+    """Linha com marcadores e o valor escrito acima de cada ponto. Usada só em séries de poucos pontos (anos), para não sobrecarregar o gráfico."""
+    x = list(range(len(valores)))
+    linha, = eixo.plot(x, valores, color=COR_AZUL, linewidth=2.2, marker="o", markersize=7)
+    linha.set_gid(gid)
+    for posicao, valor in zip(x, valores):
+        eixo.annotate(fmt_int(valor), (posicao, valor), textcoords="offset points", xytext=(0, 9), ha="center", fontsize=10)
+    return linha
+
+
 def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
     """Série anual de um único indicador (somente anos completos selecionados)."""
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
@@ -274,21 +284,18 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
     unidade = tabela["unidade"].iloc[0]
     maximo = int(tabela["soma"].max())
     figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", f"Anos completos selecionados ({int(tabela['ano'].min())}–{int(tabela['ano'].max())}) — abrangência {abrangencia}",
-                                    "Barras verticais: soma dos 12 meses de cada ano. Um ano parcial (ainda incompleto) não entra em séries anuais.", max(maximo * 1.25, 1),
+                                    "Linha com marcadores: soma dos 12 meses de cada ano. Um ano parcial (ainda incompleto) não entra em séries anuais.", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
     anos_plot = tabela["ano"].astype(int).tolist()
-    barras = eixo.bar(range(len(anos_plot)), [int(v) for v in tabela["soma"]], color=[cor_ano(a) for a in anos_plot], width=0.6)
-    for barra in barras:
-        barra.set_gid("barra_anual")
-    eixo.bar_label(barras, labels=[fmt_int(v) for v in tabela["soma"]], padding=4, fontsize=10)
+    _linha_com_marcadores(eixo, [int(v) for v in tabela["soma"]], "linha_anual")
     eixo.set_xticks(range(len(anos_plot)), [str(a) for a in anos_plot])
-    eixo.set_xlim(-0.7, len(anos_plot) - 0.3)
+    eixo.set_xlim(-0.5, len(anos_plot) - 0.5)
     _aviso_sem_variacao(eixo, tabela["soma"])
     return figura
 
 
 def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int], mes_final: int = 8) -> Figure | None:
-    """Barras de períodos equivalentes (janeiro até ``mes_final``) por ano para um indicador."""
+    """Linha com marcadores dos períodos equivalentes (janeiro até ``mes_final``) por ano para um indicador."""
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
     tabela = calculos.comparacao_periodo_sinesp(serie, mes_final)
     tabela = tabela.loc[tabela["ano"].isin(anos) & tabela["soma"].notna()].sort_values("ano")
@@ -301,10 +308,9 @@ def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, a
                                     f"Todos os anos têm os mesmos meses ({rotulo}); a comparação é entre períodos de igual duração.", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
     anos_plot = tabela["ano"].astype(int).tolist()
-    barras = eixo.bar(range(len(anos_plot)), [int(v) for v in tabela["soma"]], color=[cor_ano(a) for a in anos_plot], width=0.55)
-    eixo.bar_label(barras, labels=[fmt_int(v) for v in tabela["soma"]], padding=4, fontsize=10)
+    _linha_com_marcadores(eixo, [int(v) for v in tabela["soma"]], "linha_periodo")
     eixo.set_xticks(range(len(anos_plot)), [str(a) for a in anos_plot])
-    eixo.set_xlim(-0.7, len(anos_plot) - 0.3)
+    eixo.set_xlim(-0.5, len(anos_plot) - 0.5)
     _aviso_sem_variacao(eixo, tabela["soma"])
     return figura
 
@@ -831,12 +837,20 @@ def figura_violencia_domestica_ssp(vd: pd.DataFrame, categoria: str | None = Non
     else:
         parte = vd.loc[vd["categoria"].eq(categoria)]
         mensal = parte.pivot(index="mes", columns="ano", values="valor").reindex(range(1, 13))
-        for deslocamento, ano in ((-0.2, 2023), (0.2, 2024)):
-            barras = eixo.bar([m + deslocamento for m in mensal.index], [int(v) for v in mensal[ano]], width=0.38, color=cores[ano], label=str(ano))
+        for ano in (2023, 2024):
+            valores = [int(v) for v in mensal[ano]]
+            linha, = eixo.plot(list(mensal.index), valores, color=cores[ano], linewidth=2.2, marker="o", markersize=6 if compacto else 7, label=str(ano))
+            linha.set_gid(f"linha_ssp_{ano}")
             if not compacto:
-                eixo.bar_label(barras, labels=[fmt_int(v) for v in mensal[ano]], padding=2, fontsize=8, color="#103C6D")
+                outro = 2024 if ano == 2023 else 2023
+                for mes, valor in zip(mensal.index, valores):
+                    # em cada mês, o MAIOR valor leva o rótulo acima do ponto e o menor, abaixo: assim os dois nunca se sobrepõem onde as linhas se cruzam
+                    acima = valor > int(mensal.loc[mes, outro]) or (valor == int(mensal.loc[mes, outro]) and ano == 2024)
+                    eixo.annotate(fmt_int(valor), (mes, valor), textcoords="offset points", xytext=(0, 8 if acima else -9), ha="center", va="bottom" if acima else "top",
+                                  fontsize=8, color="#103C6D")
         eixo.set_xticks(range(1, 13), ABREV_MESES, fontsize=8 if compacto else 10)
         eixo.set_ylabel("Fatos comunicados no mês", fontsize=9 if compacto else 10)
+        eixo.set_xlim(0.5, 12.5)
         eixo.set_ylim(0, max(float(mensal.to_numpy().max()) * 1.3, 1))
         eixo.yaxis.set_major_locator(MaxNLocator(nbins=6, integer=True))
         eixo.grid(axis="y", color="#D9E5F2", linewidth=0.8)
