@@ -280,12 +280,12 @@ Execução integral em kernel real da `.venv`, com figuras renderizadas; o arqui
 | Pandas                                   | Leitura, tratamento, validação, UNION e estatísticas                               |
 | Matplotlib                               | Todos os gráficos                                                                    |
 | Streamlit 1.66.0 (versão fixa)          | Painel; o mínimo seria a 1.55 (abas com execução só da aba aberta)                |
-| lxml, openpyxl                           | Planilhas do Sinesp; XLSX sintéticos nos testes                                      |
+| lxml, openpyxl                           | lxml lê o XML das planilhas do Sinesp; o openpyxl só cria planilhas de teste        |
 | pdfplumber, pypdf                        | Leitura dos PDFs da SSP/SC                                                            |
 | pytest                                   | Testes automatizados                                                                  |
-| ipykernel, nbformat, nbclient, nbconvert | Kernel real, formato validado, execução integral e revisão renderizada do notebook |
+| ipykernel, nbformat, nbclient            | Kernel real, formato validado e execução integral do notebook                        |
 
-As versões estão em [requirements.txt](requirements.txt); a instalação foi conferida num ambiente novo.
+As versões estão em [requirements.txt](requirements.txt), comentado por finalidade (painel, dados, leitura dos arquivos oficiais, testes e notebook). Na Fase 2 saíram da lista o `pyarrow` e o `nbconvert`, que nenhum código do projeto importa (o `pyarrow` continua instalado como dependência do próprio Streamlit); a consistência do ambiente foi conferida com `pip check`.
 
 ## 7. Resultados encontrados
 
@@ -475,7 +475,7 @@ python -m src.pipeline.atualizacao_dados reverter <versao> --confirmo <versao>
 
 A última atualização (27/10/2026) trouxe setembro/2026: 11 competências novas, nenhuma revisão histórica, promovida sem `--aceitar-revisoes`. O gov.br não tem API pública e bloqueia `HEAD`; a verificação é indício, não prova.
 
-**Testes:** **290 testes aprovados**, nenhum ignorado, em 29/10/2026 (664,92 s), na suíte unificada `tests/`. Inclui integridade e manifesto, totais do README, filtros, página única Streamlit com quatro seções, gráficos, modo compacto, estatísticas, atualização controlada, ETL, notebook em kernel real e SSP/SC. Execute com `-ra` para ver explicitamente eventuais testes não executados por falta de acervo; nesta validação local o acervo está disponível. O ETL completo foi executado com destino isolado e reproduziu a base aprovada. Os 147 arquivos de dados existentes no início da retomada, incluindo o pacote público, mantiveram exatamente os mesmos hashes. A reprodução SSP/SC foi comparada em destino isolado para preservar inclusive as saídas anteriores. O notebook executou 22 células de código e cinco figuras, inspecionadas visualmente. As três páginas, navegação e filtros passaram no AppTest; servidor local com HTTP 200. A nova revisão visual interativa no Chrome ficou pendente porque o acesso ao aplicativo expirou na ferramenta; as capturas preservadas são da Etapa 25.
+**Testes:** **292 testes aprovados**, nenhum ignorado, em 29/10/2026 (684,34 s), na suíte unificada `tests/`. Inclui integridade e manifesto, totais do README, filtros, página única Streamlit com quatro seções, gráficos, modo compacto, estatísticas, atualização controlada, ETL, notebook em kernel real e SSP/SC. Execute com `-ra` para ver explicitamente eventuais testes não executados por falta de acervo; nesta validação local o acervo está disponível. O ETL único (`scripts/etl_joinville.py`) foi executado com destino isolado: as quatro saídas do Sinesp são idênticas às da versão aprovada e as sete da SSP/SC, idênticas às do exportador do módulo `ssp_sc.py`. Os 147 arquivos de dados existentes no início da retomada, incluindo o pacote público, mantiveram exatamente os mesmos hashes. A reprodução SSP/SC foi comparada em destino isolado para preservar inclusive as saídas anteriores. O notebook executou integralmente em kernel real (16 células de código e uma de identificação), com as figuras renderizadas. A página única, a navegação e os filtros passaram no AppTest; um servidor Streamlit novo respondeu HTTP 200 e, numa sessão limpa do Chrome (1440, 768 e 390 px), exibiu os 18 cartões, as quatro figuras e as seções de qualidade e metodologia, sem exceções nem avisos no log. A revisão visual humana final continua pendente.
 
 **Migração dos 12 testes históricos (referência anterior: **240 testes aprovados** ativos + 12 históricos):**
 
@@ -536,7 +536,7 @@ Seguranca Publica Joinville/
 │   └── painel_streamlit.py      ← script principal 2: entrada do painel
 ├── notebooks/analise_seguranca_publica_joinville.ipynb
 ├── src/pipeline/                módulos auxiliares
-│   ├── transform.py, utils.py           leitura dos XLSX e caminhos
+│   ├── transform.py, utils.py           leitura do XML dos XLSX (só SC/JOINVILLE) e caminhos
 │   ├── atualizacao_dados.py, fontes_oficiais.py, versionamento_dados.py   atualização controlada
 │   ├── ssp_sc.py                        acervo e auditoria SSP/SC
 │   └── consolidacao.py                  esquema comum, UNION e matriz
@@ -550,6 +550,8 @@ Seguranca Publica Joinville/
 ├── atualizacao/                 (local, fora do Git) versoes/, verificacoes/ e historico.jsonl da atualização controlada
 └── tests/                      suíte ativa e garantias históricas migradas
 ```
+
+**Fase 2 (ETL único):** o roteiro `scripts/etl_sinesp.py` (682 linhas, com análise e gráficos que já estão no notebook) foi substituído por `scripts/etl_joinville.py`; também saíram as funções de exportação sem chamador de `transform.py` (feminicídio, Prefeitura, `run_sinesp`) e duas funções auxiliares sem uso. Cópias com SHA-256 em `C:\Users\Ususario\Desktop\readme.ia\arquivo_fase2_etl\`; o código antigo continua recuperável com `git show 22688ae^:scripts/etl_sinesp.py` e `git show 22688ae:src/pipeline/transform.py`. Os dados em `dados/` e os módulos de atualização controlada, SSP/SC e UNION foram mantidos.
 
 **Recuperação do histórico:** `historico/`, `tests_historicos/` e `dashboard/data_publica/LEIAME.md` foram retirados da árvore ativa na Etapa 26;
 os arquivos versionados continuam recuperáveis com `git show 5702724:<caminho>`. A antiga página SSP/SC é recuperável em `bad9723`.

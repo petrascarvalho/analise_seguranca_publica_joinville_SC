@@ -12,7 +12,6 @@ Nenhum metadado ausente é inventado: o que a fonte não informa fica ``null``/"
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -47,10 +46,6 @@ def agora_utc() -> datetime:
 
 def id_versao(agora: datetime) -> str:
     return agora.strftime("%Y%m%dT%H%M%SZ")
-
-
-def sha256_bytes_normalizado(conteudo: bytes) -> str:
-    return hashlib.sha256(conteudo.replace(b"\r\n", b"\n")).hexdigest()
 
 
 def competencia_texto(ano: int, mes: int) -> str:

@@ -34,7 +34,8 @@ def test_etl_e_notebook_sao_os_roteiros_principais_e_o_antigo_e_historico():
     assert project_path("src", "pipeline", "ssp_sc.py").is_file()  # extração autônoma
     assert sorted(p.name for p in project_path("scripts").glob("*.py")) == ["etl_joinville.py", "painel_streamlit.py"]  # só os dois pontos principais
     readme = _ler("README.md")
-    assert "scripts/etl_joinville.py" in readme and r"scripts\etl_joinville.py" in readme and "etl_sinesp" not in readme
+    assert "scripts/etl_joinville.py" in readme and r"scripts\etl_joinville.py" in readme and "-m scripts.etl_sinesp" not in readme
+    assert "`scripts/etl_sinesp.py` (682 linhas" in readme and "etl_sinesp.py   " not in readme  # o roteiro antigo só aparece no registro histórico da Fase 2
     assert "notebooks/analise_seguranca_publica_joinville.ipynb" in readme and "dados/processados/etl_joinville" in readme
     assert r".\.venv\Scripts\python.exe" in readme  # comandos testados no Windows
     assert "git show 5702724:<caminho>" in readme and "arquivo_etapa26" in readme

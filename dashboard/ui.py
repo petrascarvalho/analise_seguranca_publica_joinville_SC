@@ -11,7 +11,7 @@ import streamlit as st
 
 from dashboard import dados_publicos as dp
 from dashboard import graficos
-from dashboard.formatacao import NOMES_MESES, fmt_competencia, fmt_mes_extenso
+from dashboard.formatacao import NOMES_MESES, fmt_mes_extenso
 
 
 # Cores da identidade visual (PROPOSTA inspirada na bandeira de Joinville; não são códigos oficiais do município).
@@ -89,13 +89,6 @@ def cartoes_html(cartoes: list[dict]) -> None:
         partes.append(f'<div class="cartao" title="{escape(c.get("ajuda", ""), quote=True)}" data-direcao="{direcao_da_seta(c.get("diferenca"))}">{miolo}</div>')
     st.html(f'<div class="grade-cartoes">{"".join(partes)}</div>')
 
-
-def selecao_dependente(local, rotulo: str, opcoes: list, *, chave: str, padrao=None, **kwargs):
-    """Conserva uma escolha válida; troca apenas quando o filtro anterior a exclui."""
-    inicial = padrao if padrao in opcoes else opcoes[0]
-    if chave in st.session_state and st.session_state[chave] not in opcoes:
-        st.session_state[chave] = inicial
-    return local.selectbox(rotulo, opcoes, key=chave, index=opcoes.index(inicial), **kwargs)
 
 def direcao_da_seta(diferenca) -> str:
     """Seta do ``st.metric`` de acordo com o sinal da diferença: "up" (aumento), "down" (queda) ou "off" (sem diferença).

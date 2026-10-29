@@ -1,16 +1,23 @@
-# Streamlit 1.66.0: versão da suíte completa. O painel exige no mínimo a 1.55 (st.tabs com on_change="rerun"; na 1.54 a página
-# Indicadores falha). A 1.55.0 foi conferida só com a execução das três páginas.
+# Bibliotecas do projeto. Instalação: .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+# Painel (scripts/painel_streamlit.py). Streamlit 1.66.0: versão da suíte completa. O painel exige no mínimo a 1.55
+# (st.tabs com on_change="rerun"; na 1.54 a página Indicadores falha). A 1.55.0 foi conferida só com a execução das três páginas.
 streamlit==1.66.0
-openpyxl>=3.1,<4.0
+
+# Dados e gráficos (ETL, notebook e painel). O NumPy vem junto com o pandas.
+pandas>=2.2,<4.0
+matplotlib>=3.8,<4.0
+
+# Leitura dos arquivos oficiais: XML da planilha do Sinesp (lxml) e PDFs da SSP/SC (pdfplumber e pypdf).
+lxml>=5.0,<7.0
 pdfplumber>=0.11,<1.0
 pypdf>=5.0,<7.0
-lxml>=5.0,<7.0
+
+# Testes (pytest). O openpyxl só cria e lê planilhas de teste; o ETL não o usa.
 pytest>=8.0,<9.0
-pandas>=2.2,<4.0
-pyarrow>=18.0,<30.0
-matplotlib>=3.8,<4.0
-# Notebook: edição validada e execução integral em kernel real.
+openpyxl>=3.1,<4.0
+
+# Notebook: kernel e execução integral validada pelos testes (nbformat/nbclient).
 ipykernel>=6.0,<8.0
 nbformat>=5.10,<6.0
 nbclient>=0.10,<1.0
-nbconvert>=7.0,<8.0
