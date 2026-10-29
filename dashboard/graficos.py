@@ -32,6 +32,7 @@ COR_EVENTO = {
 }
 COR_AZUL = "#074EA2"           # azul principal (barras e destaques)
 COR_AZUL_CLARO = "#8FBBE3"     # barras de apoio
+COR_BARRA_ANUAL = "#A8CDEB"    # barras preenchidas do gráfico combinado (evolução anual)
 COR_CINZA_TEXTO = "#20354F"
 _PALETA_RESERVA = ("#3E7FBF", "#1C5FA8", "#6AA3D6", "#0D4283", "#90B9E2")  # anos sem cor definida: ainda tons de azul
 
@@ -264,18 +265,30 @@ def figuras_sinesp_etapa10(sinesp: pd.DataFrame) -> dict[str, Figure]:
     return figuras
 
 
-def _linha_com_marcadores(eixo, valores: list[int], gid: str):
-    """Linha com marcadores e o valor escrito acima de cada ponto. Usada só em séries de poucos pontos (anos), para não sobrecarregar o gráfico."""
+def _fonte_no_subtitulo() -> str:
+    """Fonte no subtítulo da figura. No modo compacto ela aparece uma única vez, em texto nativo abaixo da imagem (ver ``ui.mostrar_figura``)."""
+    return "" if esta_compacto() else " · MJSP/Sinesp VDE"
+
+
+def _barras_e_linha_anual(eixo, valores: list[int], gid_linha: str, gid_barras: str):
+    """Gráfico combinado de evolução anual: barras azul-claras com o valor de cada ano e, por cima, uma linha azul-escura com marcadores circulares.
+
+    As barras e a linha usam a MESMA escala vertical (iniciada em zero). O valor é escrito uma só vez, acima de cada ponto da linha (nada é escrito nas
+    barras). Usada só em séries de poucos pontos (anos), para não sobrecarregar o gráfico.
+    """
     x = list(range(len(valores)))
-    linha, = eixo.plot(x, valores, color=COR_AZUL, linewidth=2.2, marker="o", markersize=7)
-    linha.set_gid(gid)
+    barras = eixo.bar(x, valores, width=0.62, color=COR_BARRA_ANUAL, zorder=2)
+    for barra in barras:
+        barra.set_gid(gid_barras)
+    linha, = eixo.plot(x, valores, color=COR_AZUL, linewidth=2.4, marker="o", markersize=8, markerfacecolor=COR_AZUL, markeredgecolor="white", zorder=3)
+    linha.set_gid(gid_linha)
     for posicao, valor in zip(x, valores):
-        eixo.annotate(fmt_int(valor), (posicao, valor), textcoords="offset points", xytext=(0, 9), ha="center", fontsize=10)
+        eixo.annotate(fmt_int(valor), (posicao, valor), textcoords="offset points", xytext=(0, 11), ha="center", fontsize=10.5, fontweight="semibold", color="#103C6D", zorder=4)
     return linha
 
 
 def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int]) -> Figure | None:
-    """Série anual de um único indicador (somente anos completos selecionados)."""
+    """Série anual de um único indicador (somente anos completos selecionados), em gráfico combinado: barras azul-claras e linha azul-escura com marcadores e rótulos."""
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
     tabela = calculos.tabela_anual_sinesp(serie)
     tabela = tabela.loc[tabela["ano"].isin(anos) & tabela["cobertura"].eq("ano completo") & tabela["soma"].notna()].sort_values("ano")
@@ -283,11 +296,12 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
         return None
     unidade = tabela["unidade"].iloc[0]
     maximo = int(tabela["soma"].max())
-    figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", f"Anos completos selecionados ({int(tabela['ano'].min())}–{int(tabela['ano'].max())}) — abrangência {abrangencia}",
-                                    "Linha com marcadores: soma dos 12 meses de cada ano. Um ano parcial (ainda incompleto) não entra em séries anuais.", max(maximo * 1.25, 1),
+    figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", f"Joinville/SC{_fonte_no_subtitulo()} · {unidade.split(' (')[0]} por ano completo ({int(tabela['ano'].min()) if tabela['ano'].min() == tabela['ano'].max() else str(int(tabela['ano'].min())) + '–' + str(int(tabela['ano'].max()))}) · classificação institucional: {abrangencia}",
+                                    "Barras e linha mostram a mesma soma dos 12 meses de cada ano, na mesma escala (iniciada em zero); o valor está escrito acima de cada ponto. "
+                                    "Um ano parcial (ainda incompleto) não entra em séries anuais.", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
     anos_plot = tabela["ano"].astype(int).tolist()
-    _linha_com_marcadores(eixo, [int(v) for v in tabela["soma"]], "linha_anual")
+    _barras_e_linha_anual(eixo, [int(v) for v in tabela["soma"]], "linha_anual", "barra_anual")
     eixo.set_xticks(range(len(anos_plot)), [str(a) for a in anos_plot])
     eixo.set_xlim(-0.5, len(anos_plot) - 0.5)
     _aviso_sem_variacao(eixo, tabela["soma"])
@@ -295,7 +309,7 @@ def figura_serie_anual_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: st
 
 
 def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, anos: list[int], mes_final: int = 8) -> Figure | None:
-    """Linha com marcadores dos períodos equivalentes (janeiro até ``mes_final``) por ano para um indicador."""
+    """Gráfico combinado (barras claras + linha com marcadores) dos períodos equivalentes (janeiro até ``mes_final``) por ano para um indicador."""
     serie = sinesp.loc[sinesp["evento"].eq(evento) & sinesp["abrangencia"].eq(abrangencia)]
     tabela = calculos.comparacao_periodo_sinesp(serie, mes_final)
     tabela = tabela.loc[tabela["ano"].isin(anos) & tabela["soma"].notna()].sort_values("ano")
@@ -304,11 +318,11 @@ def figura_periodo_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, a
     unidade = tabela["unidade"].iloc[0]
     maximo = int(tabela["soma"].max())
     rotulo = tabela["periodo"].iloc[0]
-    figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", f"Períodos equivalentes ({rotulo}) — abrangência {abrangencia}",
-                                    f"Todos os anos têm os mesmos meses ({rotulo}); a comparação é entre períodos de igual duração.", max(maximo * 1.25, 1),
+    figura, eixo = _preparar_sinesp(f"{evento} em Joinville/SC", f"Joinville/SC{_fonte_no_subtitulo()} · {unidade.split(' (')[0]} em {rotulo}, em cada ano · classificação institucional: {abrangencia}",
+                                    f"Todos os anos têm os mesmos meses ({rotulo}); a comparação é entre períodos de igual duração. Barras e linha mostram o mesmo valor, na mesma escala (iniciada em zero).", max(maximo * 1.25, 1),
                                     f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}", unidade.split(" (")[0].capitalize())
     anos_plot = tabela["ano"].astype(int).tolist()
-    _linha_com_marcadores(eixo, [int(v) for v in tabela["soma"]], "linha_periodo")
+    _barras_e_linha_anual(eixo, [int(v) for v in tabela["soma"]], "linha_periodo", "barra_periodo")
     eixo.set_xticks(range(len(anos_plot)), [str(a) for a in anos_plot])
     eixo.set_xlim(-0.5, len(anos_plot) - 0.5)
     _aviso_sem_variacao(eixo, tabela["soma"])

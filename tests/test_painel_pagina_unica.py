@@ -296,3 +296,41 @@ def test_icone_de_ancora_dos_titulos_fica_oculto_e_os_links_do_indice_continuam(
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
     titulos = [h.value for h in app.title] + [h.value for h in app.header]
     assert not [t for t in titulos if re.search(r"\bT\b|🔗|#", t)], titulos  # nenhum "T" solto nem símbolo de âncora no texto
+
+
+# ------------------------------------------------------------------------------------------------- gráfico combinado da evolução anual
+def test_evolucao_anual_combina_barras_claras_e_linha_azul_escura_com_rotulos_unicos(sinesp_publico):
+    import matplotlib.colors as mcolors
+
+    figura = graficos.figura_serie_anual_sinesp(sinesp_publico, "Homicídio doloso", "Estadual", list(range(2020, 2027)))
+    eixo = figura.axes[0]
+    barras = [b for b in eixo.patches if b.get_gid() == "barra_anual"]
+    linha = next(l for l in eixo.lines if l.get_gid() == "linha_anual")
+    esperado = [62, 62, 49, 55, 36, 29]  # exemplo validado; 2026 é parcial e não entra
+    assert [b.get_height() for b in barras] == esperado and [int(v) for v in linha.get_ydata()] == esperado
+    assert all(mcolors.to_hex(b.get_facecolor()).lower() == "#a8cdeb" for b in barras)  # barras azul-claras
+    assert mcolors.to_hex(linha.get_color()).lower() == "#074ea2" and linha.get_marker() == "o"  # linha azul-escura com marcadores circulares
+    assert len(eixo.figure.axes) == 1 and eixo.get_ylim()[0] == 0  # uma única escala vertical, iniciada em zero
+    rotulos = [t for t in eixo.texts if t.get_text().isdigit()]
+    assert [t.get_text() for t in rotulos] == [str(v) for v in esperado]  # rótulos não duplicados nas barras
+    assert all(t.xy[1] == v for t, v in zip(rotulos, esperado))  # ancorados nos pontos (e deslocados para cima, sem tocar nas barras)
+    assert [t.get_text() for t in eixo.get_xticklabels()] == ["2020", "2021", "2022", "2023", "2024", "2025"]  # só anos completos
+    titulo, subtitulo = figura.get_suptitle(), next(t.get_text() for t in figura.texts if "classificação institucional" in t.get_text())
+    for trecho in ("Homicídio doloso", "Joinville/SC"):
+        assert trecho in titulo
+    for trecho in ("Joinville/SC", "MJSP/Sinesp VDE", "vítimas", "classificação institucional: Estadual"):
+        assert trecho in subtitulo, trecho
+
+
+def test_periodos_equivalentes_seguem_o_mesmo_padrao_e_categorias_e_distribuicao_continuam_em_barras(sinesp_publico):
+    periodo = graficos.figura_periodo_sinesp(sinesp_publico, "Homicídio doloso", "Estadual", list(range(2020, 2027)), 9)
+    assert [b.get_height() for b in periodo.axes[0].patches if b.get_gid() == "barra_periodo"] == [int(v) for v in next(l for l in periodo.axes[0].lines if l.get_gid() == "linha_periodo").get_ydata()]
+    assert next(l for l in periodo.axes[0].lines if l.get_gid() == "linha_periodo").get_marker() == "o"
+    # não mudam: distribuição (barras categóricas), ranking (barras horizontais) e comparação anual da SSP/SC por categoria (barras horizontais)
+    distribuicao = graficos.figura_distribuicao_sinesp(sinesp_publico, "Homicídio doloso", "Estadual", list(range(2020, 2027)))
+    assert [b for b in distribuicao.axes[0].patches if b.get_gid() == "frequencia"] and not distribuicao.axes[0].lines
+
+
+@pytest.fixture(scope="module")
+def sinesp_publico():
+    return dp.carregar_sinesp()
