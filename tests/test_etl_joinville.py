@@ -42,7 +42,8 @@ def test_etl_tem_14_etapas_com_comentarios_numerados_e_e_um_roteiro_basico():
     arvore = ast.parse(texto)
     # Programação básica e sequencial: nenhuma função, classe ou decorator próprios.
     assert not [n for n in ast.walk(arvore) if isinstance(n, (ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef))]
-    assert len(texto.splitlines()) < 300  # roteiro curto, para o aluno ler e explicar
+    codigo = [l for l in texto.splitlines() if l.strip() and not l.lstrip().startswith("#")]
+    assert len(codigo) < 220  # roteiro curto: menos de 220 linhas de código (os comentários explicativos não contam)
     assert texto.count("#") > 60  # comentado em português com #
     assert "Pandas" in texto and "display" in texto and "print(" in texto  # funciona no Interactive e como programa
 

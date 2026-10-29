@@ -6,6 +6,7 @@ atualizacao_dados.ler_sinesp_xlsx, que o ETL (scripts/etl_joinville.py) e a atua
 
 from __future__ import annotations
 
+# re: busca de padrões no texto do XML; ZipFile: abre o XLSX (um ZIP); lxml.etree: lê os elementos XML de cada linha.
 import re
 from pathlib import Path
 from zipfile import ZipFile
@@ -23,6 +24,7 @@ NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 def _cell_value(cell, shared_strings: list[str]):
     """Valor de uma célula do XML da planilha (texto, número ou verdadeiro/falso)."""
+    # O atributo t diz o tipo da célula: s = texto compartilhado, inlineStr = texto na própria célula, b = verdadeiro/falso; sem t = número.
     kind = cell.get("t")
     if kind == "inlineStr":
         return "".join(cell.itertext())
@@ -60,6 +62,7 @@ def _shared_strings(archive: ZipFile) -> list[str]:
     """Lista dos textos compartilhados do XLSX (a planilha guarda cada texto uma vez e as células apontam para ele)."""
     if "xl/sharedStrings.xml" not in archive.namelist():
         return []
+    # Lista de todos os textos da planilha; as células de texto guardam só a posição nessa lista.
     root = etree.fromstring(archive.read("xl/sharedStrings.xml"))
     return ["".join(node.itertext()) for node in root.findall(NS + "si")]
 
@@ -69,12 +72,14 @@ def _joinville_rows(source: Path) -> list[list[object]]:
     rows = []
     with ZipFile(source) as archive:
         shared_strings = _shared_strings(archive)
+        # Posições da palavra JOINVILLE na lista de textos (para achar as linhas sem converter o arquivo inteiro).
         joinville_shared_ids = [
             str(index).encode("ascii")
             for index, value in enumerate(shared_strings)
             if value == "JOINVILLE"
         ]
         xml = archive.read("xl/worksheets/sheet1.xml")
+    # Percorre o XML linha a linha (<row>...</row>) e só converte as linhas que mencionam JOINVILLE: muito mais rápido que ler o país inteiro.
     for match in re.finditer(rb"<row\b[^>]*\br=\"\d+\"[^>]*>.*?</row>", xml, re.DOTALL):
         raw_row = match.group()
         has_inline_city = b"JOINVILLE" in raw_row
@@ -90,6 +95,7 @@ def _joinville_rows(source: Path) -> list[list[object]]:
             for cell in element.findall(NS + "c")
         }
         row = [cells.get(chr(65 + column)) for column in range(len(HEADERS))]
+        # Filtro final exato: UF = SC e município = JOINVILLE.
         if row[0] == "SC" and row[1] == "JOINVILLE":
             rows.append(row)
     return rows

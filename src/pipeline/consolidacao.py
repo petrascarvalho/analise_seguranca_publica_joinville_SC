@@ -35,8 +35,10 @@ def sinesp_no_esquema_comum(sinesp: pd.DataFrame | None = None, versao: str | No
     Parâmetros: sinesp — base mensal (por padrão, a publicada em dashboard/data_publica, só leitura); versao — rótulo da versão.
     Retorno: DataFrame com as colunas de ESQUEMA (uma linha por observação original).
     """
+    # Usa a base publicada (só leitura) quando nenhuma tabela é passada.
     sinesp = dp.carregar_sinesp() if sinesp is None else sinesp
     versao = versao or dp.carregar_manifesto()["versao"]
+    # Primeiro dia de cada mês; MonthEnd(0) leva ao último dia do mesmo mês.
     inicio = pd.to_datetime(dict(year=sinesp["ano"], month=sinesp["mes"], day=1))
     return pd.DataFrame({
         "fonte": "Sinesp/MJSP", "municipio": "JOINVILLE", "uf": "SC",
@@ -59,6 +61,7 @@ def unir(*fontes: pd.DataFrame) -> pd.DataFrame:
         if list(tabela[ESQUEMA].columns) != ESQUEMA:
             raise ValueError("Fonte fora do esquema comum.")
     uniao = pd.concat([t[ESQUEMA] for t in fontes], ignore_index=True)  # empilha linhas; não cruza nem soma
+    # Conferências da UNION: mesma quantidade de linhas, nenhuma chave repetida e uma unidade por série.
     if len(uniao) != sum(len(t) for t in fontes):
         raise ValueError("A união mudou a quantidade de linhas.")
     chave = ["fonte", "serie_id", "periodo_inicio", "periodo_fim"]
@@ -92,6 +95,7 @@ def exportar() -> dict:
     """Grava a Sinesp no esquema comum e a matriz de compatibilidade. Não grava consolidação de duas fontes (pendente)."""
     sinesp = sinesp_no_esquema_comum()
     (PASTA_PROCESSADOS / "sinesp").mkdir(parents=True, exist_ok=True)
+    # Grava a Sinesp no esquema comum e a matriz de compatibilidade; nenhuma consolidação entre fontes é gravada.
     sinesp.to_csv(PASTA_PROCESSADOS / "sinesp" / "sinesp_esquema_comum.csv", index=False, encoding="utf-8", lineterminator="\n")
     matriz_compatibilidade().to_csv(PASTA_PROCESSADOS / "matriz_compatibilidade_union.csv", index=False, encoding="utf-8", lineterminator="\n")
     return {"sinesp_esquema_comum": len(sinesp), "consolidado_duas_fontes": "não gerado: SSP/SC em validação"}

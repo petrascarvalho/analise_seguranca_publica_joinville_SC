@@ -3,12 +3,14 @@ cache de dados, erros explícitos e avisos."""
 
 from __future__ import annotations
 
+# html.escape protege os textos dos cards (troca < e > por códigos seguros antes de montar o HTML).
 from html import escape
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+# Módulos do projeto: leitura dos dados publicados, gráficos e formatação de números e meses.
 from dashboard import dados_publicos as dp
 from dashboard import graficos
 from dashboard.formatacao import NOMES_MESES, fmt_mes_extenso
@@ -54,13 +56,16 @@ h1, h2, h3, h4 {{ color: {TITULO} !important; }}
 
 def aplicar_estilo() -> None:
     """Injeta o CSS da identidade azul e branca (uma vez por execução da página)."""
+    # st.html insere o bloco <style> na página; o navegador aplica as regras de cor e de grade.
     st.html(CSS)
 
 
 def cabecalho(titulo: str, descricao: str) -> None:
     """Cabeçalho: bandeira de Joinville (arquivo SVG local, sem rede e sem alterar a arte) ao lado do título."""
+    # Contêiner com nome (key): o CSS usa esse nome (.st-key-cabecalho) para desenhar o quadro branco do cabeçalho.
     with st.container(key="cabecalho"):
         with st.container(horizontal=True, vertical_alignment="center", gap="medium"):
+            # Bandeira lida do arquivo local (sem internet), com texto alternativo para leitores de tela.
             st.image(str(Path(__file__).parent / "assets" / "bandeira_joinville.svg"),
                      width=84, alt="Bandeira de Joinville: campo azul, losango branco e brasão municipal")
             with st.container():
@@ -70,6 +75,7 @@ def cabecalho(titulo: str, descricao: str) -> None:
 
 def secao(titulo: str, ancora: str, descricao: str | None = None) -> None:
     """Título de uma seção da página única (com âncora para o índice do topo) e, opcionalmente, uma linha de descrição."""
+    # anchor cria o endereço (#apresentacao, #indicadores...) usado pelos links do índice no topo.
     st.header(titulo, anchor=ancora)
     if descricao:
         st.caption(descricao)
@@ -82,11 +88,14 @@ def cartoes_html(cartoes: list[dict]) -> None:
     """
     partes = []
     for c in cartoes:
+        # Escolhe a seta pelo sinal da diferença (dicionário: chave -> símbolo); sem variação, sem seta.
         seta = {"up": "▲ ", "down": "▼ ", "off": ""}[direcao_da_seta(c.get("diferenca"))] if c.get("variacao") else ""
         campos = [("titulo", c["titulo"]), ("detalhe", c.get("detalhe", "")), ("valor", c["valor"]),
                   ("variacao", seta + c["variacao"] if c.get("variacao") else ""), ("base", c.get("base", ""))]
+        # Monta o HTML das cinco partes do card; cada parte recebe uma classe CSS (cartao-titulo, cartao-valor...).
         miolo = "".join(f'<div class="cartao-{nome}">{escape(str(texto))}</div>' for nome, texto in campos)
         partes.append(f'<div class="cartao" title="{escape(c.get("ajuda", ""), quote=True)}" data-direcao="{direcao_da_seta(c.get("diferenca"))}">{miolo}</div>')
+    # Todos os cards dentro de uma grade: o CSS deixa os da mesma linha com a mesma altura.
     st.html(f'<div class="grade-cartoes">{"".join(partes)}</div>')
 
 
@@ -149,6 +158,7 @@ def _integridade():
 def exigir(carregar):
     """Executa um carregador e, se os dados estiverem ausentes ou inválidos, mostra o erro e interrompe a página."""
     try:
+        # Executa a função de leitura recebida; se os dados forem inválidos, cai no except abaixo.
         return carregar()
     except dp.ErroDados as erro:
         st.error(f"**Dados indisponíveis ou inválidos.** {erro}")
@@ -190,6 +200,7 @@ def carregar_dados_consistentes():
 
 def modo_compacto() -> bool:
     """Estado do seletor "Visualização compacta (celular)" (st.session_state['modo_compacto']; falso por padrão)."""
+    # Lê o estado da chave "Visualização compacta" guardado pelo Streamlit (falso se ainda não existir).
     return bool(st.session_state.get("modo_compacto", False))
 
 
@@ -203,6 +214,7 @@ def mostrar_figura(figura, legenda: str | None = None, tabela=None):
         graficos.ajustar_compacto(figura)  # sem espaço em branco abaixo de gráficos sem legenda
     else:
         graficos.ajustar_completo(figura)  # sem espaço vazio no topo quando não há legenda acima do gráfico
+    # st.pyplot desenha a figura do Matplotlib ocupando toda a largura disponível.
     st.pyplot(figura, clear_figure=False, width="stretch")
     if legenda:
         st.caption(legenda)
@@ -211,6 +223,7 @@ def mostrar_figura(figura, legenda: str | None = None, tabela=None):
         st.caption(notas["interpretacao"])
         st.caption(notas["rodape"])
     if tabela is not None:
+        # Tabela com os números do gráfico, num bloco recolhível, para conferência.
         with st.expander("Valores usados neste gráfico (tabela)"):
             st.dataframe(tabela, hide_index=True)
 
@@ -218,6 +231,7 @@ def mostrar_figura(figura, legenda: str | None = None, tabela=None):
 def data_da_atualizacao(manifesto: dict) -> str:
     """Data da última atualização dos dados (dia/mês/ano), lida do identificador da versão: '20261027T114400Z' → '27/10/2026'."""
     versao = str(manifesto.get("versao", ""))
+    # Fatiamento de texto: [6:8] = dia, [4:6] = mês, [:4] = ano.
     return f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 and versao[:8].isdigit() else "não informada"
 
 
@@ -245,6 +259,7 @@ def mostrar_versao_dos_dados() -> None:
                 "**Análise e visualização:** Petras Ruben Carvalho — Analista de Dados | Business Intelligence.")
     st.caption(f"Dados do Sinesp/MJSP para Joinville/SC · base atualizada em {data_da_atualizacao(manifesto)} · "
                f"período: {periodo_sinesp_texto(manifesto)} (2026 é parcial; o último mês disponível nesta base é {fmt_mes_extenso(ultima)}).")
+    # next() pega a primeira fonte com id "sinesp_vde" (ou None se não houver).
     fonte = next((f for f in manifesto.get("fontes", []) if f.get("id") == "sinesp_vde"), None)
     with st.expander("Fonte, atualização dos dados e condições de uso"):
         st.markdown("**Fonte dos dados:** Ministério da Justiça e Segurança Pública (MJSP) — Sinesp VDE (Sistema Nacional de Estatísticas de Segurança Pública). "

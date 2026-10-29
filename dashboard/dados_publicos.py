@@ -10,6 +10,7 @@ nada é preenchido ou corrigido. Ausência de valor é preservada (<NA>) e nunca
 
 from __future__ import annotations
 
+# hashlib: SHA-256; json: ler o manifesto; pathlib: caminhos; pandas: tabelas.
 import hashlib
 import json
 from pathlib import Path
@@ -56,6 +57,7 @@ def _ler_texto(nome: str, diretorio: Path) -> pd.DataFrame:
             "`python -m src.pipeline.atualizacao_dados` (requer os XLSX oficiais do Sinesp)."
         )
     try:
+        # Lê o CSV tudo como texto (dtype=str) e sem converter vazios em NaN: a conversão e as regras vêm depois, com mensagens claras.
         return pd.read_csv(caminho, dtype=str, keep_default_na=False, na_filter=False, encoding="utf-8")
     except (pd.errors.ParserError, UnicodeDecodeError, pd.errors.EmptyDataError) as erro:
         raise ErroDados(f"Arquivo ilegível ou malformado: {nome} ({erro}).") from erro
@@ -70,6 +72,7 @@ def _exigir_colunas(quadro: pd.DataFrame, colunas: list[str], nome: str) -> None
 def _inteiro(serie: pd.Series, campo: str, nome: str, *, permitir_vazio: bool) -> pd.Series:
     """Converte uma coluna de texto em inteiros; vazio vira ausente (se permitido) e qualquer outro valor inválido interrompe."""
     valores = []
+    # Percorre os valores um a um: vazio vira ausente (pd.NA); só dígitos viram inteiro; o resto é erro.
     for posicao, texto in enumerate(serie.tolist()):
         if texto == "":
             if not permitir_vazio:
@@ -99,12 +102,15 @@ def validar_sinesp(quadro: pd.DataFrame, nome: str = ARQ_SINESP) -> pd.DataFrame
         raise ErroDados(f"{nome}: ano fora de {ANOS_SINESP[0]}–{ANOS_SINESP[-1]}.")
     if not saida["mes"].between(1, 12).all():
         raise ErroDados(f"{nome}: mês fora de 1–12.")
+    # duplicated().any(): verdadeiro se alguma competência aparecer duas vezes na mesma série.
     if saida.duplicated(["evento", "abrangencia", "ano", "mes"]).any():
         raise ErroDados(f"{nome}: competências repetidas na mesma série (evento, abrangência, ano, mês).")
     for (evento, abrangencia), serie in saida.groupby(["evento", "abrangencia"]):
+        # Número sequencial de cada mês; a lista tem de ser contínua (sem meses faltando no meio).
         indices = sorted((serie["ano"] * 12 + serie["mes"] - 1).astype(int).tolist())
         if indices != list(range(indices[0], indices[0] + len(indices))):
             raise ErroDados(f"{nome}: lacuna de competências na série {evento}/{abrangencia}.")
+    # nunique conta as unidades diferentes em cada série: precisa ser 1.
     if (saida.groupby(["evento", "abrangencia"])["unidade"].nunique() > 1).any():
         raise ErroDados(f"{nome}: uma mesma série com mais de uma unidade (vítimas e mandados não podem ser misturados).")
     return saida.reset_index(drop=True)
@@ -152,6 +158,7 @@ def carregar_manifesto(diretorio: Path = DIRETORIO_DADOS) -> dict:
     if not caminho.is_file():
         raise ErroDados(f"Manifesto não encontrado: {ARQ_MANIFESTO}.")
     try:
+        # json.loads transforma o texto JSON do manifesto em dicionário Python.
         return json.loads(caminho.read_text(encoding="utf-8"))
     except json.JSONDecodeError as erro:
         raise ErroDados(f"Manifesto inválido: {erro}.") from erro
@@ -165,6 +172,7 @@ def verificar_integridade(diretorio: Path = DIRETORIO_DADOS) -> pd.DataFrame:
     for ficha in manifesto.get("arquivos", []):
         caminho = Path(diretorio) / ficha["arquivo"]
         existe = caminho.is_file()
+        # SHA-256 do arquivo atual, para comparar com o registrado no manifesto.
         hash_atual = sha256_normalizado(caminho.read_bytes()) if existe else None
         linhas.append({
             "arquivo": ficha["arquivo"], "existe": existe, "linhas_manifesto": ficha["linhas"], "colunas_manifesto": ficha["colunas"],

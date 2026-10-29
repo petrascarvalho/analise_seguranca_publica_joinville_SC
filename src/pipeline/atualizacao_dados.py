@@ -22,6 +22,8 @@ Uso (a partir da raiz do projeto)::
 
 from __future__ import annotations
 
+# argparse: lê os comandos digitados no terminal (verificar, preparar, aprovar...); hashlib: SHA-256; io: ler bytes como arquivo;
+# json: manifesto e relatórios; re: padrões de texto; shutil: copiar e apagar pastas; zipfile: abrir o XLSX (que é um arquivo ZIP).
 import argparse
 import hashlib
 import io
@@ -47,6 +49,7 @@ from src.pipeline import fontes_oficiais as fo  # noqa: E402
 from src.pipeline import transform  # noqa: E402
 from src.pipeline import versionamento_dados as vv  # noqa: E402
 
+# Pasta de trabalho da atualização (candidatas, versões anteriores, histórico) e pasta ativa (base publicada no painel).
 BASE_ATUALIZACAO = RAIZ / "atualizacao"
 ATIVA_PADRAO = dp.DIRETORIO_DADOS
 _renomear = os.replace  # indireção para testes (simulação de falha na troca)
@@ -57,6 +60,7 @@ class ErroAtualizacao(Exception):
 
 
 @dataclass
+# Classe de dados (@dataclass) que junta erros, avisos e informações de uma validação; mantida porque vários módulos e testes a usam.
 class Validacao:
     erros: list[str] = field(default_factory=list)
     avisos: list[str] = field(default_factory=list)
@@ -83,6 +87,7 @@ class Candidato:
 # ---------------------------------------------------------------------------------------- utilidades
 def _csv_bytes(quadro: pd.DataFrame) -> bytes:
     """Texto CSV da tabela, com quebra de linha LF e vazio para ausente (o mesmo formato dos arquivos publicados)."""
+    # to_csv sem caminho devolve o texto do CSV (nada é gravado); encode transforma em bytes para calcular o hash.
     return quadro.to_csv(index=False, lineterminator="\n", na_rep="").encode("utf-8")
 
 
@@ -112,6 +117,7 @@ def _cabecalho_xlsx(caminho: Path) -> tuple[list, bool]:
     """Lê o cabeçalho (linha 1) do XLSX e diz se existem colunas além das 14 esperadas."""
     with ZipFile(caminho) as pacote:
         textos = transform._shared_strings(pacote)
+        # Um XLSX é um ZIP: a planilha fica no arquivo interno xl/worksheets/sheet1.xml.
         xml = pacote.read("xl/worksheets/sheet1.xml")
     linha = re.search(rb'<row\b[^>]*\br="1"[^>]*>.*?</row>', xml, re.DOTALL)
     if linha is None:
@@ -128,6 +134,7 @@ def ler_sinesp_xlsx(caminho: Path) -> pd.DataFrame:
     if cabecalho != transform.HEADERS or extras:
         raise ErroAtualizacao(f"Alteração de esquema em {caminho.name}: colunas esperadas {transform.HEADERS}; encontradas {cabecalho}"
                               f"{' (há colunas adicionais)' if extras else ''}.")
+    # Lê só as linhas de SC/JOINVILLE e cria o DataFrame com as 14 colunas originais.
     linhas = transform._joinville_rows(caminho)
     if not linhas:
         raise ErroAtualizacao(f"Nenhuma linha SC/JOINVILLE em {caminho.name}.")
@@ -159,6 +166,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
             raise ErroAtualizacao(f"Recorte de {ano_arquivo} contém linhas fora de SC/JOINVILLE.")
         for posicao, linha in enumerate(quadro.itertuples(index=False)):
             descricao = f"{ano_arquivo}, linha {posicao + 1} do recorte"
+            # Cada linha passa por regras: indicador conhecido, classificação preenchida, data válida (dia 1 do ano do arquivo).
             if linha.evento not in vv.NATUREZAS:
                 raise ErroAtualizacao(f"Indicador novo ou renomeado em {descricao}: {linha.evento!r}. Exige decisão metodológica; não incorporado.")
             if pd.isna(linha.abrangencia) or str(linha.abrangencia).strip() == "":
@@ -169,12 +177,14 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
             data = pd.Timestamp("1899-12-30") + pd.Timedelta(days=int(serial))
             if data.day != 1 or data.year != ano_arquivo:
                 raise ErroAtualizacao(f"Competência fora do primeiro dia do mês ou de outro ano em {descricao}: {data.date()}.")
+            # Vítimas vêm da coluna total_vitima; mandados, da coluna total (unidades diferentes).
             mandado = linha.evento == vv.EVENTO_MANDADO
             valor = _inteiro_nao_negativo(linha.total if mandado else linha.total_vitima, descricao)
             registros.append({"ano": data.year, "mes": data.month, "evento": linha.evento, "abrangencia": str(linha.abrangencia),
                               "unidade": vv.UNIDADE_MANDADOS if mandado else vv.UNIDADE_VITIMAS, "valor": valor})
     bruto = pd.DataFrame(registros)
     chave = ["evento", "abrangencia", "ano", "mes"]
+    # duplicated(keep=False) marca TODAS as linhas que repetem indicador + classificação + ano + mês.
     repetidas = bruto[bruto.duplicated(chave, keep=False)]
     if len(repetidas):
         eventos_repetidos = set(repetidas["evento"])
@@ -190,6 +200,7 @@ def construir_sinesp(quadros: dict[int, pd.DataFrame]) -> tuple[pd.DataFrame, pd
     mensal["ano"], mensal["mes"] = mensal["ano"].astype("int64"), mensal["mes"].astype("int64")
     mensal = mensal[dp.COLUNAS_SINESP]
     linhas_catalogo = []
+    # Monta o catálogo: uma linha por série, com início, fim, meses com valor, zeros e ausências.
     for (evento, abrangencia), serie in mensal.groupby(["evento", "abrangencia"], sort=True):
         mandado = evento == vv.EVENTO_MANDADO
         ini, fim = vv.primeira_e_ultima_competencia(serie)
@@ -207,6 +218,7 @@ def comparar_sinesp(ativa: pd.DataFrame, candidata: pd.DataFrame) -> pd.DataFram
     chave = ["evento", "abrangencia", "ano", "mes"]
     a = ativa.assign(ano=ativa["ano"].astype("int64"), mes=ativa["mes"].astype("int64")).rename(columns={"valor": "valor_ativo", "unidade": "unidade_ativa"})
     c = candidata.assign(ano=candidata["ano"].astype("int64"), mes=candidata["mes"].astype("int64")).rename(columns={"valor": "valor_candidato", "unidade": "unidade_candidata"})
+    # merge "outer" junta a versão ativa e a candidata pela chave; indicator diz se a linha existe só na ativa, só na candidata ou nas duas.
     junto = a.merge(c, on=chave, how="outer", indicator="origem")
     linhas = []
     for linha in junto.itertuples(index=False):
@@ -241,6 +253,7 @@ def validar_sinesp_candidato(candidata: pd.DataFrame, catalogo: pd.DataFrame, at
         indices = (serie["ano"].astype(int) * 12 + serie["mes"].astype(int) - 1).sort_values().tolist()
         if indices != list(range(indices[0], indices[0] + len(indices))):
             validacao.erros.append(f"Lacuna de competências em {evento}/{abrangencia}.")
+    # Última competência de cada série (ano x 100 + mês, o maior valor): mostra se alguma série termina antes das outras.
     ultimas = candidata.groupby(["evento", "abrangencia"]).apply(lambda s: (s["ano"].astype(int) * 100 + s["mes"].astype(int)).max(), include_groups=False)
     if ultimas.nunique() > 1:  # esperado (p.ex. a PRF pode terminar antes das demais): informação, não alerta
         validacao.informacoes["series_com_ultima_competencia_diferente"] = {f"{k[0]}/{k[1]}": int(v) for k, v in ultimas.items() if v != ultimas.max()}
@@ -273,6 +286,7 @@ def localizar_entradas_sinesp(pasta: Path, anos: list[int]) -> dict[int, Path]:
     """Encontra exatamente um bancovde-ANO.xlsx por ano; qualquer ambiguidade interrompe."""
     encontrados = {}
     for ano in anos:
+        # rglob procura o arquivo do ano na pasta e nas subpastas; precisa haver exatamente um.
         candidatos = sorted(Path(pasta).rglob(f"bancovde-{ano}.xlsx"))
         if len(candidatos) != 1:
             raise ErroAtualizacao(f"Esperado exatamente um 'bancovde-{ano}.xlsx' em {pasta}; encontrados: {len(candidatos)}. "
@@ -369,6 +383,7 @@ def _preparar(*, ativa: Path, staging_root: Path | None, entradas_sinesp: Path |
     integridade = dp.verificar_integridade(destino)
     if not integridade["integro"].all():
         validacao.erros.append("Integridade (SHA-256) da candidata não confere com o seu manifesto.")
+    # Grava a comparação ativa x candidata para revisão humana antes de aprovar.
     comparacao.to_csv(raiz_candidata / "comparacao_sinesp.csv", index=False, lineterminator="\n")
     (raiz_candidata / "relatorio_validacao.json").write_text(json.dumps({"id": id_candidata, "versao_ativa_comparada": manifesto_ativo.get("versao"),
                                                                        **validacao.para_dict()}, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8", newline="\n")
@@ -387,6 +402,7 @@ def _trocar_diretorio(novo: Path, ativa: Path) -> Path:
     antigo = ativa.with_name(ativa.name + ".antigo")
     if antigo.exists():
         shutil.rmtree(antigo)
+    # Troca segura: renomeia a pasta ativa para .antigo e a nova para ativa; se a segunda falhar, desfaz a primeira.
     _renomear(ativa, antigo)
     try:
         _renomear(novo, ativa)
@@ -411,6 +427,7 @@ def _promover_diretorio(origem: Path, ativa: Path, versoes_root: Path, *, aprova
     backup = versoes_root / id_anterior
     if not backup.exists():
         versoes_root.mkdir(parents=True, exist_ok=True)
+        # Antes de trocar, copia a versão ativa para atualizacao/versoes/<versão> (permite reverter).
         shutil.copytree(ativa, backup)
     novo = ativa.with_name(ativa.name + ".novo")
     if novo.exists():
@@ -422,6 +439,7 @@ def _promover_diretorio(origem: Path, ativa: Path, versoes_root: Path, *, aprova
             manifesto["aprovacao"] = aprovacao
             manifesto["situacao_validacao"] = {**manifesto.get("situacao_validacao", {}), "status": "aprovado", "descricao": "Aprovada explicitamente pelo responsável."}
             (novo / dp.ARQ_MANIFESTO).write_text(json.dumps(manifesto, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+        # Confere a nova pasta (consistência e SHA-256) antes da troca e de novo depois dela.
         _validar_diretorio(novo)
         antigo = _trocar_diretorio(novo, ativa)
     except BaseException:
@@ -534,6 +552,7 @@ def baixar_sinesp(anos: list[int], destino: Path, cliente: fo.Cliente | None = N
 
 def main(argv: list[str] | None = None) -> int:
     """Interpreta o comando digitado no terminal (verificar, preparar, comparar, aprovar, versoes, reverter) e o executa."""
+    # Define os comandos do terminal; cada subcomando tem as suas opções (ex.: aprovar exige --confirmo <id>).
     analisador = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = analisador.add_subparsers(dest="comando", required=True)
     p = sub.add_parser("verificar", help="A: consulta as fontes (não altera dados)")

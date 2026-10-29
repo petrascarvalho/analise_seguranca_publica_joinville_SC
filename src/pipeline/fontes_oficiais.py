@@ -22,6 +22,7 @@ Princípios:
 
 from __future__ import annotations
 
+# Bibliotecas padrão para consultar páginas na internet (urllib) e organizar os resultados (dataclasses, enum).
 import http.client
 import json
 import re
@@ -197,6 +198,7 @@ def _data_pagina(texto: str, rotulo_regex: str) -> str | None:
 
 
 # ------------------------------------------------------------------------------------------ Sinesp
+# Consulta a página do Sinesp e compara as datas publicadas com as registradas no manifesto (só indício).
 def verificar_sinesp_pagina(cliente: Cliente, manifesto: dict, instante: str) -> list[Achado]:
     """Página da base VDE: datas informadas, links dos arquivos anuais e licença do rodapé (evidências)."""
     recurso, url = "pagina_sinesp_vde", URL_SINESP_PAGINA
@@ -231,6 +233,7 @@ def verificar_sinesp_pagina(cliente: Cliente, manifesto: dict, instante: str) ->
     return [Achado(ID_SINESP, recurso, url, "pagina", instante, Classificacao.NENHUMA_NOVIDADE, detalhe, evidencia, requer_verificacao_manual=mudou or not registrada)]
 
 
+# Compara o tamanho dos arquivos remotos com o dos auditados: tamanho diferente é indício de nova versão.
 def verificar_sinesp_arquivos(cliente: Cliente, manifesto: dict, instante: str) -> list[Achado]:
     """Tamanho de cada arquivo anual (e do ano seguinte ao último coberto) comparado ao dos originais auditados."""
     tamanhos = {int(a): int(b) for a, b in _referencia(manifesto, "sinesp_xlsx_bytes").items()}
@@ -299,6 +302,7 @@ def verificar_catalogo_ckan(cliente: Cliente, url: str, fonte: str, recurso: str
 
 
 # ---------------------------------------------------------------------------------------- orquestração
+# Junta todas as consultas em um relatório; nenhuma delas altera dados.
 def verificar_fontes(manifesto: dict, cliente: Cliente | None = None, agora: datetime | None = None) -> Relatorio:
     """Executa todas as verificações. Nunca lança por falha de rede e nunca altera dados."""
     cliente = cliente or ClienteHTTP()

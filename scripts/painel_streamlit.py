@@ -17,6 +17,7 @@
 #   - Os cálculos ficam em dashboard/calculos.py, os gráficos em dashboard/graficos.py e os componentes em dashboard/ui.py.
 
 
+# runpy executa outro arquivo Python (cada seção da página); sys e Path tratam do caminho de importação.
 import runpy
 import sys
 from pathlib import Path
@@ -36,6 +37,7 @@ st.set_page_config(page_title=TITULO, page_icon="🛡️", layout="wide")
 
 
 
+# cache_resource: o dicionário é criado uma vez e dura enquanto o servidor estiver aberto.
 @st.cache_resource
 def horarios_dos_arquivos() -> dict:
     """Um dicionário que dura enquanto o servidor estiver aberto: guarda o horário de modificação de cada arquivo de dashboard/."""
@@ -53,6 +55,7 @@ if horarios and atuais != horarios:
 horarios.clear()
 horarios.update(atuais)
 
+# Componentes visuais do painel (estilo, cabeçalho, cards).
 from dashboard import ui  # noqa: E402
 
 ui.aplicar_estilo()
@@ -62,5 +65,6 @@ st.markdown("**Nesta página:** [Apresentação](#apresentacao) · [Indicadores 
 
 # As seções, na ordem em que aparecem. Cada arquivo é executado como um programa Python independente.
 SECOES = ["home.py", "sinesp.py", "violencia_domestica.py", "quality.py"]
+# Executa as quatro seções em ordem; cada uma desenha a sua parte da página.
 for arquivo in SECOES:
     runpy.run_path(str(_RAIZ / "dashboard" / "pages" / arquivo))

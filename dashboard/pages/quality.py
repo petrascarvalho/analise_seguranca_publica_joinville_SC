@@ -7,6 +7,7 @@ O passo a passo para reproduzir o projeto fica no README.md, não aqui.
 import sys
 from pathlib import Path
 
+# Pasta do projeto: entra no caminho de importação para o Python achar o pacote dashboard.
 _RAIZ = Path(__file__).resolve().parents[2]
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
@@ -19,7 +20,9 @@ from dashboard.formatacao import fmt_competencia, fmt_int, fmt_mes_extenso  # no
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 manifesto = ui.carregar_manifesto()
+# Compara o SHA-256 de cada arquivo publicado com o registrado no manifesto (uma linha por arquivo).
 integridade = ui.verificar_integridade()
+# get() lê uma chave do dicionário e devolve um valor padrão ({}) se ela não existir.
 cobertura = manifesto.get("cobertura", {}).get("sinesp", {})
 primeira, ultima = cobertura.get("primeira_competencia", ""), cobertura.get("ultima_competencia", "")
 periodo = ui.periodo_sinesp_texto(manifesto)
@@ -30,12 +33,14 @@ ui.secao("Qualidade dos dados", "qualidade", "O que foi conferido, até quando v
 
 # Quatro cards com o essencial; cada card é um dicionário (ver ui.cartoes_html).
 ui.cartoes_html([
+    # sum() em uma coluna de True/False conta quantos arquivos conferem; len() é o total de arquivos.
     {"titulo": "Arquivos conferidos", "valor": f"{int(integridade['integro'].sum())} de {len(integridade)}", "detalhe": "dados do painel × registro da versão",
      "base": "Cada arquivo é comparado com o registro da versão."},
     {"titulo": "Base atualizada em", "valor": atualizacao, "detalhe": "Sinesp/MJSP · Joinville/SC", "base": "Atualização manual, depois de conferência."},
     {"titulo": "Último mês disponível nesta base", "valor": fmt_competencia(ultima, curto=True), "detalhe": f"Dados a partir de {fmt_competencia(primeira, curto=True)}",
      "base": f"{fmt_mes_extenso(ultima)}. A série da PRF termina em agosto de 2026; os mandados da PF começam em 2025."},
     # Qualidade dos dados: conta registros SEM valor (ausentes). Zero informado pela fonte é valor, não ausência; e este card não fala de vítimas.
+    # isna() marca os valores ausentes e sum() conta quantos são; eq(0) faz o mesmo para os zeros informados.
     {"titulo": "Dados não informados", "valor": "Nenhum valor ausente" if int(sinesp["valor"].isna().sum()) == 0 else fmt_int(int(sinesp["valor"].isna().sum())),
      "detalhe": "registros mensais do Sinesp" if int(sinesp["valor"].isna().sum()) == 0 else "registros mensais sem valor informado",
      "base": (f"Os {fmt_int(len(sinesp))} registros disponíveis possuem valores informados. " if int(sinesp["valor"].isna().sum()) == 0
@@ -59,17 +64,22 @@ st.markdown(
 with st.expander("Detalhes técnicos de conferência (opcional)"):
     st.markdown(f"Identificador da versão dos dados: `{manifesto.get('versao', '—')}`. Cada arquivo tem um código de conferência (SHA-256); se o arquivo mudar, "
                 "o código muda e o painel avisa.")
+    # Cria um DataFrame a partir da lista de arquivos do manifesto (uma linha por arquivo) e escolhe quatro colunas.
     fichas = pd.DataFrame(manifesto["arquivos"])[["arquivo", "linhas", "colunas", "sha256"]]
+    # merge junta as duas tabelas pela coluna "arquivo" (como um PROCV): cada arquivo ganha o resultado da conferência.
     fichas = fichas.merge(integridade[["arquivo", "integro"]], on="arquivo", how="left")
+    # map troca cada True/False pelo texto correspondente.
     fichas["Conferência"] = fichas["integro"].map({True: "✅ confere", False: "❌ diverge"})
     fichas["linhas"] = fichas["linhas"].map(fmt_int)
     st.dataframe(fichas.drop(columns="integro").rename(columns={"arquivo": "Arquivo", "linhas": "Linhas", "colunas": "Colunas", "sha256": "Código de conferência (SHA-256)"}),
                  hide_index=True)
+# all() é verdadeiro só se TODOS os arquivos conferem; se algum divergir, o painel avisa.
 if not integridade["integro"].all():
     st.error("Um ou mais arquivos não coincidem com o registro da versão. Os números exibidos podem não corresponder aos dados conferidos.")
 
 # ------------------------------------------------------------------------------------------ 2. fontes, metodologia e limitações
 ui.secao("Fontes, metodologia e limitações", "metodologia", "De onde vêm os números, como foram tratados e o que eles não permitem afirmar.")
+# Três abas; o conteúdo de cada uma fica dentro de "with abas[i]:".
 abas = st.tabs(["Origem dos dados", "Como os números são tratados", "Limitações"])
 
 # ------------------------------------------------------------------ origem dos dados
@@ -78,6 +88,7 @@ with abas[0]:
     st.markdown("As informações foram obtidas em bases oficiais do Sinesp/MJSP. Foram selecionados os registros referentes ao município de Joinville/SC "
                 "e realizadas etapas de organização, tratamento e conferência. Os arquivos originais completos não são redistribuídos por este painel.")
     st.info(ui.NOTA_ABRANGENCIA)
+    # Para cada fonte registrada no manifesto, mostra o link oficial e as datas informadas pela própria página.
     for fonte in manifesto.get("fontes", []):
         st.markdown(f"**Página oficial:** [{fonte['nome']}]({fonte['url']})")
         publicacao = fonte.get("publicacao") or {}
@@ -88,6 +99,7 @@ with abas[0]:
     st.subheader("Cobertura por indicador")
     st.markdown("**Unidades:** *vítimas* (número de vítimas registradas) e *mandados cumpridos* (contagem publicada de mandados de prisão cumpridos). "
                 "As duas unidades nunca são somadas.")
+    # rename troca os nomes técnicos das colunas por nomes para o público.
     tabela = catalogo.rename(columns={
         "evento": "Indicador", "abrangencia": "Classificação institucional", "unidade": "Unidade", "meses_observados": "Meses", "meses_com_valor": "Com valor",
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor"})

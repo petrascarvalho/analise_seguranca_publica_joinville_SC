@@ -14,6 +14,8 @@
 
 
 # 1. IMPORTAÇÃO DAS BIBLIOTECAS
+# hashlib: SHA-256 dos arquivos; json: relatório final; os: variáveis de ambiente (pastas opcionais); sys: caminho de importação;
+# pathlib.Path: caminhos de pastas que funcionam no Windows e no Linux; pandas: tabelas (DataFrames).
 import hashlib
 import json
 import os
@@ -49,6 +51,7 @@ print(f"Pandas {pd.__version__}")
 
 # 2. DEFINIÇÃO DAS PASTAS
 anos = list(range(2020, 2027))  # anos dos arquivos do Sinesp
+# os.environ.get usa a pasta informada pelo usuário (variável de ambiente) ou, se não houver, a pasta padrão do projeto.
 pasta_xlsx = Path(os.environ.get("SINESP_PASTA_XLSX", raiz / "dados" / "brutos" / "sinesp"))
 pasta_saida = Path(os.environ.get("ETL_PASTA_SAIDA", raiz / "dados" / "processados" / "etl_joinville"))
 
@@ -65,7 +68,9 @@ hashes_aprovados = manifesto["origem_dos_dados"]["sinesp_xlsx_sha256"]
 
 arquivos = {}
 for ano in anos:
+    # rglob procura o arquivo do ano na pasta e em todas as subpastas.
     for candidato in sorted(pasta_xlsx.rglob(f"bancovde-{ano}.xlsx")):
+        # Lê o arquivo inteiro em bytes, calcula o SHA-256 e compara com o hash aprovado.
         if hashlib.sha256(candidato.read_bytes()).hexdigest() == hashes_aprovados[str(ano)]:
             arquivos[ano] = candidato
             break
@@ -76,6 +81,7 @@ for ano in anos:
 # Cada XLSX nacional tem cerca de 24 MB; a função lê o XML da planilha e guarda só SC/JOINVILLE (14 colunas originais).
 recortes = {}
 for ano, caminho in arquivos.items():
+    # Cria um DataFrame só com as linhas de SC/JOINVILLE daquele ano.
     recortes[ano] = au.ler_sinesp_xlsx(caminho)
     print(f"{ano}: {caminho.name} -> {len(recortes[ano])} linhas de Joinville")
 
@@ -85,6 +91,7 @@ for ano, caminho in arquivos.items():
 dados_brutos = pd.concat(recortes.values(), ignore_index=True)
 print(f"Dados brutos de Joinville: {dados_brutos.shape[0]} linhas x {dados_brutos.shape[1]} colunas")
 display(dados_brutos.head())
+# info() lista as colunas, o tipo de cada uma e quantos valores estão preenchidos.
 dados_brutos.info()
 # total_vitima é a medida dos indicadores de vítimas; total é a medida dos mandados de prisão.
 print("Indicadores:", sorted(dados_brutos["evento"].unique()))
@@ -94,7 +101,9 @@ print("Classificações institucionais (abrangência):", sorted(dados_brutos["ab
 # 5. VERIFICAÇÃO DE DUPLICIDADES
 # Nenhuma linha é apagada. A nota oficial do Sinesp diz que "Tentativa de homicídio" e "Estupro" podem ter
 # mais de uma linha no mesmo mês (parcelas que devem ser somadas, na etapa 09). Em outro indicador, repetição é erro.
+# duplicated() marca True nas linhas iguais a uma anterior; sum() conta quantos True existem.
 linhas_identicas = int(dados_brutos.duplicated().sum())
+# subset compara só a chave (indicador + classificação + mês); keep=False marca todas as linhas repetidas, não só a segunda.
 repeticoes_de_chave = int(dados_brutos.duplicated(subset=["evento", "abrangencia", "data_referencia"], keep=False).sum())
 print(f"Linhas totalmente idênticas: {linhas_identicas}")
 print(f"Linhas que repetem indicador + abrangência + mês: {repeticoes_de_chave}")
@@ -103,6 +112,7 @@ print(f"Linhas que repetem indicador + abrangência + mês: {repeticoes_de_chave
 # 6. VERIFICAÇÃO DE VALORES AUSENTES
 # Zero publicado é uma informação (a fonte disse "0"); valor ausente é a falta de informação e nunca vira zero.
 # Na camada original, os campos vazios de total_vitima e total só mostram que cada linha usa uma das duas medidas.
+# isna() marca as células vazias; sum() conta as vazias de cada coluna; to_frame() vira tabela.
 ausencias = dados_brutos.isna().sum().rename("ausências").to_frame()
 ausencias["%"] = (ausencias["ausências"] / len(dados_brutos) * 100).round(2)
 display(ausencias)
@@ -111,6 +121,7 @@ display(ausencias)
 # 7. TRATAMENTO DOS DADOS
 # Cada linha original vira uma observação padronizada: ano, mes, evento, abrangencia, unidade e valor.
 observacoes = []
+# Percorre cada ano e cada linha (itertuples devolve a linha com os nomes das colunas: linha.evento, linha.total...).
 for ano, recorte in recortes.items():
     for linha in recorte.itertuples(index=False):
         if linha.evento not in vv.NATUREZAS:
@@ -135,6 +146,7 @@ for ano, recorte in recortes.items():
         observacoes.append({"ano": data.year, "mes": data.month, "evento": linha.evento, "abrangencia": str(linha.abrangencia),
                             "unidade": vv.UNIDADE_MANDADOS if mandado else vv.UNIDADE_VITIMAS, "valor": valor})
 
+# Cria o DataFrame a partir da lista de dicionários (cada dicionário vira uma linha).
 dados_tratados = pd.DataFrame(observacoes)
 # Int64 (com "I" maiúsculo) é o inteiro do pandas que aceita ausência (<NA>); o int64 comum obrigaria a inventar um número.
 dados_tratados[["ano", "mes"]] = dados_tratados[["ano", "mes"]].astype("int64")
@@ -155,6 +167,7 @@ print(f"Linhas de outros municípios: {int((~dados_brutos['municipio'].eq('JOINV
 # Objetivo: uma linha por série (indicador + classificação) e mês.
 # groupby() junta as linhas de mesma chave e soma os valores; sum(min_count=1) devolve <NA> (e não 0) se todas as parcelas são vazias.
 chave = ["evento", "abrangencia", "ano", "mes"]
+# Linhas que repetem a chave (só podem existir nos indicadores com nota oficial de soma).
 repetidas = dados_tratados[dados_tratados.duplicated(chave, keep=False)]
 nao_permitidos = set(repetidas["evento"]) - set(vv.EVENTOS_COM_LINHAS_MULTIPLAS)
 if nao_permitidos:
@@ -163,6 +176,7 @@ print(f"Linhas repetidas somadas conforme a nota oficial: {len(repetidas)}")
 
 dados_processados = dados_tratados.groupby(chave + ["unidade"], as_index=False, sort=False)["valor"].sum(min_count=1)
 dados_processados = dados_processados[dp.COLUNAS_SINESP]  # volta à ordem oficial das colunas
+# Ordena por indicador, classificação, ano e mês e renumera as linhas.
 dados_processados = dados_processados.sort_values(chave, kind="stable").reset_index(drop=True)
 dados_processados["valor"] = dados_processados["valor"].astype("Int64")
 dados_processados[["ano", "mes"]] = dados_processados[["ano", "mes"]].astype("int64")
@@ -172,6 +186,7 @@ competencia = dados_processados["ano"].astype(str) + "-" + dados_processados["me
 dados_catalogo = dados_processados.assign(competencia=competencia, zero=dados_processados["valor"].eq(0))  # zero = True quando a fonte publicou 0
 catalogo = dados_catalogo.groupby(["evento", "abrangencia", "unidade"]).agg(
     inicio=("competencia", "min"), fim=("competencia", "max"), meses=("valor", "size"), com_valor=("valor", "count"), zeros=("zero", "sum")).reset_index()
+# Meses sem valor = meses existentes - meses com valor (subtração de colunas inteiras).
 catalogo["sem_valor"] = catalogo["meses"] - catalogo["com_valor"]
 display(catalogo)
 
@@ -192,11 +207,13 @@ for regra, aprovada in regras.items():
     print(f"{'OK ' if aprovada else 'ERRO'} {regra}")
 
 # Comparação com a base aprovada e publicada no painel (valores, tipos, ordem) e com o hash do manifesto.
+# Lê a base aprovada que o painel usa, para comparar com a reconstruída.
 base_publicada = dp.carregar_sinesp()
 catalogo_publicado = dp.carregar_catalogo_sinesp()
 csv_mensal = dados_processados.to_csv(index=False, lineterminator="\n", na_rep="").encode("utf-8")  # sem caminho: nada é gravado
 hash_gerado = dp.sha256_normalizado(csv_mensal)
 hash_aprovado = next(f["sha256"] for f in manifesto["arquivos"] if f["arquivo"] == dp.ARQ_SINESP)
+# equals() é verdadeiro só se as duas tabelas tiverem os mesmos valores, na mesma ordem.
 base_igual = dados_processados.astype(base_publicada.dtypes.to_dict()).equals(base_publicada)
 catalogo_igual = (catalogo["meses"].tolist() == catalogo_publicado["meses_observados"].astype(int).tolist()
                   and catalogo["fim"].tolist() == catalogo_publicado["fim"].tolist()
@@ -207,6 +224,7 @@ print(f"Base reconstruída igual à publicada: {base_igual}")
 print(f"SHA-256 reconstruído igual ao do manifesto: {hash_gerado == hash_aprovado}")
 print(f"Catálogo igual ao publicado: {catalogo_igual}")
 # Se algo divergir, o roteiro para aqui: nada diferente da versão aprovada é gravado.
+# assert interrompe o programa com erro se alguma conferência for falsa.
 assert all(regras.values()) and base_igual and hash_gerado == hash_aprovado and catalogo_igual, "A reconstrução diverge da base aprovada: revisar."
 
 
@@ -224,6 +242,7 @@ display(inventario[["arquivo_pdf", "tipo_documento", "bytes_pdf", "par_completo"
 # processar() lê o bloco de JOINVILLE de cada relatório, trata e confere cada célula usada contra a tabela do próprio PDF.
 # Cada valor é rastreável até o PDF, a página, a tabela e a linha.
 resultado = ssp_sc.processar()
+# processar() devolve um dicionário de tabelas; aqui pegamos a violência doméstica, as verificações e os grupos de homicídios.
 violencia = resultado["vd"]
 verificacoes = resultado["verificacoes"]
 homicidios_grupos = resultado["grupos"]
@@ -245,10 +264,12 @@ assert list(violencia["unidade"].unique()) == [ssp_sc.UNIDADE_VD] and bool(verif
 pasta_sinesp = pasta_saida / "sinesp"
 pasta_ssp = pasta_saida / "ssp_sc"
 assert pasta_saida.resolve() != dp.DIRETORIO_DADOS.resolve(), "O ETL não pode gravar sobre a base publicada no painel."
+# mkdir cria a pasta (e as pastas acima, se faltarem); exist_ok evita erro se ela já existir.
 pasta_sinesp.mkdir(parents=True, exist_ok=True)
 pasta_ssp.mkdir(parents=True, exist_ok=True)
 
 # Sinesp
+# to_csv grava a tabela em CSV; index=False não grava a numeração das linhas.
 dados_brutos.to_csv(pasta_sinesp / "etl_recorte_joinville_bruto.csv", index=False, encoding="utf-8", lineterminator="\n")
 (pasta_sinesp / "etl_sinesp_joinville_mensal.csv").write_bytes(csv_mensal)   # o mesmo conteúdo conferido na etapa 10
 catalogo.to_csv(pasta_sinesp / "etl_catalogo_series.csv", index=False, encoding="utf-8", lineterminator="\n")
@@ -258,6 +279,7 @@ relatorio_sinesp = {
     "sha256_base_mensal": hash_gerado, "igual_a_base_publicada": bool(base_igual), "versao_publicada": manifesto["versao"],
     "xlsx": {str(ano): {"arquivo": caminho.name, "sha256": hashes_aprovados[str(ano)]} for ano, caminho in arquivos.items()},
 }
+# json.dumps transforma o dicionário em texto JSON (indent=2 deixa legível; ensure_ascii=False mantém os acentos).
 (pasta_sinesp / "etl_relatorio.json").write_text(json.dumps(relatorio_sinesp, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 # SSP/SC
@@ -269,6 +291,7 @@ tabelas_ssp = {
     "verificacoes_extracao_ssp_sc.csv": verificacoes,
     "rastreabilidade_celulas_ssp_sc.csv": resultado["rastreabilidade"],
 }
+# Grava cada tabela da SSP/SC com o nome definido no dicionário acima.
 for nome, tabela in tabelas_ssp.items():
     tabela.to_csv(pasta_ssp / nome, index=False, encoding="utf-8", lineterminator="\n")
 originais_inalterados = ssp_sc.inventariar_acervo()["sha256_pdf"].tolist() == inventario["sha256_pdf"].tolist()
@@ -281,6 +304,7 @@ for arquivo in sorted(pasta_saida.rglob("*.*")):
 
 # 14. VALIDAÇÕES FINAIS
 # Relê os arquivos gravados (não as variáveis em memória) e confere os números de referência.
+# read_csv lê de volta os arquivos gravados, para conferir o que realmente ficou no disco.
 mensal_gravado = pd.read_csv(pasta_sinesp / "etl_sinesp_joinville_mensal.csv")
 vd_gravada = pd.read_csv(pasta_ssp / "violencia_domestica_joinville_tratada.csv")
 sinesp_ok = (len(mensal_gravado) == 911 and int(mensal_gravado["valor"].eq(0).sum()) == 401 and int(mensal_gravado["valor"].isna().sum()) == 0

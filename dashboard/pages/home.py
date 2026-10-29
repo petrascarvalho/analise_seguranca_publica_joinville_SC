@@ -7,6 +7,7 @@ Os destaques abaixo NÃO mudam com os filtros: são números fixos calculados da
 import sys
 from pathlib import Path
 
+# Pasta do projeto: entra no caminho de importação para o Python achar o pacote dashboard.
 _RAIZ = Path(__file__).resolve().parents[2]
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
@@ -16,7 +17,9 @@ import streamlit as st  # noqa: E402
 from dashboard import calculos, ui  # noqa: E402
 from dashboard.formatacao import fmt_competencia, fmt_dif, fmt_int, fmt_mes_extenso  # noqa: E402
 
+# Lê a base mensal e o catálogo publicados (com conferência de consistência).
 sinesp, catalogo = ui.carregar_dados_consistentes()
+# O manifesto é um JSON com a versão dos dados, a cobertura e os hashes; get() devolve {} se a chave não existir.
 manifesto = ui.carregar_manifesto()
 periodo = ui.periodo_sinesp_texto(manifesto)
 cobertura = manifesto.get("cobertura", {}).get("sinesp", {})
@@ -44,8 +47,10 @@ st.caption("Todos os números são de Joinville/SC. A classificação institucio
 def _destaques() -> list[dict]:
     """Três números calculados da base: último ano completo e mesmo período do ano parcial (homicídio doloso e tentativa)."""
     lista = []
+    # Série de homicídio doloso (classificação Estadual) e sua soma por ano.
     homicidio = calculos.serie_sinesp(sinesp, "Homicídio doloso", "Estadual")
     anual = calculos.tabela_anual_sinesp(homicidio)
+    # Só anos completos, em ordem; os dois últimos são comparados.
     completos = anual.loc[anual["cobertura"].eq("ano completo") & anual["soma"].notna()].sort_values("ano")
     if len(completos) >= 2:
         ultimo, anterior = completos.iloc[-1], completos.iloc[-2]
@@ -54,6 +59,7 @@ def _destaques() -> list[dict]:
                       "valor": fmt_int(ultimo["soma"]), "variacao": f"{fmt_dif(dif)} vs {int(anterior['ano'])}", "diferenca": dif,
                       "base": f"Comparado com o ano completo de {int(anterior['ano'])}."})
     for evento in ("Homicídio doloso", "Tentativa de homicídio"):
+        # Mesmo período (janeiro até o último mês publicado) no ano parcial e no ano anterior.
         r = calculos.comparacao_ultimo_periodo_sinesp(calculos.serie_sinesp(sinesp, evento, "Estadual"))
         if r is not None:
             dif = int(r["diferenca_absoluta"])
@@ -69,13 +75,16 @@ st.caption("Diferenças entre períodos de igual duração, sem cor de \"bom\" o
 
 # ------------------------------------------------------------------------------------------ 3. achados e limites
 st.subheader("Principais achados")
+# Os três primeiros achados (fatiamento [:3]) viram uma lista com marcadores.
 for achado in calculos.achados_principais(sinesp)[:3]:
     st.markdown(f"- **{achado['titulo']}:** {achado['texto']}")
+# Séries que terminam antes do último mês da base (ex.: PRF): .loc[linhas, colunas] escolhe linhas e colunas de uma vez.
 atrasadas = catalogo.loc[catalogo["fim"] != catalogo["fim"].max(), ["evento", "abrangencia", "fim"]]
 if len(atrasadas):
     st.info("Algumas séries terminam antes das demais: " + "; ".join(f"{r.evento} ({r.abrangencia}) até {fmt_competencia(r.fim)}" for r in atrasadas.itertuples())
             + ". O painel mostra essas séries só até o último mês disponível, sem preencher os meses que faltam.")
 
+# expander: bloco recolhível; o conteúdo só aparece quando o usuário clica.
 with st.expander("Pergunta, unidades e limites da leitura"):
     st.markdown(
         "**Pergunta que orienta o painel:** como evoluíram, desde janeiro/2020, os indicadores oficiais de segurança pública do Sinesp/MJSP para "

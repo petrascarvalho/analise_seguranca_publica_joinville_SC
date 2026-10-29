@@ -17,6 +17,7 @@ def fmt_int(valor) -> str:
     """1957 → '1.957'; ausente → '—' (nunca '0')."""
     if _ausente(valor):
         return TRACO
+    # O Python escreve 1,957 (padrão americano); replace troca a vírgula pelo ponto: 1.957.
     return f"{int(valor):,}".replace(",", ".")
 
 
@@ -24,6 +25,7 @@ def fmt_dec(valor, casas: int = 2) -> str:
     """168.4167 → '168,42'; ausente → '—'."""
     if _ausente(valor):
         return TRACO
+    # Troca os separadores em três passos (com § como marcador temporário): 1,234.56 vira 1.234,56.
     return f"{float(valor):,.{casas}f}".replace(",", "§").replace(".", ",").replace("§", ".")
 
 

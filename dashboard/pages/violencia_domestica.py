@@ -10,6 +10,7 @@ Regras desta seção (não negociáveis):
 import sys
 from pathlib import Path
 
+# Pasta do projeto: entra no caminho de importação para o Python achar o pacote dashboard.
 _RAIZ = Path(__file__).resolve().parents[2]
 if str(_RAIZ) not in sys.path:
     sys.path.insert(0, str(_RAIZ))
@@ -26,7 +27,9 @@ st.warning("**Fonte em validação.** Não foi identificada uma definição oper
            "ser lida como vítimas, pessoas ou ocorrências únicas. Não some categorias nem compare estes números com os do Sinesp.")
 
 try:
+    # Lê o CSV local da SSP/SC (216 linhas) e confere as regras; devolve None se o arquivo não existir (ex.: no Streamlit Cloud).
     vd = dados_ssp.carregar_violencia_domestica()
+# Se o arquivo existir mas violar alguma regra, mostra o erro e st.stop() interrompe a página.
 except dados_ssp.ErroDadosSsp as erro:
     st.error(f"**Dados da SSP/SC inválidos.** {erro} Nenhum valor foi preenchido ou estimado.")
     st.stop()
@@ -39,13 +42,17 @@ if vd is None:
         st.image(str(dados_ssp.FIGURA_ESTATICA), caption="Fatos comunicados por categoria, 2023 × 2024 (SSP/SC). Unidade em validação; não integra os indicadores Sinesp.")
 else:
     # ------------------------------------------------------------------------------------------ filtro próprio e cards
+    # As 9 categorias, sem repetição e em ordem alfabética: opções do filtro desta seção.
     categorias = sorted(vd["categoria"].unique())
     with st.container(border=True):
         st.markdown("**Filtro desta seção** — independente dos filtros do Sinesp.")
+        # Filtro próprio da seção (key diferente dos filtros do Sinesp, por isso um não altera o outro).
         escolha = st.selectbox("Categoria (SSP/SC)", ["Todas as categorias"] + categorias, key="vd_categoria",
                                help="“Todas” compara cada categoria com ela mesma em 2023 e 2024; uma categoria específica mostra os 24 meses.")
+    # None significa "todas as categorias".
     categoria = None if escolha == "Todas as categorias" else escolha
 
+    # groupby junta as linhas de mesma categoria e ano; sum() soma os 12 meses; unstack põe os anos (2023, 2024) em colunas.
     totais = vd.groupby(["categoria", "ano"])["valor"].sum().unstack("ano")   # soma dos 12 meses de cada categoria e ano; nunca entre categorias
     if categoria is None:
         ui.cartoes_html([
@@ -57,7 +64,9 @@ else:
             {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Definição não identificada nos documentos analisados."},
         ])
     else:
+        # Total da categoria escolhida em cada ano (.loc[linha, coluna]).
         a23, a24 = int(totais.loc[categoria, 2023]), int(totais.loc[categoria, 2024])
+        # Conta os meses com valor zero só da categoria escolhida: eq(0) marca True nos zeros e sum() conta os True.
         zeros_categoria = int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())
         ui.cartoes_html([
             {"titulo": f"{categoria} — 2023", "valor": fmt_int(a23), "detalhe": "fatos comunicados · 12 meses", "base": "Soma dos 12 meses publicados."},
@@ -71,15 +80,18 @@ else:
         ])
 
     # ------------------------------------------------------------------------------------------ gráfico e tabela
+    # Todas as categorias: barras horizontais 2023 x 2024; uma categoria: duas linhas com os 24 meses.
     figura = graficos.figura_violencia_domestica_ssp(vd, categoria)
     if categoria is None:
         tabela = totais.reset_index().rename(columns={"categoria": "Categoria", 2023: "2023", 2024: "2024"})
+        # Subtrai as colunas inteiras de uma vez (2024 - 2023) e formata com sinal (+128, −9).
         tabela["Diferença 2024 − 2023"] = (totais[2024] - totais[2023]).map(fmt_dif).to_numpy()
         tabela = tabela.sort_values("2024", ascending=False)  # ordena pelo número; só depois formata o texto
         tabela["2023"] = tabela["2023"].map(fmt_int)
         tabela["2024"] = tabela["2024"].map(fmt_int)
         legenda = "Total anual de cada categoria (soma dos 12 meses). As categorias não são somadas entre si."
     else:
+        # Tabela mês x ano da categoria: pivot põe os anos em colunas; reindex garante os 12 meses em ordem.
         mensal = vd.loc[vd["categoria"].eq(categoria)].pivot(index="mes", columns="ano", values="valor").reindex(range(1, 13))
         tabela = pd.DataFrame({"Mês": ABREV_MESES, "2023": mensal[2023].map(fmt_int).to_numpy(), "2024": mensal[2024].map(fmt_int).to_numpy()})
         legenda = f"{categoria}: valor publicado em cada mês."

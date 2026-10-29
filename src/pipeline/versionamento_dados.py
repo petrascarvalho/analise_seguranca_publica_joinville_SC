@@ -21,6 +21,7 @@ EVENTO_MANDADO = "Mandado de prisão cumprido"
 UNIDADE_VITIMAS = "vítimas"
 UNIDADE_MANDADOS = "mandados cumpridos (contagem publicada)"
 
+# Lista oficial dos 11 indicadores de Joinville e o tipo de cada um; um indicador fora desta lista interrompe o processamento.
 NATUREZAS = {
     "Feminicídio": "criminal", "Homicídio doloso": "criminal", "Lesão corporal seguida de morte": "criminal",
     EVENTO_MANDADO: "atividade policial",
@@ -58,6 +59,7 @@ def competencia_texto(ano: int, mes: int) -> str:
 
 def primeira_e_ultima_competencia(quadro: pd.DataFrame) -> tuple[str, str]:
     """Primeira e última competência (ano-mês) de uma tabela."""
+    # ano x 100 + mês vira um número (202609); min e max dão a primeira e a última competência.
     chaves = quadro["ano"].astype(int) * 100 + quadro["mes"].astype(int)
     primeira, ultima = int(chaves.min()), int(chaves.max())
     return competencia_texto(primeira // 100, primeira % 100), competencia_texto(ultima // 100, ultima % 100)
