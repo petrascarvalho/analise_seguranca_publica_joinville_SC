@@ -373,9 +373,11 @@ def test_qualidade_sem_faixa_de_conferencia_e_com_ausencia_em_linguagem_simples_
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
     textos = " ".join(t for t in __import__("apoio_painel").textos_visiveis(app))
     assert "Conferência concluída" not in textos and "coincidem com o registro" not in textos  # a faixa foi removida
-    ausencia = next(c for c in cartoes(app) if c.titulo == "Ausência de informação")
-    assert ausencia.valor == "Nenhuma" and "Sem valores ausentes" in ausencia.detalhe and "911 registros mensais" in ausencia.base
-    assert not any(c.titulo == "Valores ausentes" for c in cartoes(app))  # sem o "0" solto
+    ausencia = next(c for c in cartoes(app) if c.titulo == "Dados não informados")
+    assert ausencia.valor == "Nenhum valor ausente" and ausencia.valor not in ("Nenhuma", "Nenhum", "0")  # nunca um "Nenhuma" solto
+    assert "Os 911 registros disponíveis possuem valores informados" in ausencia.base and "401" in ausencia.base and "não significa ausência de informação" in ausencia.base
+    assert "vítima" not in (ausencia.detalhe + ausencia.base).lower()  # card de qualidade dos dados, não de vítimas
+    assert not any(c.titulo in ("Ausência de informação", "Valores ausentes") for c in cartoes(app))
     assert "**Fonte dos dados:** Ministério da Justiça e Segurança Pública (MJSP) — Sinesp VDE." in " ".join(m.value for m in app.markdown)
     assert "**Análise e visualização:** Petras Ruben Carvalho — Analista de Dados | Business Intelligence." in " ".join(m.value for m in app.markdown)
     assert "Análista" not in textos
@@ -400,3 +402,27 @@ def test_rotulos_das_barras_mensais_so_aparecem_para_valores_maiores_que_zero(si
         um_ano = graficos.figura_mensal_sinesp(sinesp_publico, "Mortes no trânsito", "Polícia Rodoviária Federal", [2025])
     assert not [t for t in compacta.axes[0].texts if t.get_text().isdigit()]
     assert [t for t in um_ano.axes[0].texts if t.get_text().isdigit()]
+
+
+def test_card_de_zeros_da_ssp_acompanha_o_filtro_de_categoria():
+    from dashboard import dados_ssp
+    if dados_ssp.caminho_disponivel() is None:
+        pytest.skip("CSV local da SSP/SC ausente (clone limpo)")
+    vd = dados_ssp.carregar_violencia_domestica()
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    todos = next(c for c in cartoes(app) if c.titulo == "Valores zero informados")
+    assert todos.valor == "27" == str(int(vd["valor"].eq(0).sum())) and "nas 9 categorias" in todos.detalhe  # 27 só com todas as categorias
+    assert "27 combinações de categoria e mês" in todos.base and "não permite concluir que não houve vítimas no município" in todos.base
+    assert not any(c.titulo == "Zeros informados" for c in cartoes(app))
+    soma = 0
+    for categoria in sorted(vd["categoria"].unique()):
+        app.selectbox(key="vd_categoria").select(categoria).run()
+        cartao = next(c for c in cartoes(app) if c.titulo == "Valores zero informados")
+        zeros = int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())
+        soma += zeros
+        assert cartao.valor == ("Nenhum" if zeros == 0 else str(zeros)), categoria  # só os zeros da categoria escolhida
+        assert (zeros == 0) or ("24 meses desta categoria" in cartao.base), categoria
+        assert cartao.valor != "27" or zeros == 27
+        for proibido in ("Nenhuma vítima registrada", "Nenhuma violência doméstica", "Nenhuma ocorrência no município"):
+            assert proibido not in cartao.base
+    assert soma == 27  # as categorias, somadas só para conferir a contagem de zeros, fecham os 27 do conjunto completo

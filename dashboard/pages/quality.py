@@ -35,9 +35,12 @@ ui.cartoes_html([
     {"titulo": "Base atualizada em", "valor": atualizacao, "detalhe": "Sinesp/MJSP · Joinville/SC", "base": "Atualização manual, depois de conferência."},
     {"titulo": "Último mês disponível nesta base", "valor": fmt_competencia(ultima, curto=True), "detalhe": f"Dados a partir de {fmt_competencia(primeira, curto=True)}",
      "base": f"{fmt_mes_extenso(ultima)}. A série da PRF termina em agosto de 2026; os mandados da PF começam em 2025."},
-    {"titulo": "Ausência de informação", "valor": "Nenhuma" if int(sinesp["valor"].isna().sum()) == 0 else fmt_int(int(sinesp["valor"].isna().sum())),
-     "detalhe": "Sem valores ausentes" if int(sinesp["valor"].isna().sum()) == 0 else "meses sem valor informado",
-     "base": f"Em {fmt_int(len(sinesp))} registros mensais. A fonte informou zero em {fmt_int(int(sinesp['valor'].eq(0).sum()))} deles (zero informado não é ausência)."},
+    # Qualidade dos dados: conta registros SEM valor (ausentes). Zero informado pela fonte é valor, não ausência; e este card não fala de vítimas.
+    {"titulo": "Dados não informados", "valor": "Nenhum valor ausente" if int(sinesp["valor"].isna().sum()) == 0 else fmt_int(int(sinesp["valor"].isna().sum())),
+     "detalhe": "registros mensais do Sinesp" if int(sinesp["valor"].isna().sum()) == 0 else "registros mensais sem valor informado",
+     "base": (f"Os {fmt_int(len(sinesp))} registros disponíveis possuem valores informados. " if int(sinesp["valor"].isna().sum()) == 0
+              else f"Dos {fmt_int(len(sinesp))} registros, {fmt_int(int(sinesp['valor'].isna().sum()))} não têm valor informado. ")
+             + f"Em {fmt_int(int(sinesp['valor'].eq(0).sum()))} deles, a fonte registrou zero, o que não significa ausência de informação."},
 ])
 
 st.subheader("Sobre os dados apresentados")

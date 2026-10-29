@@ -51,17 +51,23 @@ else:
         ui.cartoes_html([
             {"titulo": "Período", "valor": "2023–2024", "detalhe": "SSP/SC · Joinville", "base": "Janeiro/2023 a dezembro/2024 (24 meses)."},
             {"titulo": "Registros", "valor": fmt_int(len(vd)), "detalhe": f"{len(categorias)} categorias × 24 meses", "base": "Sem registros repetidos e sem valores ausentes."},
-            {"titulo": "Zeros informados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": "meses com 0 fatos comunicados", "base": "Zero informado é um número publicado, não ausência."},
+            # 27 = valores zero entre as 216 combinações de categoria e mês (9 categorias × 24 meses); não são 27 meses distintos
+            {"titulo": "Valores zero informados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": f"nas {len(categorias)} categorias, 2023–2024",
+             "base": "Em " + fmt_int(int(vd["valor"].eq(0).sum())) + " combinações de categoria e mês, a fonte informou valor zero. Zero informado não significa ausência de dados e não permite concluir que não houve vítimas no município."},
             {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Definição não identificada nos documentos analisados."},
         ])
     else:
         a23, a24 = int(totais.loc[categoria, 2023]), int(totais.loc[categoria, 2024])
+        zeros_categoria = int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())
         ui.cartoes_html([
             {"titulo": f"{categoria} — 2023", "valor": fmt_int(a23), "detalhe": "fatos comunicados · 12 meses", "base": "Soma dos 12 meses publicados."},
             {"titulo": f"{categoria} — 2024", "valor": fmt_int(a24), "detalhe": "fatos comunicados · 12 meses", "variacao": f"{fmt_dif(a24 - a23)} vs 2023",
              "diferenca": a24 - a23, "base": "Comparado com 2023 (ano completo)."},
-            {"titulo": "Meses com zero", "valor": "Nenhum" if int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum()) == 0 else fmt_int(int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())),
-             "detalhe": "de 24 meses", "base": "Nenhum mês com zero informado pela fonte." if int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum()) == 0 else "Meses em que a fonte informou zero fatos comunicados."},
+            # Zeros só da categoria escolhida (valor de cada um dos 24 meses); o total de 27 vale só para "Todas as categorias"
+            {"titulo": "Valores zero informados", "valor": "Nenhum" if zeros_categoria == 0 else fmt_int(zeros_categoria),
+             "detalhe": "valor zero nesta categoria, 2023–2024" if zeros_categoria == 0 else "nesta categoria, em 24 meses",
+             "base": "Nenhum dos 24 meses desta categoria teve valor zero informado pela fonte." if zeros_categoria == 0
+                     else f"Em {fmt_int(zeros_categoria)} dos 24 meses desta categoria, a fonte informou valor zero. Zero informado não significa ausência de dados e não permite concluir que não houve vítimas no município."},
         ])
 
     # ------------------------------------------------------------------------------------------ gráfico e tabela
