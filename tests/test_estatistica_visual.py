@@ -463,3 +463,26 @@ def test_tabela_de_pontos_atipicos_acompanha_o_diagnostico(sinesp):
     assert d["interpretavel"] and d["n_fora"] == 4 and set(d["fora"]["direcao"]) == {"abaixo", "acima"}
     assert (d["fora"].loc[d["fora"]["direcao"] == "abaixo", "valor"].astype(float) < d["limite_inferior"]).all()
     assert (d["fora"].loc[d["fora"]["direcao"] == "acima", "valor"].astype(float) > d["limite_superior"]).all()
+
+
+# ---------------------------------------------------------------- conferências que antes ficavam no roteiro de ETL (agora, no notebook e aqui)
+def test_mapa_de_calor_desenha_exatamente_a_tabela_ano_por_mes(sinesp):
+    serie = calculos.serie_sinesp(sinesp, "Homicídio doloso", "Estadual")
+    figura = graficos.figura_mapa_calor_sinesp(sinesp, "Homicídio doloso", "Estadual", ANOS)
+    matriz = figura.axes[0].images[0].get_array()
+    desenhado = [[None if matriz[i, j] is np.ma.masked else int(matriz[i, j]) for j in range(matriz.shape[1])] for i in range(matriz.shape[0])]
+    esperado = [[None if pd.isna(v) else int(v) for v in linha] for linha in calculos.quadro_ano_mes(serie).to_numpy()]
+    assert desenhado == esperado  # as células coloridas são os números da tabela; mês sem valor continua em branco
+
+
+def test_media_movel_desenhada_e_a_da_tabela(sinesp):
+    serie = calculos.serie_sinesp(sinesp, "Homicídio doloso", "Estadual")
+    figura = graficos.figura_media_movel_sinesp(sinesp, "Homicídio doloso", "Estadual", ANOS)
+    linha = {l.get_gid(): l for l in figura.axes[0].lines}["media_movel"]
+    esperado = calculos.media_movel(serie)["media_movel"].astype("float64").to_numpy()
+    assert np.allclose(np.array(linha.get_ydata(), dtype="float64"), esperado, equal_nan=True)
+
+
+def test_criterio_iqr_e_informativo_em_5_das_12_series(sinesp):
+    diagnosticos = calculos.diagnostico_outliers_todas_as_series(sinesp)
+    assert len(diagnosticos) == 12 and int(diagnosticos["classificacao"].eq("método informativo").sum()) == 5

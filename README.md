@@ -13,7 +13,7 @@ Este repositório reúne a obtenção, o tratamento, a auditoria, a análise e a
 
 | Parte                                       | Onde está                                                                                                    | O que faz                                                                                           |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| **ETL** (script principal 1)          | [`scripts/etl_sinesp.py`](scripts/etl_sinesp.py)                                                             | Lê os XLSX oficiais do Sinesp, trata, valida, analisa e exporta, em 18 etapas comentadas           |
+| **ETL** (script principal 1)          | [`scripts/etl_joinville.py`](scripts/etl_joinville.py)                                                       | ETL único: lê, trata, confere e exporta o Sinesp e a SSP/SC (fontes separadas), em 14 etapas comentadas |
 | **Painel** (script principal 2)       | [`scripts/painel_streamlit.py`](scripts/painel_streamlit.py)                                                 | Dashboard de página única: apresentação, indicadores Sinesp, violência doméstica SSP/SC (separada) e qualidade e metodologia |
 | **Notebook**                          | [`notebooks/analise_seguranca_publica_joinville.ipynb`](notebooks/analise_seguranca_publica_joinville.ipynb) | Roteiro didático Sinesp e exploração separada SSP/SC                                             |
 | **Acervo SSP/SC** (módulo auxiliar)  | [`src/pipeline/ssp_sc.py`](src/pipeline/ssp_sc.py)                                                           | Inventário dos PDFs, extração validada, auditoria da violência doméstica e das republicações |
@@ -224,22 +224,25 @@ Os dados passam por camadas, cada uma numa pasta:
 | Tratado                 | `dados/processados/sinesp/`   | `dados/processados/ssp_sc/`          |
 | Aprovado para o painel  | `dashboard/data_publica/`     | nenhum (em validação)                |
 
-### 5.1 ETL do Sinesp — [`scripts/etl_sinesp.py`](scripts/etl_sinesp.py)
+### 5.1 ETL único — [`scripts/etl_joinville.py`](scripts/etl_joinville.py)
 
-Células `# %%` para o VS Code. Cada etapa tem objetivo, explicação, resultado esperado e uma conferência que interrompe o processo se algo não bater:
+Um só programa, básico e sequencial (sem funções, classes ou decoradores próprios), com células `# %%` para o VS Code e comentários `#` em português. Também roda no terminal. Cada etapa imprime o que conferiu; qualquer divergência interrompe o processo antes de gravar:
 
-| Etapas | O que fazem                                                                                                                                                                                      |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 01–03 | Bibliotecas, pastas e localização dos sete XLSX, com conferência do SHA-256                                                                                                                   |
-| 04–07 | Leitura só das linhas SC/JOINVILLE (911), inspeção, dicionário das 14 colunas e duplicidades — nenhuma linha é apagada                                                                     |
-| 08–12 | Datas do Excel (serial a partir de 30/12/1899, dia 1 e ano do arquivo), escolha da medida (vítimas × mandados), ausências como `<NA>` (nunca zero), tipos `Int64` e consolidação mensal |
-| 13     | Validação e comparação com a base publicada (mesmo SHA-256 do manifesto)                                                                                                                     |
-| 14–16 | Estatísticas, análise exploratória e gráficos                                                                                                                                                |
-| 17–18 | Exportação **somente** para `dados/processados/sinesp/` e conclusões                                                                                                                  |
+| Etapas | O que fazem                                                                                                                                                                                        |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01–02 | Bibliotecas e pastas (entrada e saída)                                                                                                                                                            |
+| 03–04 | Leitura só das linhas SC/JOINVILLE (911) dos sete XLSX, usando o arquivo cujo SHA-256 é o do manifesto; inspeção com `head()` e `info()`                                                      |
+| 05–06 | Duplicidades (nenhuma linha é apagada) e valores ausentes (zero publicado ≠ ausência; ausência nunca vira zero)                                                                              |
+| 07–08 | Tratamento: data serial do Excel (dia 1 e ano do arquivo), medida (vítimas × mandados), tipo `Int64`; conferência de que só há Joinville/SC                                                  |
+| 09–10 | Uma linha por série e mês (só *Tentativa de homicídio* e *Estupro* podem ter parcelas somadas) e conferência: regras de qualidade, igualdade com a base publicada e SHA-256 do manifesto |
+| 11–12 | SSP/SC: inventário dos 45 PDFs, extração do bloco de Joinville, 159 verificações contra os PDFs; violência doméstica (216 observações) e homicídios (58 grupos republicados, sem escolher versão) |
+| 13–14 | Exportação **somente** para `dados/processados/etl_joinville/` (`sinesp/` e `ssp_sc/`, separados) e releitura dos arquivos gravados com os números de referência                             |
 
-Sem os XLSX, o ETL roda em **modo demonstração** (usa a base publicada e não exporta nada). Regras: filtro exato; zeros publicados mantidos; nenhum valor ausente vira zero; vítimas e mandados nunca somados; só *Tentativa de homicídio* e *Estupro* podem ter parcelas somadas no mesmo mês, como manda a nota oficial; qualquer outra repetição interrompe o processo.
+Sem os XLSX oficiais (ou com outra edição, de hash diferente do manifesto) ou sem os PDFs da SSP/SC, o ETL **para com uma mensagem clara** e não grava nada; ele não usa dados de demonstração. A base publicada no painel (`dashboard/data_publica/`) nunca é alterada por ele. Regras: filtro exato; zeros publicados mantidos; nenhum valor ausente vira zero; vítimas e mandados nunca somados; qualquer repetição fora da nota oficial interrompe o processo. A unidade "Fato Comunicado" da SSP/SC não é reinterpretada como vítimas.
 
-**Estatísticas:** soma anual só com os 12 meses publicados; o ano parcial (2026) só é comparado com o mesmo período dos anos anteriores, série a série (a PRF termina em agosto); variação percentual só com base positiva, com a diferença absoluta sempre informada; desvio-padrão descritivo (`ddof=0`); quartis por interpolação linear e limites de Tukey (Q1 − 1,5·IQR; Q3 + 1,5·IQR), tratados como informativos apenas quando a série tem ao menos 12 meses, IQR > 0, menos de 50% de zeros e Q3 > 1; distribuição com o zero como faixa própria (regra de Sturges); perfil mensal pela mediana dos anos completos.
+Variáveis opcionais: `SINESP_PASTA_XLSX` (onde estão os XLSX) e `ETL_PASTA_SAIDA` (onde gravar). Os arquivos de saída do Sinesp foram comparados, byte a byte, com os da versão aprovada; os da SSP/SC, com os do exportador do módulo `ssp_sc.py`.
+
+**Estatísticas (notebook e painel):** soma anual só com os 12 meses publicados; o ano parcial (2026) só é comparado com o mesmo período dos anos anteriores, série a série (a PRF termina em agosto); variação percentual só com base positiva, com a diferença absoluta sempre informada; desvio-padrão descritivo (`ddof=0`); quartis por interpolação linear e limites de Tukey (Q1 − 1,5·IQR; Q3 + 1,5·IQR), tratados como informativos apenas quando a série tem ao menos 12 meses, IQR > 0, menos de 50% de zeros e Q3 > 1; distribuição com o zero como faixa própria (regra de Sturges); perfil mensal pela mediana dos anos completos.
 
 ### 5.2 Acervo SSP/SC — [`src/pipeline/ssp_sc.py`](src/pipeline/ssp_sc.py)
 
@@ -248,7 +251,7 @@ Sem os XLSX, o ETL roda em **modo demonstração** (usa a base publicada e não 
 3. **Violência doméstica:** uma linha por categoria e mês (216), com página do PDF, rótulo original e SHA-256 do documento. As duas grafias das lesões corporais ("0 Dolosa" e "- Dolosa") são mapeadas para a mesma categoria por decisão documentada; nenhuma categoria é somada a outra.
 4. **Homicídios dos boletins:** cada valor publicado vira uma linha (294). Um JOIN muitos-para-um (cardinalidade conferida) anexa o grupo de republicação (58 grupos). Nenhuma versão é escolhida.
 5. **Rastreabilidade:** `rastreabilidade_celulas_ssp_sc.csv` localiza as 510 células (216 + 294) por PDF, SHA-256, página, tabela, linha e coluna do CSV. O [inventário versionado](documentacao/auditoria/ssp_sc_acervo_sha256.csv) fixa os hashes dos 45 pares. Nos 30 valores de homicídio sem grupo, `grupo_republicacao` e `grupo_divergente` ficam vazios; `NaN` é apenas sua representação ao ler o CSV, não zero nem ausência de divergência.
-6. **Exportação** para `dados/processados/ssp_sc/` com nomes novos, sem sobrescrever a extração anterior; os originais são conferidos por hash antes e depois.
+6. **Exportação** pelo ETL único (etapa 13), para `dados/processados/etl_joinville/ssp_sc/`, sem sobrescrever a extração anterior; os originais são conferidos por hash antes e depois.
 
 ### 5.3 UNION e JOIN — [`src/pipeline/consolidacao.py`](src/pipeline/consolidacao.py)
 
@@ -267,7 +270,7 @@ Cada fonte é tratada separadamente e convertida para um esquema comum: `fonte`,
 
 Roteiro sequencial de 16 etapas de código, explicadas por comentários `#` e com resultados em `print()`/`display()` (estilo do Mini_Projeto_SUS): leitura e conferência da base aprovada (SHA-256 do manifesto), leitura bruta ilustrada com 2026, tratamento, duplicidades, ausências e zeros, cobertura, estatísticas, totais anuais e períodos equivalentes, outliers (IQR), quatro gráficos Sinesp, conclusões e limitações. Reutiliza as funções validadas do ETL e do painel. As etapas 12 a 15 executam a rotina SSP/SC em memória, em fonte separada: conferências, estatísticas por categoria, figura exploratória de violência doméstica e rastreabilidade das republicações. As fontes mantêm unidades separadas.
 
-Execução integral em kernel real da `.venv`, com figuras renderizadas; o arquivo versionado fica sem outputs. A seção SSP/SC informa explicitamente quando o acervo está ausente. O ETL completo dos sete XLSX continua em `scripts/etl_sinesp.py`.
+Execução integral em kernel real da `.venv`, com figuras renderizadas; o arquivo versionado fica sem outputs. A seção SSP/SC informa explicitamente quando o acervo está ausente. O ETL completo dos sete XLSX e da SSP/SC está em `scripts/etl_joinville.py`.
 
 ## 6. Bibliotecas e tecnologias
 
@@ -489,7 +492,7 @@ A última atualização (27/10/2026) trouxe setembro/2026: 11 competências nova
 | Caminhos relativos à raiz                                  | Migrada                                                                                                                                                             |
 | Presença literal de etapas/nomes no roteiro SSP antigo     | Obsoleta após retirada do script; substituída por execução da extração, conferência CSV/PDF, rastreabilidade das células e gráficos com valores conferidos |
 | Índice documental histórico SSP                           | Obsoleto após consolidação; referências e recuperação no README, com testes de links relativos                                                                |
-| Presença literal das etapas Sinesp 1–10 no roteiro antigo | Obsoleta; garantias atuais em `test_etl_sinesp.py` (18 etapas, exportação controlada e reconstrução dos XLSX) e `test_notebook.py` (kernel real)            |
+| Presença literal das etapas Sinesp 1–10 no roteiro antigo | Obsoleta; garantias atuais em `test_etl_joinville.py` (14 etapas, exportação controlada, reconstrução dos XLSX e da SSP/SC) e `test_notebook.py` (kernel real)            |
 
 Os nove testes de integridade foram migrados integralmente. A retirada dos três testes textuais não é contabilizada como melhoria de cobertura.
 Três testes de arquivos arquivados usam `JOINVILLE_ARQUIVO_ETAPA26` (padrão local: `~/Desktop/readme.ia/arquivo_etapa26`); em outro computador, apontar para a cópia restaurada.
@@ -504,11 +507,10 @@ No **Prompt de Comando (CMD)** do Windows, na pasta do projeto:
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
-:: 2. ETL do Sinesp (lê dados/brutos/sinesp e grava só em dados/processados/sinesp)
-.\.venv\Scripts\python.exe -m scripts.etl_sinesp
+:: 2. ETL único (lê dados/brutos/sinesp e dados/brutos/ssp_sc; grava só em dados/processados/etl_joinville)
+.\.venv\Scripts\python.exe scripts\etl_joinville.py
 
-:: 3. Acervo SSP/SC e matriz de compatibilidade (leem dados/brutos/ssp_sc; gravam em dados/processados)
-.\.venv\Scripts\python.exe -m src.pipeline.ssp_sc
+:: 3. Matriz de compatibilidade e esquema comum (opcional; lê a base publicada e grava em dados/processados)
 .\.venv\Scripts\python.exe -m src.pipeline.consolidacao
 
 :: 4. Painel (abre em http://localhost:8501). Se o código mudar com o servidor aberto, pare (Ctrl+C) e execute de novo:
@@ -530,7 +532,7 @@ Seguranca Publica Joinville/
 ├── README.md                    documentação única do projeto
 ├── requirements.txt
 ├── scripts/
-│   ├── etl_sinesp.py            ← script principal 1: ETL e análise (18 etapas)
+│   ├── etl_joinville.py         ← script principal 1: ETL único (14 etapas)
 │   └── painel_streamlit.py      ← script principal 2: entrada do painel
 ├── notebooks/analise_seguranca_publica_joinville.ipynb
 ├── src/pipeline/                módulos auxiliares
