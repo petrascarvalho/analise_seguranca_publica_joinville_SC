@@ -216,7 +216,7 @@ def test_alternancia_do_modo_compacto_preserva_filtros_e_abas():
     app.select_slider[0].set_value((2025, 2026)).run()
     app.toggle[0].set_value(True).run()
     assert app.toggle[0].value is True and not app.exception and not app.error
-    assert (app.selectbox(key="serie").value, app.select_slider[0].value) == ("Mandado de prisão cumprido — Polícia Federal", (2025, 2026))  # filtros mantidos
+    assert (app.selectbox(key="indicador").value, app.selectbox(key="abrangencia").value, app.select_slider[0].value) == ("Mandado de prisão cumprido", "Polícia Federal", (2025, 2026))  # filtros mantidos
     escolher_serie(app, "Suicídio", "Estadual")
     assert app.toggle[0].value is True  # o modo permanece durante as interações
     app.toggle[0].set_value(False).run()

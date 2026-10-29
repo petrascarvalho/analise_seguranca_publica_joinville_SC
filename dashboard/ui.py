@@ -225,6 +225,11 @@ NOTA_ABRANGENCIA = ("Os indicadores do Sinesp foram selecionados para o municíp
 NOTA_ABRANGENCIA_CURTA = "“Estadual” é a classificação institucional da série, **não um total de Santa Catarina**."
 
 
+def sem_registro(unidade_curta: str) -> str:
+    """Texto para um total igual a zero (a fonte informou zero, o que não é o mesmo que ausência de informação)."""
+    return "Nenhum mandado cumprido registrado" if unidade_curta.startswith("mandado") else "Nenhuma vítima registrada"
+
+
 def mostrar_versao_dos_dados() -> None:
     """Rodapé simples: fonte, data da atualização e condições de uso, em linguagem comum. Não consulta a rede nem baixa dados."""
     try:
@@ -233,12 +238,14 @@ def mostrar_versao_dos_dados() -> None:
         st.caption("Informações sobre a atualização dos dados indisponíveis no momento.")
         return
     ultima = manifesto.get("cobertura", {}).get("sinesp", {}).get("ultima_competencia", "")
+    st.markdown("**Fonte dos dados:** Ministério da Justiça e Segurança Pública (MJSP) — Sinesp VDE.  \n"
+                "**Análise e visualização:** Petras Ruben Carvalho — Analista de Dados | Business Intelligence.")
     st.caption(f"Dados do Sinesp/MJSP para Joinville/SC · base atualizada em {data_da_atualizacao(manifesto)} · "
                f"período: {periodo_sinesp_texto(manifesto)} (2026 é parcial; o último mês disponível nesta base é {fmt_mes_extenso(ultima)}).")
     fonte = next((f for f in manifesto.get("fontes", []) if f.get("id") == "sinesp_vde"), None)
     with st.expander("Fonte, atualização dos dados e condições de uso"):
-        st.markdown("**Fonte:** Ministério da Justiça e Segurança Pública (MJSP) — Sistema Nacional de Estatísticas de Segurança Pública (Sinesp). "
-                    "Tabelas e gráficos são elaborações próprias do projeto a partir de números estatísticos públicos.")
+        st.markdown("**Fonte dos dados:** Ministério da Justiça e Segurança Pública (MJSP) — Sinesp VDE (Sistema Nacional de Estatísticas de Segurança Pública). "
+                    "Tabelas e gráficos são elaborações próprias, feitas a partir de números estatísticos públicos.")
         if fonte:
             st.markdown(f"**Página oficial da fonte:** [{fonte['nome']}]({fonte['url']})")
             consulta = (fonte.get("consulta") or {}).get("data_consulta_utc") or ""   # versões sem consulta registrada têm este campo vazio

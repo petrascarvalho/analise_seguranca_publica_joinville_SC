@@ -57,11 +57,13 @@ def test_filtros_visiveis_indicador_com_abrangencia_anos_e_meses():
     assert not app.exception and not app.error
     assert [s.label for s in app.selectbox] == ["Indicador"]  # sem Categoria e sem Abrangência como filtros separados
     assert [s.label for s in app.select_slider][:2] == ["Período (anos)", "Meses"]
-    opcoes = app.selectbox(key="serie").options
-    assert len(opcoes) == 12 and len({o.split(" — ")[0] for o in opcoes}) == 11  # as 12 séries; os 11 indicadores do Sinesp para Joinville
-    assert opcoes.count("Mandado de prisão cumprido — Estadual") == 1 and "Mandado de prisão cumprido — Polícia Federal" in opcoes
-    assert "Mortes no trânsito — Polícia Rodoviária Federal" in opcoes  # PF e PRF preservadas
-    assert app.selectbox(key="serie").value == "Homicídio doloso — Estadual"
+    opcoes = app.selectbox(key="indicador").options
+    assert len(opcoes) == 11 and not [o for o in opcoes if "—" in o]  # os 11 indicadores do Sinesp para Joinville, só com o nome principal
+    app.selectbox(key="indicador").select("Mandado de prisão cumprido").run()
+    assert app.selectbox(key="abrangencia").options == ["Estadual", "Polícia Federal"]  # PF preservada como segunda escolha
+    assert "Mortes no trânsito" in opcoes  # a série da PRF continua disponível
+    app.selectbox(key="indicador").select("Homicídio doloso").run()
+    assert app.selectbox(key="indicador").value == "Homicídio doloso" and "abrangencia" not in [s.key for s in app.selectbox]
 
 
 def test_filtro_de_meses_chega_aos_kpis_e_aos_resultados_mensais():
@@ -154,7 +156,7 @@ def test_documentacao_das_fontes_complementares_registra_matriz_e_divergencia():
 def test_filtros_ativos_ficam_visiveis_e_analises_de_ano_completo_sao_identificadas():
     app = _pagina()
     ativos = next(m.value for m in app.markdown if m.value.startswith("**Recorte ativo:**"))
-    assert "indicador **Homicídio doloso — Estadual**" in ativos and "categoria" not in ativos  # a abrangência vai dentro do nome do indicador
+    assert "indicador **Homicídio doloso**" in ativos and "categoria" not in ativos and "Estadual" not in ativos  # o recorte mostra só o nome principal do indicador
     assert "anos **2020–2026**" in ativos and "janeiro–dezembro (12 meses)" in ativos and "visualização **completa**" in ativos
     assert not any("Análise de ano completo" in c.value for c in app.caption)  # sem filtro de meses não há o que avisar
     app.select_slider[1].set_value((4, 6)).run()
@@ -168,7 +170,7 @@ def test_filtros_ativos_ficam_visiveis_e_analises_de_ano_completo_sao_identifica
     assert any(m.label.startswith("Abr–Jun de 2026") and m.value == "7" for m in cartoes(app))  # 4 + 0 + 3: soma só dos meses escolhidos, rotulada com o intervalo
     escolher_serie(app, "Suicídio")
     ativos = next(m.value for m in app.markdown if m.value.startswith("**Recorte ativo:**"))
-    assert "indicador **Suicídio — Estadual**" in ativos and not app.exception
+    assert "indicador **Suicídio**" in ativos and not app.exception
 
 
 def test_soma_de_alguns_meses_nunca_vira_total_anual():

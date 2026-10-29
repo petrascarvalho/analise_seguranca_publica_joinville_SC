@@ -9,7 +9,8 @@ Comandos do Streamlit usados nesta seção (o arquivo é executado de novo a cad
     • st.dataframe — tabela interativa; st.pyplot — figura do Matplotlib; st.expander — seção recolhível.
 
 Os números vêm de dashboard/calculos.py e as figuras de dashboard/graficos.py; esta seção só organiza a apresentação.
-A abrangência (Estadual, Polícia Federal, PRF) não é um filtro: ela faz parte do nome do indicador, como em "Homicídio doloso — Estadual".
+O filtro "Indicador" mostra só o nome do indicador. A classificação institucional da série (Estadual, Polícia Federal, PRF) é guardada internamente e só vira uma
+segunda escolha quando o mesmo indicador existe em duas classificações (hoje, apenas "Mandado de prisão cumprido").
 """
 
 import sys
@@ -30,31 +31,35 @@ _ini, _fim = sinesp.assign(c=sinesp["ano"] * 100 + sinesp["mes"])["c"].agg(["min
 ui.secao("Indicadores Sinesp — Joinville/SC", "indicadores",
          f"Fonte: MJSP / Sinesp VDE, Joinville/SC, {NOMES_MESES[int(_ini) % 100 - 1]}/{int(_ini) // 100} a {NOMES_MESES[int(_fim) % 100 - 1]}/{int(_fim) // 100}. "
          "Contagens mensais publicadas pela fonte. Escolha o indicador, o período e os meses; os resultados aparecem nas abas abaixo.")
-st.caption("Todos os números são de Joinville/SC. " + ui.NOTA_ABRANGENCIA_CURTA)
 
 # ------------------------------------------------------------------------------------------ filtros
-# Cada série (indicador × abrangência) vira uma opção "Indicador — Abrangência". Assim não existe um filtro de abrangência redundante,
-# e a abrangência continua visível em todos os títulos, legendas e tabelas.
-catalogo = catalogo.assign(serie=catalogo["evento"] + " — " + catalogo["abrangencia"])
-series = sorted(catalogo["serie"])
-SERIE_PADRAO = "Homicídio doloso — Estadual"
+# O seletor mostra só o nome do indicador. Cada indicador tem uma ou duas séries (classificação institucional: Estadual, Polícia Federal ou PRF);
+# a classificação fica guardada em "abrangencia" e só aparece como segunda escolha quando o indicador tem mais de uma.
+indicadores = sorted(catalogo["evento"].unique())
+INDICADOR_PADRAO = "Homicídio doloso"
 
 
 def restaurar_filtros():
     """Volta ao indicador, ao período e aos meses iniciais (a preferência de visualização compacta é mantida)."""
-    st.session_state["serie"] = SERIE_PADRAO
-    for chave in ("periodo_anos", "periodo_meses"):
+    st.session_state["indicador"] = INDICADOR_PADRAO
+    for chave in ("abrangencia", "periodo_anos", "periodo_meses"):
         st.session_state.pop(chave, None)  # sem a escolha guardada, cada controle recomeça com o seu valor inicial (todo o período, 12 meses)
 
 
 with st.container(border=True):
     st.markdown("**Filtros** — os resultados são atualizados ao selecionar.")
     f1, f2, f3 = st.columns([2.2, 1.5, 1.5])
-    st.session_state.setdefault("serie", SERIE_PADRAO)  # indicador inicial (sem "index=", para não conflitar com o botão Restaurar filtros)
-    serie_escolhida = f1.selectbox("Indicador", series, key="serie",
-                                   help="Cada opção é um indicador com a sua abrangência. Estadual, Polícia Federal e PRF são séries distintas e não são somadas.")
-    ficha = catalogo.loc[catalogo["serie"].eq(serie_escolhida)].iloc[0]
-    evento, abrangencia = ficha["evento"], ficha["abrangencia"]
+    st.session_state.setdefault("indicador", INDICADOR_PADRAO)  # indicador inicial (sem "index=", para não conflitar com o botão Restaurar filtros)
+    evento = f1.selectbox("Indicador", indicadores, key="indicador", help="Escolha o indicador de segurança pública de Joinville/SC que deseja ver.")
+    classificacoes = catalogo.loc[catalogo["evento"].eq(evento), "abrangencia"].tolist()
+    if len(classificacoes) > 1:  # só "Mandado de prisão cumprido" existe em duas classificações; elas são séries diferentes e nunca se somam
+        if st.session_state.get("abrangencia") not in classificacoes:
+            st.session_state["abrangencia"] = classificacoes[0]
+        abrangencia = f1.selectbox("Classificação institucional da série", classificacoes, key="abrangencia",
+                                   help="Este indicador existe em duas classificações da fonte. Elas são séries diferentes e não são somadas.")
+    else:
+        abrangencia = classificacoes[0]
+    ficha = catalogo.loc[catalogo["evento"].eq(evento) & catalogo["abrangencia"].eq(abrangencia)].iloc[0]
     serie = calculos.serie_sinesp(sinesp, evento, abrangencia)
     # Filtro dependente: os anos oferecidos são os da série escolhida (a PF, por exemplo, só existe desde 2025).
     anos_disponiveis = sorted(int(a) for a in serie["ano"].unique())
@@ -86,8 +91,10 @@ def aviso_ano_completo() -> None:
 
 unidade = ficha["unidade"]
 unidade_curta = unidade.split(" (")[0]
-# Recorte ativo: o que está sendo analisado (indicador com abrangência, período, unidade e cobertura da série), num único bloco de texto.
-st.markdown(f"**Recorte ativo:** indicador **{serie_escolhida}** · anos **{ano_ini}–{ano_fim}** · meses **{_MESES_TEXTO}**"
+# Nota discreta: a classificação institucional da série não é o foco do painel, mas fica sempre à vista.
+st.caption(f"Todos os números são de Joinville/SC. Classificação institucional da série na fonte: **{abrangencia}** (não indica um total de Santa Catarina).")
+# Recorte ativo: o que está sendo analisado (indicador, período, unidade e cobertura da série), num único bloco de texto.
+st.markdown(f"**Recorte ativo:** indicador **{evento}** · anos **{ano_ini}–{ano_fim}** · meses **{_MESES_TEXTO}**"
             f" · visualização **{'compacta' if ui.modo_compacto() else 'completa'}**  \n"
             f"**Unidade:** {unidade} · **Tipo de indicador:** {ficha['natureza']} · **Período da série:** {fmt_competencia(ficha['inicio'])} a {fmt_competencia(ficha['fim'])}")
 if abrangencia == "Polícia Federal":
@@ -114,7 +121,7 @@ if filtro_meses:
 # ------------------------------------------------------------------------------------- cards do indicador
 st.subheader("Resumo do indicador escolhido")
 cards = []   # cada card é um dicionário: titulo, valor, detalhe, variacao, diferenca, ajuda (ver ui.cartoes_html)
-detalhe = f"{evento} · {abrangencia}"
+detalhe = f"{evento} · {abrangencia}" if len(classificacoes) > 1 else f"{evento} · Joinville/SC"
 soma_meses = calculos.soma_no_periodo(serie, mes_ini, mes_fim)
 soma_meses = soma_meses.loc[soma_meses["ano"].isin(anos_sel) & soma_meses["soma"].notna()]
 if filtro_meses:  # com filtro de meses, o card principal é a soma desses meses no último ano em que todos foram publicados
@@ -153,6 +160,9 @@ else:
 resumo = calculos.resumo_serie_sinesp(serie_mes)
 cards.append({"titulo": "Meses com valor publicado", "detalhe": detalhe, "valor": f"{resumo['meses_com_valor']} de {resumo['meses_observados']}",
               "base": f"Zeros informados: {resumo['meses_valor_zero']}. Meses sem informação: {resumo['meses_sem_valor']} (nunca preenchidos)."})
+for card in cards:  # total igual a zero: texto claro (a fonte informou zero; isso não é ausência de informação)
+    if card["valor"] == "0":
+        card["base"] = (card.get("base", "") + " " + ui.sem_registro(unidade_curta) + ".").strip()
 ui.cartoes_html(cards)
 
 # Abas com execução preguiçosa (Streamlit 1.66): só a aba selecionada é calculada e desenhada (cada figura leva ~0,3 s para virar PNG).
@@ -242,7 +252,7 @@ with abas[1]:
         tabela.columns = ["Ano", "Cobertura", "Meses presentes", "Meses com valor", f"Soma ({unidade_curta})"]
         st.dataframe(tabela, hide_index=True)
         if serie_parcial:
-            st.caption(f"A linha de {ano_final_serie} é parcial ({nome_periodo}) e não deve ser comparada com anos completos. Sem total entre indicadores ou abrangências.")
+            st.caption(f"A linha de {ano_final_serie} é parcial ({nome_periodo}) e não deve ser comparada com anos completos. Sem total entre indicadores diferentes.")
         anos_completos = [int(a) for a in completos["ano"]]
         if len(anos_completos) >= 2:
             ca, cb = st.columns(2)
@@ -284,10 +294,10 @@ with abas[1]:
             if ranking.empty:
                 st.info("Nenhuma série com ano completo nesta unidade.")
             else:
-                tabela = ranking.rename(columns={"evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "soma": f"Total de {int(ano_rank)}"})
+                tabela = ranking.rename(columns={"evento": "Indicador", "abrangencia": "Classificação institucional", "unidade": "Unidade", "soma": f"Total de {int(ano_rank)}"})
                 tabela[f"Total de {int(ano_rank)}"] = tabela[f"Total de {int(ano_rank)}"].map(fmt_int)
                 figura = graficos.figura_ranking_sinesp(ranking, int(ano_rank), destaque=(evento, abrangencia))
-                ui.mostrar_figura(figura, "Ordem dos indicadores dentro de uma única unidade; a barra mais escura é o indicador escolhido. Não existe total entre indicadores nem entre abrangências.", tabela)
+                ui.mostrar_figura(figura, "Ordem dos indicadores dentro de uma única unidade; a barra mais escura é o indicador escolhido. Não existe total entre indicadores diferentes.", tabela)
             st.caption("Séries com cobertura diferente (por exemplo, a Polícia Federal a partir de 2025) só entram nos anos em que estão completas.")
 
 # ------------------------------------------------------------------------------ 3. padrões e tendência (secundária)
@@ -400,20 +410,20 @@ with abas[3]:
         with st.expander("Limites de referência (IQR) em todas as séries, cada uma na sua unidade"):
             todas = calculos.diagnostico_outliers_todas_as_series(sinesp)
             st.dataframe(pd.DataFrame({
-                "Indicador": todas["evento"], "Abrangência": todas["abrangencia"], "Unidade": todas["unidade"], "Meses": todas["meses"], "Q1": todas["q1"].map(_num),
+                "Indicador": todas["evento"], "Classificação institucional": todas["abrangencia"], "Unidade": todas["unidade"], "Meses": todas["meses"], "Q1": todas["q1"].map(_num),
                 "Q3": todas["q3"].map(_num), "IQR": todas["iqr"].map(_num), "Zeros": todas["zeros"], "Método": todas["classificacao"],
                 "Meses fora": todas["pontos_fora"].map(fmt_int)}), hide_index=True)
             st.caption("Período completo de cada série. As séries não são comparadas entre si: mandados e vítimas têm unidades diferentes.")
 
 # ------------------------------------------------------------------------------------------------ 5. indicadores
 with abas[4]:
-    st.caption("Lista dos indicadores disponíveis, com abrangência, unidade, período coberto e cuidados de leitura.")
+    st.caption("Lista dos indicadores disponíveis, com classificação institucional, unidade, período coberto e cuidados de leitura.")
     cat = catalogo.rename(columns={
-        "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "natureza": "Tipo", "meses_observados": "Meses", "meses_com_valor": "Com valor",
+        "evento": "Indicador", "abrangencia": "Classificação institucional", "unidade": "Unidade", "natureza": "Tipo", "meses_observados": "Meses", "meses_com_valor": "Com valor",
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor", "limitacoes": "Cuidados de leitura"})
     cat["Início"] = catalogo["inicio"].map(lambda c: fmt_competencia(c, curto=True))
     cat["Fim"] = catalogo["fim"].map(lambda c: fmt_competencia(c, curto=True))
-    st.dataframe(cat[["Indicador", "Abrangência", "Unidade", "Tipo", "Início", "Fim", "Meses", "Com valor", "Zeros informados", "Sem valor", "Cuidados de leitura"]], hide_index=True)
+    st.dataframe(cat[["Indicador", "Classificação institucional", "Unidade", "Tipo", "Início", "Fim", "Meses", "Com valor", "Zeros informados", "Sem valor", "Cuidados de leitura"]], hide_index=True)
     st.markdown("**Como interpretar estes números**")
     st.markdown(
         "- **O que os números mostram:** valores publicados pelo Sinesp para Joinville (contagens mensais) e as diferenças calculadas entre eles.\n"
@@ -428,7 +438,7 @@ with abas[4]:
 # ---------------------------------------------------------------------------------- figuras Etapa 10
 with st.expander("Quatro gráficos de referência (fixos, não mudam com os filtros)", expanded=False):
     st.warning("**Estes quatro gráficos são fixos:** o indicador, os anos e os meses escolhidos acima não os alteram.")
-    st.write("Mostram vítimas de homicídio doloso, tentativa de homicídio, feminicídio e tentativa de feminicídio (abrangência Estadual, Joinville/SC), em anos completos de 2020 a 2025 e no período de janeiro a agosto de 2020 a 2026.")
+    st.write("Mostram vítimas de homicídio doloso, tentativa de homicídio, feminicídio e tentativa de feminicídio (Joinville/SC), em anos completos de 2020 a 2025 e no período de janeiro a agosto de 2020 a 2026.")
     mostrar_etapa10 = st.checkbox("Mostrar os quatro gráficos", key="mostrar_etapa10", help="Gerar os gráficos leva alguns segundos; por isso eles só são desenhados quando você pedir.")
     try:
         figuras = graficos.figuras_sinesp_etapa10(sinesp) if mostrar_etapa10 else {}

@@ -33,8 +33,10 @@ def texto_dos_cartoes(app) -> str:
 
 
 def escolher_serie(app, evento: str, abrangencia: str = "Estadual"):
-    """Seleciona a série "Indicador — Abrangência" (o filtro de abrangência não existe mais) e executa o app de novo."""
-    app.selectbox(key="serie").select(f"{evento} — {abrangencia}").run()
+    """Escolhe o indicador pelo nome simples e, só quando ele existe em duas classificações institucionais (Mandado de prisão cumprido), a classificação."""
+    app.selectbox(key="indicador").select(evento).run()
+    if "abrangencia" in [s.key for s in app.selectbox]:
+        app.selectbox(key="abrangencia").select(abrangencia).run()
     return app
 
 

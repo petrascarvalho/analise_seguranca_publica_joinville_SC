@@ -28,9 +28,6 @@ atualizacao = ui.data_da_atualizacao(manifesto)
 # ------------------------------------------------------------------------------------------ 1. qualidade dos dados
 ui.secao("Qualidade dos dados", "qualidade", "O que foi conferido, até quando vão os dados e o que ainda exige cuidado na leitura.")
 
-if integridade["integro"].all():
-    st.info(f"Conferência concluída: os {len(integridade)} arquivos de dados usados pelo painel coincidem com o registro da base de {atualizacao}.", icon="✅")
-
 # Quatro cards com o essencial; cada card é um dicionário (ver ui.cartoes_html).
 ui.cartoes_html([
     {"titulo": "Arquivos conferidos", "valor": f"{int(integridade['integro'].sum())} de {len(integridade)}", "detalhe": "dados do painel × registro da versão",
@@ -38,14 +35,16 @@ ui.cartoes_html([
     {"titulo": "Base atualizada em", "valor": atualizacao, "detalhe": "Sinesp/MJSP · Joinville/SC", "base": "Atualização manual, depois de conferência."},
     {"titulo": "Último mês disponível nesta base", "valor": fmt_competencia(ultima, curto=True), "detalhe": f"Dados a partir de {fmt_competencia(primeira, curto=True)}",
      "base": f"{fmt_mes_extenso(ultima)}. A série da PRF termina em agosto de 2026; os mandados da PF começam em 2025."},
-    {"titulo": "Valores ausentes", "valor": fmt_int(int(sinesp["valor"].isna().sum())), "detalhe": f"Zeros informados: {fmt_int(int(sinesp['valor'].eq(0).sum()))}",
-     "base": "Ausência nunca é trocada por zero."},
+    {"titulo": "Ausência de informação", "valor": "Nenhuma" if int(sinesp["valor"].isna().sum()) == 0 else fmt_int(int(sinesp["valor"].isna().sum())),
+     "detalhe": "Sem valores ausentes" if int(sinesp["valor"].isna().sum()) == 0 else "meses sem valor informado",
+     "base": f"Em {fmt_int(len(sinesp))} registros mensais. A fonte informou zero em {fmt_int(int(sinesp['valor'].eq(0).sum()))} deles (zero informado não é ausência)."},
 ])
 
 st.subheader("Sobre os dados apresentados")
 st.markdown(
     f"- **Fonte dos dados:** Sinesp/MJSP (Sistema Nacional de Estatísticas de Segurança Pública, do Ministério da Justiça e Segurança Pública).\n"
     f"- **Município analisado:** Joinville/SC. {ui.NOTA_ABRANGENCIA_CURTA}\n"
+    f"- **Autoria da análise e da visualização:** Petras Ruben Carvalho — Analista de Dados | Business Intelligence.\n"
     f"- **Base atualizada em:** {atualizacao}. Pode não incluir publicações mais recentes da fonte.\n"
     f"- **Período do Sinesp:** {periodo} (último mês disponível nesta base: {fmt_mes_extenso(ultima)}). A série da Polícia Rodoviária Federal vai até agosto de 2026.\n"
     f"- **Ano de 2026 parcial:** só se compara com o mesmo período dos anos anteriores, nunca com anos completos.\n"
@@ -87,11 +86,11 @@ with abas[0]:
     st.markdown("**Unidades:** *vítimas* (número de vítimas registradas) e *mandados cumpridos* (contagem publicada de mandados de prisão cumpridos). "
                 "As duas unidades nunca são somadas.")
     tabela = catalogo.rename(columns={
-        "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "meses_observados": "Meses", "meses_com_valor": "Com valor",
+        "evento": "Indicador", "abrangencia": "Classificação institucional", "unidade": "Unidade", "meses_observados": "Meses", "meses_com_valor": "Com valor",
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor"})
     tabela["Início"] = tabela["inicio"].map(lambda c: fmt_competencia(c, curto=True))
     tabela["Última competência"] = tabela["fim"].map(lambda c: fmt_competencia(c, curto=True))
-    st.dataframe(tabela[["Indicador", "Abrangência", "Unidade", "Início", "Última competência", "Meses", "Com valor", "Zeros informados", "Sem valor"]], hide_index=True)
+    st.dataframe(tabela[["Indicador", "Classificação institucional", "Unidade", "Início", "Última competência", "Meses", "Com valor", "Zeros informados", "Sem valor"]], hide_index=True)
     st.markdown(
         f"- **Total:** {fmt_int(len(sinesp))} registros mensais em {len(catalogo)} séries; **valores ausentes:** {int(sinesp['valor'].isna().sum())} "
         f"(nunca trocados por zero); **zeros informados:** {fmt_int(int(sinesp['valor'].eq(0).sum()))}.\n"

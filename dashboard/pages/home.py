@@ -31,13 +31,14 @@ ui.secao("Apresentação", "apresentacao",
 ui.cartoes_html([
     {"titulo": "Período", "valor": "2020–2026", "detalhe": "Sinesp/MJSP · Joinville/SC", "base": f"{periodo}. Cada indicador vai até o último mês disponível nesta base."},
     {"titulo": "Registros mensais", "valor": fmt_int(len(sinesp)), "detalhe": "todos os indicadores, mês a mês", "base": "Contagens publicadas pela fonte."},
-    {"titulo": "Séries", "valor": str(len(catalogo)), "detalhe": "Estadual, Polícia Federal e PRF", "base": "Séries de abrangências diferentes nunca são somadas."},
+    {"titulo": "Séries", "valor": str(len(catalogo)), "detalhe": "indicadores de Joinville/SC", "base": "Cada série tem a sua unidade; séries diferentes nunca são somadas."},
     {"titulo": "Último mês disponível nesta base", "valor": fmt_competencia(cobertura.get("ultima_competencia", ""), curto=True), "detalhe": "Sinesp/MJSP",
      "base": f"{fmt_mes_extenso(cobertura.get('ultima_competencia', ''))}. " + (f"O ano de {parcial} é parcial: só se compara com o mesmo período dos anos anteriores." if parcial else "")},
 ])
 
 
-st.info(ui.NOTA_ABRANGENCIA)
+st.caption("Todos os números são de Joinville/SC. A classificação institucional da série (por exemplo, “Estadual”) vem da fonte e não indica um total de Santa Catarina; "
+           "a explicação completa está em “Fontes, metodologia e limitações”.")
 
 # ------------------------------------------------------------------------------------------ 2. destaques fixos
 def _destaques() -> list[dict]:
@@ -49,14 +50,14 @@ def _destaques() -> list[dict]:
     if len(completos) >= 2:
         ultimo, anterior = completos.iloc[-1], completos.iloc[-2]
         dif = int(ultimo["soma"]) - int(anterior["soma"])
-        lista.append({"titulo": f"Homicídio doloso · {int(ultimo['ano'])} (completo)", "detalhe": "Estadual · vítimas · ano completo",
+        lista.append({"titulo": f"Homicídio doloso · {int(ultimo['ano'])} (completo)", "detalhe": "Joinville/SC · vítimas · ano completo",
                       "valor": fmt_int(ultimo["soma"]), "variacao": f"{fmt_dif(dif)} vs {int(anterior['ano'])}", "diferenca": dif,
                       "base": f"Comparado com o ano completo de {int(anterior['ano'])}."})
     for evento in ("Homicídio doloso", "Tentativa de homicídio"):
         r = calculos.comparacao_ultimo_periodo_sinesp(calculos.serie_sinesp(sinesp, evento, "Estadual"))
         if r is not None:
             dif = int(r["diferenca_absoluta"])
-            lista.append({"titulo": f"{evento} · {r['periodo']} de {r['ano_atual']}", "detalhe": "Estadual · vítimas · ano parcial",
+            lista.append({"titulo": f"{evento} · {r['periodo']} de {r['ano_atual']}", "detalhe": "Joinville/SC · vítimas · ano parcial",
                           "valor": fmt_int(r["valor_atual"]), "variacao": f"{fmt_dif(dif)} vs {r['periodo']} de {r['ano_anterior']}", "diferenca": dif,
                           "base": f"Comparado com {r['periodo']} de {r['ano_anterior']} (mesma duração)."})
     return lista
@@ -79,7 +80,7 @@ with st.expander("Pergunta, unidades e limites da leitura"):
     st.markdown(
         "**Pergunta que orienta o painel:** como evoluíram, desde janeiro/2020, os indicadores oficiais de segurança pública do Sinesp/MJSP para "
         "Joinville/SC, e o que a comparação entre períodos equivalentes permite — e não permite — afirmar?\n\n"
-        "- *Vítimas* e *mandados cumpridos* são unidades diferentes e **nunca são somadas**; não existe um total geral entre indicadores ou abrangências.\n"
+        "- *Vítimas* e *mandados cumpridos* são unidades diferentes e **nunca são somadas**; não existe um total geral entre indicadores diferentes.\n"
         "- São registros administrativos agregados: não medem toda a criminalidade, não estimam casos não registrados e não permitem apontar causas.\n"
         "- Não há taxas por habitante nem dados por bairro, rua ou horário.\n"
         "- Zero informado é um número publicado; falta de informação não é zero. Contagens pequenas geram percentuais instáveis."

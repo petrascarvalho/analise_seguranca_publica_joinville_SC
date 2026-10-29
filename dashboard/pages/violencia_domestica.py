@@ -60,8 +60,8 @@ else:
             {"titulo": f"{categoria} — 2023", "valor": fmt_int(a23), "detalhe": "fatos comunicados · 12 meses", "base": "Soma dos 12 meses publicados."},
             {"titulo": f"{categoria} — 2024", "valor": fmt_int(a24), "detalhe": "fatos comunicados · 12 meses", "variacao": f"{fmt_dif(a24 - a23)} vs 2023",
              "diferenca": a24 - a23, "base": "Comparado com 2023 (ano completo)."},
-            {"titulo": "Meses com zero", "valor": fmt_int(int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())), "detalhe": "de 24 meses",
-             "base": "Meses em que a fonte informou zero."},
+            {"titulo": "Meses com zero", "valor": "Nenhum" if int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum()) == 0 else fmt_int(int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())),
+             "detalhe": "de 24 meses", "base": "Nenhum mês com zero informado pela fonte." if int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum()) == 0 else "Meses em que a fonte informou zero fatos comunicados."},
         ])
 
     # ------------------------------------------------------------------------------------------ gráfico e tabela

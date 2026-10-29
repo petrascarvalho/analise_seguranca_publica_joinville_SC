@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from apoio_painel import cartoes
+from apoio_painel import cartoes, escolher_serie
 from dashboard import dados_publicos as dp
 from dashboard import dados_ssp, graficos, ui
 from src.pipeline.utils import project_path
@@ -79,7 +79,7 @@ def test_pagina_unica_tem_cards_do_sinesp_com_abrangencia_e_valores_preservados(
     lista = cartoes(app)
     assert [c.value for c in lista][:10] == ["2020–2026", "911", "12", "set/2026", "29", "25", "77", "29", "25", "81 de 81"]
     sinesp_cards = lista[7:10]
-    assert all(c.detalhe == "Homicídio doloso · Estadual" for c in sinesp_cards)  # a abrangência continua explícita em cada card
+    assert all(c.detalhe == "Homicídio doloso · Joinville/SC" for c in sinesp_cards)  # o município aparece em cada card; a classificação fica numa nota discreta
 
 
 # ------------------------------------------------------------------------------------------------- SSP/SC: carregador
@@ -201,10 +201,12 @@ def test_abrangencia_estadual_e_explicada_sem_sugerir_total_de_santa_catarina():
     corpo = " ".join(m.value for m in app.markdown) + " ".join(c.value for c in app.caption) + " ".join(i.value for i in app.info)
     completa = "identifica a classificação institucional da série na fonte; **não é um total do estado de Santa Catarina**"
     curta = "“Estadual” é a classificação institucional da série, **não um total de Santa Catarina**"
-    assert corpo.count(completa) == 2  # explicação completa só na Apresentação e na metodologia
-    assert corpo.count(curta) == 2  # aviso curto na seção Sinesp e em "Sobre os dados apresentados"
+    assert corpo.count(completa) == 1  # explicação completa só na metodologia ("Fontes, metodologia e limitações")
+    assert corpo.count(curta) == 1  # aviso curto em "Sobre os dados apresentados"
+    assert "Classificação institucional da série na fonte: **Estadual** (não indica um total de Santa Catarina)" in corpo  # nota discreta junto aos filtros
+    assert "A classificação institucional da série (por exemplo, “Estadual”) vem da fonte e não indica um total de Santa Catarina" in corpo  # nota curta na Apresentação
     assert "Os indicadores do Sinesp foram selecionados para o município de **Joinville/SC**" in corpo
-    texto_sem_notas = corpo.replace(completa, "").replace(curta, "")
+    texto_sem_notas = (corpo.replace(completa, "").replace(curta, "").replace("não indica um total de Santa Catarina", ""))
     assert "total do estado" not in texto_sem_notas and "total de Santa Catarina" not in texto_sem_notas
 
 
@@ -237,10 +239,11 @@ def _conferir_linguagem(textos, cenario):
 def test_textos_condicionais_de_todos_os_filtros_seguem_a_linguagem_publica():
     """Não basta o estado inicial: percorre cada série, o filtro de meses, o de anos, o modo compacto e cada categoria da SSP/SC."""
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=300).run()
-    for serie in app.selectbox(key="serie").options:  # as 12 séries (inclui PF e PRF, com avisos próprios)
-        app.selectbox(key="serie").select(serie).run()
-        _conferir_linguagem(_texto_de_um_estado(app), serie)
-    app.selectbox(key="serie").select("Homicídio doloso — Estadual").run()
+    catalogo = dp.carregar_catalogo_sinesp()
+    for linha in catalogo.itertuples():  # as 12 séries (inclui PF e PRF, com avisos próprios)
+        escolher_serie(app, linha.evento, linha.abrangencia)
+        _conferir_linguagem(_texto_de_um_estado(app), f"{linha.evento} / {linha.abrangencia}")
+    escolher_serie(app, "Homicídio doloso")
     for meses in ((4, 6), (10, 12)):  # meses ainda não publicados em 2026 geram textos próprios
         app.select_slider(key="periodo_meses").set_value(meses).run()
         _conferir_linguagem(_texto_de_um_estado(app), f"meses {meses}")
@@ -264,9 +267,9 @@ def test_ressalvas_preservadas_em_cada_estado_dos_filtros():
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=300).run()
     avisos = lambda a: " ".join([w.value for w in a.warning] + [i.value for i in a.info])  # noqa: E731
     assert "2026 contém apenas janeiro a setembro" in avisos(app)  # ano parcial
-    app.selectbox(key="serie").select("Mandado de prisão cumprido — Polícia Federal").run()
+    escolher_serie(app, "Mandado de prisão cumprido", "Polícia Federal")
     assert "antes disso não há série (e isso não significa zero)" in avisos(app)  # ausência de série ≠ zero
-    app.selectbox(key="serie").select("Mortes no trânsito — Polícia Rodoviária Federal").run()
+    escolher_serie(app, "Mortes no trânsito", "Polícia Rodoviária Federal")
     assert "2026 contém apenas janeiro a agosto" in avisos(app) and "sem preencher os meses que faltam" in avisos(app)
     cartao = [c for c in cartoes(app) if c.titulo == "Meses com valor publicado"][0]
     assert "Meses sem informação: 0 (nunca preenchidos)" in cartao.base and "Zeros informados:" in cartao.base  # zero ≠ ausência
@@ -315,11 +318,13 @@ def test_evolucao_anual_combina_barras_claras_e_linha_azul_escura_com_rotulos_un
     assert [t.get_text() for t in rotulos] == [str(v) for v in esperado]  # rótulos não duplicados nas barras
     assert all(t.xy[1] == v for t, v in zip(rotulos, esperado))  # ancorados nos pontos (e deslocados para cima, sem tocar nas barras)
     assert [t.get_text() for t in eixo.get_xticklabels()] == ["2020", "2021", "2022", "2023", "2024", "2025"]  # só anos completos
-    titulo, subtitulo = figura.get_suptitle(), next(t.get_text() for t in figura.texts if "classificação institucional" in t.get_text())
+    titulo, subtitulo = figura.get_suptitle(), next(t.get_text() for t in figura.texts if t.get_text().startswith("Joinville/SC"))
     for trecho in ("Homicídio doloso", "Joinville/SC"):
         assert trecho in titulo
-    for trecho in ("Joinville/SC", "MJSP/Sinesp VDE", "vítimas", "classificação institucional: Estadual"):
+    for trecho in ("Joinville/SC", "MJSP/Sinesp VDE", "vítimas por ano completo (2020–2025)"):
         assert trecho in subtitulo, trecho
+    assert "Estadual" not in subtitulo and "classificação institucional" not in subtitulo  # a classificação fica na nota discreta do rodapé
+    assert any("Abrangência: Estadual" in t.get_text() for t in figura.texts)
 
 
 def test_periodos_equivalentes_seguem_o_mesmo_padrao_e_categorias_e_distribuicao_continuam_em_barras(sinesp_publico):
@@ -334,3 +339,64 @@ def test_periodos_equivalentes_seguem_o_mesmo_padrao_e_categorias_e_distribuicao
 @pytest.fixture(scope="module")
 def sinesp_publico():
     return dp.carregar_sinesp()
+
+
+# ------------------------------------------------------------------------------------------------- clareza para o público leigo
+def test_subtitulos_dos_graficos_citam_joinville_fonte_e_unidade_sem_a_classificacao_institucional(sinesp_publico):
+    anos = list(range(2020, 2027))
+    for evento, abrangencia in (("Feminicídio", "Estadual"), ("Mandado de prisão cumprido", "Polícia Federal"), ("Mortes no trânsito", "Polícia Rodoviária Federal")):
+        figuras = [graficos.figura_serie_anual_sinesp(sinesp_publico, evento, abrangencia, anos), graficos.figura_periodo_sinesp(sinesp_publico, evento, abrangencia, anos, 8),
+                   graficos.figura_mensal_sinesp(sinesp_publico, evento, abrangencia, anos), graficos.figura_media_movel_sinesp(sinesp_publico, evento, abrangencia, anos),
+                   graficos.figura_acumulado_sinesp(sinesp_publico, evento, abrangencia, anos), graficos.figura_boxplot_anual_sinesp(sinesp_publico, evento, abrangencia, anos),
+                   graficos.figura_distribuicao_sinesp(sinesp_publico, evento, abrangencia, anos), graficos.figura_outliers_iqr_sinesp(sinesp_publico, evento, abrangencia, anos),
+                   graficos.figura_mapa_calor_sinesp(sinesp_publico, evento, abrangencia, anos)]
+        for figura in [f for f in figuras if f is not None]:
+            assert figura.get_suptitle().endswith("em Joinville/SC") and evento.split()[0][:6] in figura.get_suptitle(), figura.get_suptitle()  # título cita o indicador e o município
+            subtitulo = next(t.get_text() for t in figura.texts if t.get_text().startswith("Joinville/SC"))
+            assert "MJSP/Sinesp VDE" in subtitulo and re.search(r"vítimas|mandados", subtitulo), subtitulo
+            assert not re.search(r"Estadual|Polícia|PRF|classificação institucional|abrangência", subtitulo, re.IGNORECASE), subtitulo
+            assert any("Abrangência:" in t.get_text() for t in figura.texts)  # a classificação fica na nota discreta do rodapé
+
+
+def test_seletor_mostra_so_o_nome_do_indicador_e_a_classificacao_vira_nota_discreta():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    opcoes = app.selectbox(key="indicador").options
+    assert opcoes[:3] == ["Feminicídio", "Homicídio doloso", "Lesão corporal seguida de morte"] and "Mandado de prisão cumprido" in opcoes
+    assert not [o for o in opcoes if re.search(r"—|Estadual|Federal|PRF", o)]
+    notas = " ".join(c.value for c in app.caption)
+    assert "Classificação institucional da série na fonte: **Estadual**" in notas and "não indica um total de Santa Catarina" in notas
+    escolher_serie(app, "Mandado de prisão cumprido", "Polícia Federal")
+    assert "Classificação institucional da série na fonte: **Polícia Federal**" in " ".join(c.value for c in app.caption)
+
+
+def test_qualidade_sem_faixa_de_conferencia_e_com_ausencia_em_linguagem_simples_e_autoria():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    textos = " ".join(t for t in __import__("apoio_painel").textos_visiveis(app))
+    assert "Conferência concluída" not in textos and "coincidem com o registro" not in textos  # a faixa foi removida
+    ausencia = next(c for c in cartoes(app) if c.titulo == "Ausência de informação")
+    assert ausencia.valor == "Nenhuma" and "Sem valores ausentes" in ausencia.detalhe and "911 registros mensais" in ausencia.base
+    assert not any(c.titulo == "Valores ausentes" for c in cartoes(app))  # sem o "0" solto
+    assert "**Fonte dos dados:** Ministério da Justiça e Segurança Pública (MJSP) — Sinesp VDE." in " ".join(m.value for m in app.markdown)
+    assert "**Análise e visualização:** Petras Ruben Carvalho — Analista de Dados | Business Intelligence." in " ".join(m.value for m in app.markdown)
+    assert "Análista" not in textos
+
+
+def test_total_zero_aparece_com_texto_claro_e_sem_confundir_com_ausencia():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
+    escolher_serie(app, "Feminicídio")  # janeiro–setembro de 2026: 0 vítimas informadas pela fonte
+    zero = next(c for c in cartoes(app) if c.valor == "0")
+    assert "Nenhuma vítima registrada" in zero.base and "ausência" not in zero.base.lower()
+
+
+def test_rotulos_das_barras_mensais_so_aparecem_para_valores_maiores_que_zero(sinesp_publico):
+    anos = list(range(2020, 2027))
+    figura = graficos.figura_mensal_sinesp(sinesp_publico, "Mortes no trânsito", "Polícia Rodoviária Federal", anos)
+    barras = [b for b in figura.axes[0].patches if (b.get_gid() or "").startswith("mensal_")]
+    rotulos = [t.get_text() for t in figura.axes[0].texts if t.get_text()]
+    assert [r for r in rotulos if r.isdigit()] and "0" not in rotulos  # nenhum rótulo "0"
+    assert len([r for r in rotulos if r.isdigit()]) == len([b for b in barras if b.get_height() > 0])  # um rótulo por barra com valor
+    with graficos.modo_compacto():  # no celular, com vários anos, os rótulos saem (os valores continuam na tabela)
+        compacta = graficos.figura_mensal_sinesp(sinesp_publico, "Mortes no trânsito", "Polícia Rodoviária Federal", anos)
+        um_ano = graficos.figura_mensal_sinesp(sinesp_publico, "Mortes no trânsito", "Polícia Rodoviária Federal", [2025])
+    assert not [t for t in compacta.axes[0].texts if t.get_text().isdigit()]
+    assert [t for t in um_ano.axes[0].texts if t.get_text().isdigit()]

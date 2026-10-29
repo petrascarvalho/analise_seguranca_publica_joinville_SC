@@ -72,7 +72,7 @@ def test_apresentacao_mostra_fonte_periodo_real_e_destaques_calculados():
     assert "+34 vs janeiro–setembro de 2025" in destaques[2].delta
     assert [c.direction for c in destaques] == ["DOWN", "UP", "UP"]  # a seta acompanha o sinal da diferença
     # cada card identifica indicador, abrangência, unidade, período e base de comparação em texto que não é cortado
-    for trecho in ("Estadual · vítimas · ano completo", "Estadual · vítimas · ano parcial",
+    for trecho in ("Joinville/SC · vítimas · ano completo", "Joinville/SC · vítimas · ano parcial",
                    "Comparado com o ano completo de 2024.", "Comparado com janeiro–setembro de 2025 (mesma duração)."):
         assert trecho in texto, trecho
     for ausente in ("Prefeitura", "Fato Comunicado"):
@@ -96,7 +96,7 @@ def test_filtros_dependentes_e_restauracao_preservam_modo_compacto():
     app.toggle(key="modo_compacto").set_value(True).run()
     next(b for b in app.button if b.label == "Restaurar filtros").click().run()
     _sem_erros(app)
-    assert app.selectbox(key="serie").value == "Homicídio doloso — Estadual"
+    assert app.selectbox(key="indicador").value == "Homicídio doloso"
     assert app.select_slider(key="periodo_anos").value == (2020, 2026)
     assert app.select_slider(key="periodo_meses").value == (1, 12)
     assert app.toggle(key="modo_compacto").value is True
@@ -106,11 +106,11 @@ def test_filtros_dependentes_e_restauracao_preservam_modo_compacto():
 def test_sinesp_valores_padrao_e_filtros():
     app = _pagina("sinesp")
     _sem_erros(app)
-    assert app.selectbox(key="serie").value == "Homicídio doloso — Estadual"
+    assert app.selectbox(key="indicador").value == "Homicídio doloso"
     lista = cartoes(app)
     assert [c.value for c in lista][:2] == ["29", "25"]  # último ano completo (2025) e janeiro–setembro de 2026
     assert "+4 vs janeiro–setembro de 2025" in lista[1].delta and "−7 vs 2024" in lista[0].delta
-    assert "Janeiro–setembro de 2026" in lista[1].label and "Homicídio doloso · Estadual" in lista[1].detalhe  # abrangência explícita no card
+    assert "Janeiro–setembro de 2026" in lista[1].label and "Homicídio doloso · Joinville/SC" in lista[1].detalhe  # município explícito no card
     assert any("2026 contém apenas janeiro a setembro" in i.value for i in app.info)
     assert len(app.tabs) == 5
 
@@ -119,8 +119,9 @@ def test_sinesp_valores_padrao_e_filtros():
     assert not any("2026 contém apenas" in i.value for i in app.info)
     assert [c.value for c in cartoes(app)][:2] == ["29", "21"]  # janeiro–setembro passa a ser 2025
 
-    opcoes = app.selectbox(key="serie").options  # todas as abrangências continuam disponíveis, dentro do nome do indicador
-    assert "Mandado de prisão cumprido — Polícia Federal" in opcoes and "Mandado de prisão cumprido — Estadual" in opcoes
+    assert "Mandado de prisão cumprido" in app.selectbox(key="indicador").options and "abrangencia" not in [s.key for s in app.selectbox]  # indicador com uma só classificação: sem segundo campo
+    app.selectbox(key="indicador").select("Mandado de prisão cumprido").run()
+    assert app.selectbox(key="abrangencia").options == ["Estadual", "Polícia Federal"]  # só aqui aparece a classificação, porque são séries diferentes
     escolher_serie(app, "Mandado de prisão cumprido", "Polícia Federal")
     _sem_erros(app)
     assert any("a partir de janeiro/2025" in w.value for w in app.warning)  # ausência de cobertura explícita, não zero
@@ -151,7 +152,7 @@ def _em_cada_aba(app):
 def test_sinesp_todos_os_indicadores_e_abrangencias_executam():
     catalogo = dp.carregar_catalogo_sinesp()
     app = _pagina("sinesp")
-    assert len(app.selectbox(key="serie").options) == len(catalogo) == 12  # nenhuma série (nem PF/PRF) some ao remover o filtro de abrangência
+    assert len(app.selectbox(key="indicador").options) == catalogo["evento"].nunique() == 11 and len(catalogo) == 12  # nenhuma série (nem PF/PRF) some
     for linha in catalogo.itertuples():
         escolher_serie(app, linha.evento, linha.abrangencia)
         _sem_erros(app)
@@ -218,7 +219,7 @@ def test_qualidade_mostra_integridade_cobertura_fonte_e_limitacoes():
     assert set(arquivos["Arquivo"]) == {dp.ARQ_SINESP, dp.ARQ_SINESP_CATALOGO}
     cobertura = app.dataframe[1].value  # catálogo com cobertura por indicador
     assert len(cobertura) == 12 and cobertura["Última competência"].isin(["set/2026", "ago/2026"]).all()
-    assert cobertura.loc[cobertura["Última competência"].eq("ago/2026"), "Abrangência"].tolist() == ["Polícia Rodoviária Federal"]
+    assert cobertura.loc[cobertura["Última competência"].eq("ago/2026"), "Classificação institucional"].tolist() == ["Polícia Rodoviária Federal"]
     assert "Do dado oficial ao painel" in [s.value for s in app.subheader] and "Procedimento de atualização dos dados" not in [s.value for s in app.subheader]
     assert "não busca informações sozinho" in corpo
     assert "Prefeitura" not in corpo
@@ -375,11 +376,11 @@ def test_painel_funciona_apos_nova_competencia_aprovada_sem_mes_fixo_no_codigo(t
             app = AppTest.from_file(f"dashboard/pages/{{pagina}}.py", default_timeout=120).run()
             assert not app.exception and not app.error, (pagina, [e.value for e in app.exception], [e.value for e in app.error])
         sinesp = AppTest.from_file("dashboard/pages/sinesp.py", default_timeout=120).run()
-        sinesp.selectbox(key="serie").select("Suicídio — Estadual").run()
+        sinesp.selectbox(key="indicador").select("Suicídio").run()
         assert any("2026 contém apenas janeiro a outubro" in i.value for i in sinesp.info), [i.value for i in sinesp.info]
         assert "Janeiro–outubro de 2026" in cartoes(sinesp)[1].label, cartoes(sinesp)[1].label
         assert "vs janeiro–outubro de 2025" in cartoes(sinesp)[1].delta
-        sinesp.selectbox(key="serie").select("Mortes no trânsito — Polícia Rodoviária Federal").run()  # série PRF: ainda até setembro
+        sinesp.selectbox(key="indicador").select("Mortes no trânsito").run()  # série PRF: ainda até setembro
         assert any("2026 contém apenas janeiro a setembro" in i.value for i in sinesp.info), [i.value for i in sinesp.info]
         assert "Janeiro–setembro de 2026" in cartoes(sinesp)[1].label, cartoes(sinesp)[1].label
         home = AppTest.from_file("dashboard/pages/home.py", default_timeout=120).run()
@@ -407,10 +408,10 @@ def test_filtros_na_ordem_indicador_depois_anos_e_meses_sem_abrangencia_redundan
     app = _pagina("sinesp")
     assert [s.label for s in app.selectbox] == ["Indicador"]
     assert [s.label for s in app.select_slider][:2] == ["Período (anos)", "Meses"]
-    assert app.selectbox(key="serie").value == "Homicídio doloso — Estadual"
-    opcoes = app.selectbox(key="serie").options
-    assert all(" — " in o for o in opcoes)  # toda opção traz a sua abrangência no nome
-    assert {o.split(" — ")[1] for o in opcoes} == {"Estadual", "Polícia Federal", "Polícia Rodoviária Federal"}
+    assert app.selectbox(key="indicador").value == "Homicídio doloso"
+    opcoes = app.selectbox(key="indicador").options
+    assert not [o for o in opcoes if "—" in o or "Estadual" in o or "Federal" in o or "PRF" in o]  # o seletor mostra só o nome principal do indicador
+    assert "Feminicídio" in opcoes and "Lesão corporal seguida de morte" in opcoes and "Mandado de prisão cumprido" in opcoes
 
 
 # ------------------------------------------------------------------ seção SSP/SC
@@ -445,5 +446,5 @@ def test_pagina_unica_ssp_sc_nao_muda_os_numeros_do_sinesp():
     if dados_ssp.caminho_disponivel() is not None:
         app.selectbox(key="vd_categoria").select("Injúria").run()
         _sem_erros(app)
-        assert app.selectbox(key="serie").value == "Homicídio doloso — Estadual"  # o filtro da SSP/SC não mexe no do Sinesp
+        assert app.selectbox(key="indicador").value == "Homicídio doloso"  # o filtro da SSP/SC não mexe no do Sinesp
         assert [c.value for c in cartoes(app)][4:10] == antes[4:10]  # destaques e cards do Sinesp inalterados
