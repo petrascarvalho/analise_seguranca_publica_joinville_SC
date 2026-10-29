@@ -14,7 +14,7 @@ if str(_RAIZ) not in sys.path:
 import streamlit as st  # noqa: E402
 
 from dashboard import calculos, ui  # noqa: E402
-from dashboard.formatacao import fmt_competencia, fmt_dif, fmt_int  # noqa: E402
+from dashboard.formatacao import fmt_competencia, fmt_dif, fmt_int, fmt_mes_extenso  # noqa: E402
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 manifesto = ui.carregar_manifesto()
@@ -29,11 +29,11 @@ ui.secao("Apresentação", "apresentacao",
 
 # Quatro números que resumem a base (cada card é um dicionário; ui.cartoes_html desenha a linha de cards).
 ui.cartoes_html([
-    {"titulo": "Período", "valor": "2020–2026", "detalhe": "Sinesp/MJSP · Joinville/SC", "base": f"{periodo}. Cada indicador vai até o último mês publicado."},
+    {"titulo": "Período", "valor": "2020–2026", "detalhe": "Sinesp/MJSP · Joinville/SC", "base": f"{periodo}. Cada indicador vai até o último mês disponível nesta base."},
     {"titulo": "Registros mensais", "valor": fmt_int(len(sinesp)), "detalhe": "todos os indicadores, mês a mês", "base": "Contagens publicadas pela fonte."},
     {"titulo": "Séries", "valor": str(len(catalogo)), "detalhe": "Estadual, Polícia Federal e PRF", "base": "Séries de abrangências diferentes nunca são somadas."},
-    {"titulo": "Último mês publicado", "valor": fmt_competencia(cobertura.get("ultima_competencia", ""), curto=True), "detalhe": "Sinesp/MJSP",
-     "base": f"{parcial} é parcial: só se compara com o mesmo período dos anos anteriores." if parcial else ""},
+    {"titulo": "Último mês disponível nesta base", "valor": fmt_competencia(cobertura.get("ultima_competencia", ""), curto=True), "detalhe": "Sinesp/MJSP",
+     "base": f"{fmt_mes_extenso(cobertura.get('ultima_competencia', ''))}. " + (f"O ano de {parcial} é parcial: só se compara com o mesmo período dos anos anteriores." if parcial else "")},
 ])
 
 
@@ -73,7 +73,7 @@ for achado in calculos.achados_principais(sinesp)[:3]:
 atrasadas = catalogo.loc[catalogo["fim"] != catalogo["fim"].max(), ["evento", "abrangencia", "fim"]]
 if len(atrasadas):
     st.info("Algumas séries terminam antes das demais: " + "; ".join(f"{r.evento} ({r.abrangencia}) até {fmt_competencia(r.fim)}" for r in atrasadas.itertuples())
-            + ". O painel mostra essas séries só até o último mês publicado, sem preencher os meses que faltam.")
+            + ". O painel mostra essas séries só até o último mês disponível, sem preencher os meses que faltam.")
 
 with st.expander("Pergunta, unidades e limites da leitura"):
     st.markdown(
@@ -82,7 +82,7 @@ with st.expander("Pergunta, unidades e limites da leitura"):
         "- *Vítimas* e *mandados cumpridos* são unidades diferentes e **nunca são somadas**; não existe um total geral entre indicadores ou abrangências.\n"
         "- São registros administrativos agregados: não medem toda a criminalidade, não estimam casos não registrados e não permitem apontar causas.\n"
         "- Não há taxas por habitante nem dados por bairro, rua ou horário.\n"
-        "- Zero informado é um número publicado; ausência de informação não é zero. Contagens pequenas geram percentuais instáveis."
+        "- Zero informado é um número publicado; falta de informação não é zero. Contagens pequenas geram percentuais instáveis."
     )
     for achado in calculos.achados_principais(sinesp)[3:]:
         st.markdown(f"- **{achado['titulo']}:** {achado['texto']}")

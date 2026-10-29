@@ -27,7 +27,7 @@ def _aba(app, nome):
 
 def _em_cada_aba(app):
     """Percorre as quatro abas de análise e devolve, a cada uma, o app já executado com ela selecionada."""
-    for nome in ("Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers"):
+    for nome in ("Evolução", "Comparações", "Meses e tendência", "Estatísticas e meses incomuns"):
         yield nome, _aba(app, nome)
 
 

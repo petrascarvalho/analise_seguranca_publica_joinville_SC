@@ -317,7 +317,7 @@ def figura_mensal_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str, an
     unidade = serie["unidade"].iloc[0]
     maximo = int(serie["valor"].max()) if serie["valor"].notna().any() else 1
     figura, eixo = _preparar_sinesp(_titulo(evento), f"Evolução mensal por barras — abrangência {abrangencia}",
-                                    "Barras agrupadas por mês, uma cor por ano; o último ano pode estar parcial. Zero publicado é uma observação (barra sem altura; no celular, um traço na base) e mês sem valor publicado fica sem barra (no celular, ×). Ano parcial: 2026 vai até o último mês publicado. Nenhum é preenchido.",
+                                    "Barras agrupadas por mês, uma cor por ano; o último ano pode estar parcial. Zero publicado é uma observação (barra sem altura; no celular, um traço na base) e mês sem valor publicado fica sem barra (no celular, ×). Ano parcial: 2026 vai até o último mês disponível; nenhum mês é preenchido.",
                                     max(maximo * 1.25, 1), f"{FONTE_SINESP} | Abrangência: {abrangencia} | Unidade: {unidade}",
                                     unidade.split(" (")[0].capitalize(), xlabel="Mês")
     anos_barras = sorted(set(serie["ano"].astype(int)))
@@ -391,7 +391,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
     eixo.grid(axis="x", color="#D9E5F2", linewidth=0.8)
     eixo.set_axisbelow(True)
     eixo.spines[["top", "right"]].set_visible(False)
-    nota = f"{FONTE_SINESP} | Unidade: {unidade} | Ordenação dentro de uma única unidade; nenhum total entre indicadores." + (" Barra laranja: série selecionada." if destaque else "")
+    nota = f"{FONTE_SINESP} | Unidade: {unidade} | Ordenação dentro de uma única unidade; nenhum total entre indicadores." + (" Barra mais escura: indicador escolhido." if destaque else "")
     if compacto:
         eixo.set_xlabel(unidade.split(" (")[0].capitalize() + f" em {ano}", fontsize=11)
         eixo.tick_params(axis="x", labelsize=10)
@@ -400,7 +400,7 @@ def figura_ranking_sinesp(ranking: pd.DataFrame, ano: int, destaque: tuple[str, 
         eixo.set_xlabel(unidade.split(" (")[0].capitalize() + f" em {ano} (soma dos 12 meses)", fontsize=11)
         figura.suptitle(f"Joinville/SC — séries ordenadas pelo total de {ano} (ano completo)", x=0.01, y=0.97, ha="left", fontsize=13, fontweight="bold")
         figura.text(0.01, 0.045, nota, fontsize=8.5, color=COR_CINZA_TEXTO)
-    figura.sinesp_notas = {"interpretacao": "Soma dos 12 meses do ano completo. A barra laranja é a série selecionada." if destaque else "Soma dos 12 meses do ano completo.", "rodape": nota}
+    figura.sinesp_notas = {"interpretacao": "Soma dos 12 meses do ano completo. A barra mais escura é o indicador escolhido." if destaque else "Soma dos 12 meses do ano completo.", "rodape": nota}
     return figura
 
 
@@ -574,7 +574,7 @@ def figura_acumulado_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: str,
     maximo = float(np.nanmax(_valores_float(tabela["acumulado"])))
     limite_y = max(maximo * 1.25, 1)
     figura, eixo = _preparar_sinesp(_titulo(evento), f"Acumulado no ano: soma de janeiro até cada mês — abrangência {abrangencia}",
-                                    "Cada linha acumula os meses de um ano; o valor da última competência publicada de cada ano está nos rótulos (ou na legenda) e na tabela de apoio. "
+                                    "Cada linha acumula os meses de um ano; o valor do último mês disponível de cada ano está nos rótulos (ou na legenda) e na tabela de apoio. "
                                     "Ano parcial termina antes de dezembro: compare os anos no mesmo mês, nunca o total de um ano parcial com o de um ano completo.",
                                     limite_y, _rodape(abrangencia, unidade), unidade.split(" (")[0].capitalize(), xlabel="Mês")
     finais = []
@@ -673,10 +673,10 @@ def figura_distribuicao_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     zeros = int(serie["valor"].eq(0).sum())
     total = int(serie["valor"].count())
     largura = int(tabela.attrs.get("largura", 1))
-    regra = ("Cada faixa é um valor inteiro" if largura == 1 else f"Faixas de {largura} valores cada ({calculos.numero_de_faixas(total)} faixas)")
-    figura, eixo = _preparar_sinesp(_titulo(evento), f"Distribuição: quantos meses tiveram cada faixa de valor — abrangência {abrangencia}",
-                                    f"{regra}; barras categóricas com a contagem de meses (n = {total}). Barra hachurada: zero publicado ({zeros} {'mês' if zeros == 1 else 'meses'}, {zeros / total * 100:.0f}%), "
-                                    "faixa própria — zero é observação, não ausência. O maior valor observado está na última faixa; faixas vazias são mantidas.",
+    regra = ("Cada valor inteiro forma uma faixa" if largura == 1 else f"Valores positivos agrupados em intervalos de {largura}; a última faixa pode ser menor")
+    figura, eixo = _preparar_sinesp(_titulo(evento), f"Quantos meses tiveram valores em cada faixa — abrangência {abrangencia}",
+                                    f"{regra}; barras categóricas com a contagem de meses (n = {total}). Barra hachurada: zero informado ({zeros} {'mês' if zeros == 1 else 'meses'}, {zeros / total * 100:.0f}%), "
+                                    "faixa própria. O maior valor observado está na última faixa; faixas vazias são mantidas.",
                                     max(float(tabela["n_meses"].max()) * 1.25, 1), _rodape(abrangencia, unidade), "Número de meses",
                                     xlabel=f"Faixa do valor mensal ({unidade.split(' (')[0]})")
     barras = eixo.bar(range(len(tabela)), [int(n) for n in tabela["n_meses"]], color=COR_AZUL, width=0.8)
@@ -704,8 +704,8 @@ def figura_sazonalidade_sinesp(sinesp: pd.DataFrame, evento: str, abrangencia: s
     if len(usados) < 2:
         return None
     unidade = serie["unidade"].iloc[0]
-    aviso = ("Menos de 3 anos completos: perfil apenas ilustrativo." if len(usados) < calculos.ANOS_MINIMOS_SAZONALIDADE
-             else "Com poucos anos completos, o perfil descreve esses anos e não demonstra sazonalidade.")
+    aviso = ("Menos de 3 anos completos: quadro apenas ilustrativo." if len(usados) < calculos.ANOS_MINIMOS_SAZONALIDADE
+             else "Com poucos anos completos, o quadro descreve esses anos e não prova um padrão sazonal.")
     anos_texto = _anos_em_texto(usados)
     figura, eixo = _preparar_sinesp(_titulo(evento), f"Mediana de cada mês nos anos completos {anos_texto} (n = {len(usados)}) — {abrangencia}",
                                     f"Barras: mediana do mês nos anos completos usados ({anos_texto}); traço fino: mínimo a máximo desses anos. Anos parciais (como 2026) ficam de fora. {aviso}",

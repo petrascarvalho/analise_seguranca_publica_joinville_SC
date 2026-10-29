@@ -11,7 +11,7 @@ import streamlit as st
 
 from dashboard import dados_publicos as dp
 from dashboard import graficos
-from dashboard.formatacao import NOMES_MESES, fmt_competencia
+from dashboard.formatacao import NOMES_MESES, fmt_competencia, fmt_mes_extenso
 
 
 # Cores da identidade visual (PROPOSTA inspirada na bandeira de Joinville; não são códigos oficiais do município).
@@ -217,9 +217,11 @@ def data_da_atualizacao(manifesto: dict) -> str:
     return f"{versao[6:8]}/{versao[4:6]}/{versao[:4]}" if len(versao) >= 8 and versao[:8].isdigit() else "não informada"
 
 
-# Frase usada em mais de um lugar: explica o que significa a abrangência "Estadual" sem sugerir que o número é do estado inteiro.
-NOTA_ABRANGENCIA = ("Todos os números do Sinesp são de **Joinville/SC**. “Estadual”, “Polícia Federal” e “Polícia Rodoviária Federal” indicam a "
-                    "abrangência institucional do registro (quem informou o dado); **“Estadual” não é o total do estado de Santa Catarina**.")
+# Explicação da abrangência "Estadual", sem sugerir que o número é do estado inteiro. A versão completa aparece só na Apresentação e na
+# metodologia; nos demais lugares usa-se a versão curta.
+NOTA_ABRANGENCIA = ("Os indicadores do Sinesp foram selecionados para o município de **Joinville/SC**. A abrangência “Estadual” (assim como “Polícia Federal” "
+                    "e “Polícia Rodoviária Federal”) identifica a classificação institucional da série na fonte; **não é um total do estado de Santa Catarina**.")
+NOTA_ABRANGENCIA_CURTA = "“Estadual” é a classificação institucional da série, **não um total de Santa Catarina**."
 
 
 def mostrar_versao_dos_dados() -> None:
@@ -230,8 +232,8 @@ def mostrar_versao_dos_dados() -> None:
         st.caption("Informações sobre a atualização dos dados indisponíveis no momento.")
         return
     ultima = manifesto.get("cobertura", {}).get("sinesp", {}).get("ultima_competencia", "")
-    st.caption(f"Dados do Sinesp/MJSP para Joinville/SC · última atualização em {data_da_atualizacao(manifesto)} · "
-               f"período: {periodo_sinesp_texto(manifesto)} (2026 é parcial; a última competência disponível é {fmt_competencia(ultima)}).")
+    st.caption(f"Dados do Sinesp/MJSP para Joinville/SC · base atualizada em {data_da_atualizacao(manifesto)} · "
+               f"período: {periodo_sinesp_texto(manifesto)} (2026 é parcial; o último mês disponível nesta base é {fmt_mes_extenso(ultima)}).")
     fonte = next((f for f in manifesto.get("fontes", []) if f.get("id") == "sinesp_vde"), None)
     with st.expander("Fonte, atualização dos dados e condições de uso"):
         st.markdown("**Fonte:** Ministério da Justiça e Segurança Pública (MJSP) — Sistema Nacional de Estatísticas de Segurança Pública (Sinesp). "
@@ -243,8 +245,8 @@ def mostrar_versao_dos_dados() -> None:
                 ano, mes, dia = consulta[:10].split("-")
                 st.markdown(f"**Fonte consultada pela última vez em:** {dia}/{mes}/{ano}.")
         st.markdown(
-            "**Atualização dos dados:** feita manualmente, depois de conferência. Este painel não busca informações sozinho: você vê a versão "
-            f"de {data_da_atualizacao(manifesto)}. Novas publicações oficiais só entram depois de conferidas."
+            "**Atualização dos dados:** feita manualmente, depois de conferência. Este painel não busca informações sozinho: você vê a base "
+            f"de {data_da_atualizacao(manifesto)}, que pode não incluir publicações mais recentes da fonte. Novas publicações só entram depois de conferidas."
         )
         st.markdown(
             "**Condições de uso:** o painel usa apenas contagens agregadas de Joinville/SC; os arquivos originais completos e dados pessoais não são "

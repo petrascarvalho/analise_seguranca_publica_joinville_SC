@@ -46,6 +46,15 @@ NOMES_MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julh
 ABREV_MESES = ("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
 
 
+def fmt_mes_extenso(competencia: str) -> str:
+    """Competência no formato do arquivo ('2026-09') em frase de texto corrido: 'setembro de 2026'."""
+    try:
+        ano, mes = str(competencia).split("-")[:2]
+        return f"{NOMES_MESES[int(mes) - 1]} de {ano}"
+    except (ValueError, IndexError):
+        return str(competencia)
+
+
 def fmt_competencia(competencia: str, *, curto: bool = False) -> str:
     """Competência no formato do arquivo ('2026-09') em texto para o público: 'setembro/2026' (ou 'set/2026' se curto=True)."""
     try:

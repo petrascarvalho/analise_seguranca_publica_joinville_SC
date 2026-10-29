@@ -172,7 +172,7 @@ def _todos_os_textos_da_pagina(app) -> list:
     from apoio_painel import textos_visiveis
 
     textos = textos_visiveis(app)
-    for aba in ("Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"):
+    for aba in ("Comparações", "Meses e tendência", "Estatísticas e meses incomuns", "Indicadores e como interpretar"):
         app.session_state["aba_analise"] = aba
         app.run()
         textos += textos_visiveis(app)
@@ -199,9 +199,13 @@ def test_texto_visivel_nao_expoe_codigo_caminhos_comandos_nem_jargao_de_implemen
 def test_abrangencia_estadual_e_explicada_sem_sugerir_total_de_santa_catarina():
     app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=180).run()
     corpo = " ".join(m.value for m in app.markdown) + " ".join(c.value for c in app.caption) + " ".join(i.value for i in app.info)
-    assert corpo.count("“Estadual” não é o total do estado de Santa Catarina") >= 3  # apresentação, seção Sinesp e qualidade
-    assert "Todos os números do Sinesp são de **Joinville/SC**" in corpo
-    assert "o total do estado" not in corpo.replace("não é o total do estado de Santa Catarina", "")
+    completa = "identifica a classificação institucional da série na fonte; **não é um total do estado de Santa Catarina**"
+    curta = "“Estadual” é a classificação institucional da série, **não um total de Santa Catarina**"
+    assert corpo.count(completa) == 2  # explicação completa só na Apresentação e na metodologia
+    assert corpo.count(curta) == 2  # aviso curto na seção Sinesp e em "Sobre os dados apresentados"
+    assert "Os indicadores do Sinesp foram selecionados para o município de **Joinville/SC**" in corpo
+    texto_sem_notas = corpo.replace(completa, "").replace(curta, "")
+    assert "total do estado" not in texto_sem_notas and "total de Santa Catarina" not in texto_sem_notas
 
 
 def test_transparencia_preservada_no_texto_publico():
@@ -210,3 +214,59 @@ def test_transparencia_preservada_no_texto_publico():
     for trecho in ("2026 é parcial", "Zero informado e ausência são diferentes", "Fato Comunicado", "em validação", "não é uma aprovação ou certificação oficial do governo",
                    "nunca somadas", "Sinesp/MJSP", "não equivale a vítimas"):
         assert trecho in corpo or trecho.replace("nunca somadas", "nunca são somadas") in corpo, trecho
+
+
+def _texto_de_um_estado(app, abas=("Evolução", "Meses e tendência", "Estatísticas e meses incomuns")) -> list:
+    from apoio_painel import textos_visiveis
+
+    textos = []
+    for aba in abas:
+        app.session_state["aba_analise"] = aba
+        app.run()
+        assert not app.exception and not app.error, aba
+        textos += textos_visiveis(app)
+    return [t for t in textos if not t.startswith("Identificador da versão dos dados") and "SHA-256" not in t and not re.fullmatch(r"[0-9a-f]{64}", t)]
+
+
+def _conferir_linguagem(textos, cenario):
+    proibidos = re.compile(r"\bNone\b|\bnan\b|<NA>|\bNaN\b|Último mês publicado|última competência disponível|Pontos fora|outliers?\b|sazonalidade, exploratório", re.IGNORECASE)
+    achados = sorted({t[:110] for t in textos if TERMOS_TECNICOS.search(t) or COMPETENCIA_ISO.search(t) or proibidos.search(t)})
+    assert not achados, (cenario, achados)
+
+
+def test_textos_condicionais_de_todos_os_filtros_seguem_a_linguagem_publica():
+    """Não basta o estado inicial: percorre cada série, o filtro de meses, o de anos, o modo compacto e cada categoria da SSP/SC."""
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=300).run()
+    for serie in app.selectbox(key="serie").options:  # as 12 séries (inclui PF e PRF, com avisos próprios)
+        app.selectbox(key="serie").select(serie).run()
+        _conferir_linguagem(_texto_de_um_estado(app), serie)
+    app.selectbox(key="serie").select("Homicídio doloso — Estadual").run()
+    for meses in ((4, 6), (10, 12)):  # meses ainda não publicados em 2026 geram textos próprios
+        app.select_slider(key="periodo_meses").set_value(meses).run()
+        _conferir_linguagem(_texto_de_um_estado(app), f"meses {meses}")
+    app.select_slider(key="periodo_meses").set_value((1, 12)).run()
+    app.select_slider(key="periodo_anos").set_value((2022, 2024)).run()
+    _conferir_linguagem(_texto_de_um_estado(app), "anos 2022-2024")
+    app.toggle(key="modo_compacto").set_value(True).run()
+    _conferir_linguagem(_texto_de_um_estado(app), "compacto")
+    app.toggle(key="modo_compacto").set_value(False).run()
+    from apoio_painel import textos_visiveis
+
+    for categoria in app.selectbox(key="vd_categoria").options:
+        app.selectbox(key="vd_categoria").select(categoria).run()
+        assert not app.exception and not app.error, categoria
+        textos = [x for x in textos_visiveis(app) if not x.startswith("Identificador da versão dos dados") and "SHA-256" not in x and not re.fullmatch(r"[0-9a-f]{64}", x)]
+        _conferir_linguagem(textos, f"SSP/SC {categoria}")
+        assert any("Fato Comunicado" in t and "não tem definição oficial confirmada" in t for t in textos), categoria  # a ressalva nunca some
+
+
+def test_ressalvas_preservadas_em_cada_estado_dos_filtros():
+    app = AppTest.from_file(str(project_path("scripts", "painel_streamlit.py")), default_timeout=300).run()
+    avisos = lambda a: " ".join([w.value for w in a.warning] + [i.value for i in a.info])  # noqa: E731
+    assert "2026 contém apenas janeiro a setembro" in avisos(app)  # ano parcial
+    app.selectbox(key="serie").select("Mandado de prisão cumprido — Polícia Federal").run()
+    assert "antes disso não há série (e isso não significa zero)" in avisos(app)  # ausência de série ≠ zero
+    app.selectbox(key="serie").select("Mortes no trânsito — Polícia Rodoviária Federal").run()
+    assert "2026 contém apenas janeiro a agosto" in avisos(app) and "sem preencher os meses que faltam" in avisos(app)
+    cartao = [c for c in cartoes(app) if c.titulo == "Meses com valor publicado"][0]
+    assert "Meses sem informação: 0 (nunca preenchidos)" in cartao.base and "Zeros informados:" in cartao.base  # zero ≠ ausência

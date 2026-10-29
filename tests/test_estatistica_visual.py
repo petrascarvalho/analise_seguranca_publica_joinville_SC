@@ -389,7 +389,7 @@ def test_figura_do_histograma_desenha_as_faixas_da_tabela_e_cita_a_regra(sinesp)
     assert [int(b.get_height()) for b in barras] == tabela["n_meses"].tolist() and sum(int(b.get_height()) for b in barras) == 81
     assert [t.get_text() for t in figura.axes[0].get_xticklabels()] == tabela["rotulo"].tolist()
     texto = " ".join(t.get_text() for t in figura.texts)
-    assert "8 faixas" in texto and "n = 81" in texto and "faixa própria" in texto and "faixas vazias são mantidas" in texto
+    assert "intervalos de 3" in texto and "a última faixa pode ser menor" in texto and "n = 81" in texto and "faixa própria" in texto and "faixas vazias são mantidas" in texto
 
 
 def test_acumulado_rotulos_finais_sem_colisao_e_com_ano_parcial_identificado(sinesp):

@@ -21,9 +21,9 @@ from dashboard import dados_ssp, graficos, ui  # noqa: E402
 from dashboard.formatacao import ABREV_MESES, fmt_dif, fmt_int  # noqa: E402
 
 ui.secao("VIOLÊNCIA DOMÉSTICA — SSP/SC", "violencia-domestica",
-         "Exploração separada do Sinesp: Secretaria de Estado da Segurança Pública de SC, município de Joinville, janeiro/2023 a dezembro/2024.")
-st.warning("**Fonte em validação.** A unidade “Fato Comunicado” não tem definição operacional confirmada nos documentos disponíveis: não a interprete como "
-           "vítimas, pessoas ou ocorrências únicas, não some categorias e não compare estes números com os indicadores do Sinesp.")
+         "Exploração separada do Sinesp: dados da Secretaria de Estado da Segurança Pública de SC (SSP/SC) para o município de Joinville, de janeiro/2023 a dezembro/2024.")
+st.warning("**Fonte em validação.** “Fato Comunicado” não tem definição oficial confirmada: não equivale a vítimas, pessoas ou ocorrências únicas. "
+           "Não some categorias nem compare estes números com os do Sinesp.")
 
 try:
     vd = dados_ssp.carregar_violencia_domestica()
@@ -51,7 +51,7 @@ else:
         ui.cartoes_html([
             {"titulo": "Período", "valor": "2023–2024", "detalhe": "SSP/SC · Joinville", "base": "Janeiro/2023 a dezembro/2024 (24 meses)."},
             {"titulo": "Registros", "valor": fmt_int(len(vd)), "detalhe": f"{len(categorias)} categorias × 24 meses", "base": "Sem registros repetidos e sem valores ausentes."},
-            {"titulo": "Zeros publicados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": "meses com 0 fatos comunicados", "base": "Zero informado é um número publicado, não ausência."},
+            {"titulo": "Zeros informados", "valor": fmt_int(int(vd["valor"].eq(0).sum())), "detalhe": "meses com 0 fatos comunicados", "base": "Zero informado é um número publicado, não ausência."},
             {"titulo": "Unidade", "valor": "Em validação", "detalhe": "Fato Comunicado", "base": "Sem definição oficial nos documentos da fonte."},
         ])
     else:
@@ -61,7 +61,7 @@ else:
             {"titulo": f"{categoria} — 2024", "valor": fmt_int(a24), "detalhe": "fatos comunicados · 12 meses", "variacao": f"{fmt_dif(a24 - a23)} vs 2023",
              "diferenca": a24 - a23, "base": "Comparado com 2023 (ano completo)."},
             {"titulo": "Meses com zero", "valor": fmt_int(int(vd.loc[vd["categoria"].eq(categoria), "valor"].eq(0).sum())), "detalhe": "de 24 meses",
-             "base": "Zero informado é um número publicado."},
+             "base": "Meses em que a fonte informou zero."},
         ])
 
     # ------------------------------------------------------------------------------------------ gráfico e tabela
@@ -77,7 +77,7 @@ else:
         legenda = f"{categoria}: valor publicado em cada mês."
     ui.mostrar_figura(figura, legenda, tabela)
     if categoria is None:
-        st.caption("Leitura exploratória: descreve registros publicados; não demonstra variação do número de vítimas nem explica causas.")
+        st.caption("Leitura simples: descreve os registros publicados; não mostra variação no número de vítimas nem explica causas.")
 
 # ------------------------------------------------------------------------------------------ fonte e limitações
 with st.expander("Fonte, procedência e limitações da SSP/SC"):

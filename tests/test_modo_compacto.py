@@ -200,7 +200,7 @@ def _aba(app, nome):
 
 def _em_cada_aba(app):
     """Percorre as quatro abas de análise e devolve, a cada uma, o app já executado com ela selecionada."""
-    for nome in ("Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers"):
+    for nome in ("Evolução", "Comparações", "Meses e tendência", "Estatísticas e meses incomuns"):
         yield nome, _aba(app, nome)
 
 
@@ -221,7 +221,7 @@ def test_alternancia_do_modo_compacto_preserva_filtros_e_abas():
     assert app.toggle[0].value is True  # o modo permanece durante as interações
     app.toggle[0].set_value(False).run()
     assert app.toggle[0].value is False and not app.exception
-    assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"]
+    assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Meses e tendência", "Estatísticas e meses incomuns", "Indicadores e como interpretar"]
 
 
 def test_modo_compacto_na_pagina_move_o_texto_explicativo_para_componentes_nativos():
@@ -302,7 +302,7 @@ def test_mensal_compacto_legenda_cronologica_e_ano_parcial_identificado(sinesp):
     assert len([b for b in prf.axes[0].patches if b.get_gid() == "mensal_2026"]) == 8  # PRF: janeiro a agosto
     textos = [t.get_text() for t in hom.axes[0].get_legend().get_texts()]
     assert textos[:7] == ["2020", "2021", "2022", "2023", "2024", "2025", "2026 (parcial)"]
-    assert "ano parcial" in hom.sinesp_notas["interpretacao"].lower() and "2026 vai até o último mês publicado" in hom.sinesp_notas["interpretacao"]
+    assert "ano parcial" in hom.sinesp_notas["interpretacao"].lower() and "2026 vai até o último mês disponível" in hom.sinesp_notas["interpretacao"]
     cores = {a: b.get_facecolor() for a in (2024, 2025) for b in prf.axes[0].patches if b.get_gid() == f"mensal_{a}"}
     assert cores[2024] != cores[2025]  # cores por ano preservadas
 

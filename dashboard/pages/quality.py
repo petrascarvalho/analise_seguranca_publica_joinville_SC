@@ -15,7 +15,7 @@ import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
 from dashboard import ui  # noqa: E402
-from dashboard.formatacao import fmt_competencia, fmt_int  # noqa: E402
+from dashboard.formatacao import fmt_competencia, fmt_int, fmt_mes_extenso  # noqa: E402
 
 sinesp, catalogo = ui.carregar_dados_consistentes()
 manifesto = ui.carregar_manifesto()
@@ -29,15 +29,15 @@ atualizacao = ui.data_da_atualizacao(manifesto)
 ui.secao("Qualidade dos dados", "qualidade", "O que foi conferido, até quando vão os dados e o que ainda exige cuidado na leitura.")
 
 if integridade["integro"].all():
-    st.info(f"Conferência concluída: os {len(integridade)} arquivos de dados usados pelo painel coincidem com o registro da versão de {atualizacao}.", icon="✅")
+    st.info(f"Conferência concluída: os {len(integridade)} arquivos de dados usados pelo painel coincidem com o registro da base de {atualizacao}.", icon="✅")
 
 # Quatro cards com o essencial; cada card é um dicionário (ver ui.cartoes_html).
 ui.cartoes_html([
     {"titulo": "Arquivos conferidos", "valor": f"{int(integridade['integro'].sum())} de {len(integridade)}", "detalhe": "dados do painel × registro da versão",
      "base": "Cada arquivo é comparado com o registro da versão."},
-    {"titulo": "Última atualização", "valor": atualizacao, "detalhe": "Sinesp/MJSP · Joinville/SC", "base": "Atualização manual, depois de conferência."},
-    {"titulo": "Dados até", "valor": fmt_competencia(ultima, curto=True), "detalhe": f"A partir de {fmt_competencia(primeira, curto=True)}",
-     "base": "A série da PRF termina em agosto/2026; os mandados da PF começam em 2025."},
+    {"titulo": "Base atualizada em", "valor": atualizacao, "detalhe": "Sinesp/MJSP · Joinville/SC", "base": "Atualização manual, depois de conferência."},
+    {"titulo": "Último mês disponível nesta base", "valor": fmt_competencia(ultima, curto=True), "detalhe": f"Dados a partir de {fmt_competencia(primeira, curto=True)}",
+     "base": f"{fmt_mes_extenso(ultima)}. A série da PRF termina em agosto de 2026; os mandados da PF começam em 2025."},
     {"titulo": "Valores ausentes", "valor": fmt_int(int(sinesp["valor"].isna().sum())), "detalhe": f"Zeros informados: {fmt_int(int(sinesp['valor'].eq(0).sum()))}",
      "base": "Ausência nunca é trocada por zero."},
 ])
@@ -45,9 +45,9 @@ ui.cartoes_html([
 st.subheader("Sobre os dados apresentados")
 st.markdown(
     f"- **Fonte dos dados:** Sinesp/MJSP (Sistema Nacional de Estatísticas de Segurança Pública, do Ministério da Justiça e Segurança Pública).\n"
-    f"- **Município analisado:** Joinville/SC. {ui.NOTA_ABRANGENCIA}\n"
-    f"- **Última atualização dos dados:** {atualizacao}.\n"
-    f"- **Período do Sinesp:** {periodo}. A série da Polícia Rodoviária Federal vai até agosto/2026.\n"
+    f"- **Município analisado:** Joinville/SC. {ui.NOTA_ABRANGENCIA_CURTA}\n"
+    f"- **Base atualizada em:** {atualizacao}. Pode não incluir publicações mais recentes da fonte.\n"
+    f"- **Período do Sinesp:** {periodo} (último mês disponível nesta base: {fmt_mes_extenso(ultima)}). A série da Polícia Rodoviária Federal vai até agosto de 2026.\n"
     f"- **Ano de 2026 parcial:** só se compara com o mesmo período dos anos anteriores, nunca com anos completos.\n"
     f"- **Zero informado e ausência são diferentes:** zero é um número publicado pela fonte; ausência é a falta de informação e nunca é preenchida.\n"
     f"- **Conferências do projeto:** os dados passaram por verificações de consistência (formato das colunas, repetições, meses faltando, unidades e "
@@ -75,6 +75,7 @@ with abas[0]:
     st.subheader("Sinesp/MJSP")
     st.markdown("As informações foram obtidas em bases oficiais do Sinesp/MJSP. Foram selecionados os registros referentes ao município de Joinville/SC "
                 "e realizadas etapas de organização, tratamento e conferência. Os arquivos originais completos não são redistribuídos por este painel.")
+    st.info(ui.NOTA_ABRANGENCIA)
     for fonte in manifesto.get("fontes", []):
         st.markdown(f"**Página oficial:** [{fonte['nome']}]({fonte['url']})")
         publicacao = fonte.get("publicacao") or {}
@@ -83,8 +84,8 @@ with abas[0]:
                        f"{publicacao['pagina_atualizada_em']}. São datas da página; não indicam, por si, mudança nos números.")
 
     st.subheader("Cobertura por indicador")
-    st.markdown("**Unidades:** *vítimas* (pessoas vítimas registradas) e *mandados cumpridos* (contagem publicada de mandados de prisão cumpridos). "
-                "As duas unidades nunca são somadas. " + ui.NOTA_ABRANGENCIA)
+    st.markdown("**Unidades:** *vítimas* (número de vítimas registradas) e *mandados cumpridos* (contagem publicada de mandados de prisão cumpridos). "
+                "As duas unidades nunca são somadas.")
     tabela = catalogo.rename(columns={
         "evento": "Indicador", "abrangencia": "Abrangência", "unidade": "Unidade", "meses_observados": "Meses", "meses_com_valor": "Com valor",
         "meses_valor_zero": "Zeros informados", "meses_sem_valor": "Sem valor"})
@@ -94,7 +95,7 @@ with abas[0]:
     st.markdown(
         f"- **Total:** {fmt_int(len(sinesp))} registros mensais em {len(catalogo)} séries; **valores ausentes:** {int(sinesp['valor'].isna().sum())} "
         f"(nunca trocados por zero); **zeros informados:** {fmt_int(int(sinesp['valor'].eq(0).sum()))}.\n"
-        "- Séries que terminam em meses diferentes (como a PRF) aparecem só até o último mês publicado, sem preenchimento; a Polícia Federal só tem registros "
+        "- Séries que terminam em meses diferentes (como a PRF) aparecem só até o último mês disponível, sem preenchimento; a Polícia Federal só tem registros "
         "a partir do início da sua série."
     )
 
@@ -127,7 +128,10 @@ with abas[1]:
         "contagens pequenas o percentual engana.\n"
         "- **Rankings** comparam indicadores só dentro da mesma unidade, sem somar indicadores diferentes.\n"
         "- **Gráficos** começam do zero, mostram a fonte, a unidade e o período, e usam o mesmo tom de azul para o mesmo ano.\n"
-        "- **Estatísticas** (média, mediana, desvio-padrão) descrevem os meses publicados; não são previsões."
+        "- **Estatísticas** (média, mediana, desvio-padrão) descrevem os meses publicados; não são previsões.\n"
+        "- **Limites de referência (IQR)** são um critério estatístico aplicado a cada série para destacar meses diferentes dos demais. Não são metas, limites legais "
+        "nem parâmetros oficiais de segurança pública, e um mês fora deles não indica, por si só, problema ou mudança real.\n"
+        "- **Mediana de cada mês do ano** compara os mesmos meses de anos completos; com poucos anos, não permite afirmar que exista um padrão sazonal."
     )
 
 # ------------------------------------------------------------------ limitações

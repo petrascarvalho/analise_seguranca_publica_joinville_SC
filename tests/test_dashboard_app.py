@@ -144,7 +144,7 @@ def _aba(app, nome):
 
 def _em_cada_aba(app):
     """Percorre as quatro abas de análise e devolve, a cada uma, o app já executado com ela selecionada."""
-    for nome in ("Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers"):
+    for nome in ("Evolução", "Comparações", "Meses e tendência", "Estatísticas e meses incomuns"):
         yield nome, _aba(app, nome)
 
 
@@ -160,28 +160,28 @@ def test_sinesp_todos_os_indicadores_e_abrangencias_executam():
 def test_sinesp_organiza_a_analise_em_quatro_grupos_com_tabela_por_grafico():
     app = _pagina("sinesp")
     _sem_erros(app)
-    assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Padrões e tendência", "Estatística e outliers", "Indicadores e interpretação"]
+    assert [t.label for t in app.tabs] == ["Evolução", "Comparações", "Meses e tendência", "Estatísticas e meses incomuns", "Indicadores e como interpretar"]
     tabelas, informativos, sazonalidade = 0, False, False
     for nome, aba in _em_cada_aba(app):  # cada aba só executa quando selecionada
         _sem_erros(aba)
         tabelas += sum(1 for e in aba.expander if e.label == "Valores usados neste gráfico (tabela)")
-        informativos |= any("Os limites de referência são úteis para esta série" in i.value for i in aba.info)  # homicídio doloso: limites informativos
-        sazonalidade |= any("Perfil por mês do ano (sazonalidade, exploratório)" in m.value for m in aba.markdown)
+        informativos |= any("o critério estatístico é útil" in i.value for i in aba.info)  # homicídio doloso: limites informativos
+        sazonalidade |= any("Mediana de cada mês do ano" in m.value for m in aba.markdown)
     assert tabelas >= 9  # mapa de calor, períodos, ranking, anual, mensal, média móvel, acumulado, boxplot, distribuição, sazonalidade, outliers
     assert informativos and sazonalidade
 
 
 def test_sinesp_outliers_nao_conclui_anomalia_quando_o_metodo_nao_e_informativo():
     app = _pagina("sinesp")
-    _aba(app, "Estatística e outliers")
+    _aba(app, "Estatísticas e meses incomuns")
     escolher_serie(app, "Roubo seguido de morte (latrocínio)")
     _sem_erros(app)
-    assert any("não ajudam a interpretar esta série" in w.value and "IQR igual a zero" in w.value for w in app.warning)
-    assert not any("Os limites de referência são úteis" in i.value for i in app.info)
+    assert any("não ajuda a interpretar esta série" in w.value and "IQR igual a zero" in w.value for w in app.warning)
+    assert not any("o critério estatístico é útil" in i.value for i in app.info)
     escolher_serie(app, "Mandado de prisão cumprido", "Polícia Federal")
     _sem_erros(app)
     assert any("maioria de zeros publicados" in w.value for w in app.warning)
-    assert any("Perfil por mês não avaliado" in i.value for i in _aba(app, "Padrões e tendência").info)  # PF: um único ano completo
+    assert any("precisa de pelo menos 2 anos completos" in i.value for i in _aba(app, "Meses e tendência").info)  # PF: um único ano completo
 
 
 def test_sinesp_comparacao_de_anos_completos_e_ranking_por_unidade():
@@ -209,8 +209,8 @@ def test_qualidade_mostra_integridade_cobertura_fonte_e_limitacoes():
     assert "Creative Commons" in corpo or "CC BY-ND" in corpo  # condições de reutilização informadas, sem afirmar licença confirmada
     assert "não foi possível confirmar uma licença específica" in corpo
     assert "Sobre os dados apresentados" in [s.value for s in app.subheader] and "Versão, datas e validação" not in [s.value for s in app.subheader]
-    for trecho in ("Última atualização dos dados:** 27/10/2026", "janeiro/2020 a setembro/2026", "Ano de 2026 parcial", "Município analisado:** Joinville/SC",
-                   "não é uma aprovação ou certificação oficial do governo", "“Estadual” não é o total do estado de Santa Catarina"):
+    for trecho in ("Base atualizada em:** 27/10/2026", "janeiro/2020 a setembro/2026", "Ano de 2026 parcial", "Município analisado:** Joinville/SC",
+                   "não é uma aprovação ou certificação oficial do governo", "“Estadual” é a classificação institucional da série"):
         assert trecho in corpo, trecho
     assert "As informações foram obtidas em bases oficiais do Sinesp/MJSP. Foram selecionados os registros referentes ao município de Joinville/SC" in corpo
     arquivos = app.dataframe[0].value  # detalhes técnicos recolhidos
@@ -342,7 +342,7 @@ def test_paginas_mostram_versao_fonte_ultima_competencia_e_como_se_atualiza():
     assert "janeiro/2020 a setembro/2026" in " ".join(c.value for c in sinesp.caption)  # período na legenda da fonte, derivado dos dados
     qualidade = _pagina("quality")
     legendas = " ".join(c.value for c in qualidade.caption)
-    assert "última atualização em 27/10/2026" in legendas and "a última competência disponível é setembro/2026" in legendas and "2026 é parcial" in legendas
+    assert "base atualizada em 27/10/2026" in legendas and "o último mês disponível nesta base é setembro de 2026" in legendas and "2026 é parcial" in legendas
     assert manifesto["versao"] in " ".join(m.value for m in qualidade.markdown)  # o identificador técnico fica só no bloco recolhido
     corpo = " ".join(m.value for m in qualidade.markdown) + " ".join(m.value for e in qualidade.expander for m in e.markdown)
     assert "MJSP" in corpo
