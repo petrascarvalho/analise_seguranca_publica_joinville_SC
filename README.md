@@ -545,7 +545,7 @@ As cores do painel (azul `#074EA2`, fundo `#EAF4FC`, cartões `#FFFFFF`) foram *
 - **Bases de dados:** [links diretos para download dos 14 ZIPs](dados/README.md#links-diretos-para-download), com o SHA-256 em [`dados/SHA256SUMS.txt`](dados/SHA256SUMS.txt).
 - **Google Drive:** [Pasta de entrega](https://drive.google.com/drive/folders/1C14z1f0nRCzVbS321L3e9TDmocGinPfu?usp=sharing).
 - **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](<https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho>) (repositório privado: acesso restrito aos participantes da turma). Para não duplicar arquivos grandes no repositório coletivo, os ZIPs de dados do Sinesp ficam no GitHub pessoal ([links diretos para download](dados/README.md#links-diretos-para-download)).
-- **LinkedIn:** [Perfil profissional](https://www.linkedin.com/in/petrasrubencarvalho/).
+- **LinkedIn:** [[Perfil profissional](https://www.linkedin.com/in/petrasrubencarvalho/](https://lnkd.in/p/dX8PcBnz)).
 - **Vídeo:** [apresentação final em vídeo](video/video_final_seguranca_publica_joinville_v2.mp4) (MP4, 2min42s, 1080p; [detalhes e SHA-256](video/README.md)).
 
 ## 16. Conclusões sustentadas pelas análises
