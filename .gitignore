@@ -33,9 +33,23 @@ desktop.ini
 /backup_pre_migracao_20261016/
 /data/joinville_rows.json
 
-# Acervo e derivados: obtenção/restauração documentada no README acadêmico.
-# Redistribuição dos arquivos de dados ainda não foi autorizada/verificada.
-/dados/
+# Acervo e derivados: só são publicados os ZIPs do Sinesp/MJSP (XLSX oficiais sem modificação e saídas Sinesp do ETL),
+# o dados/README.md e os arquivos de integridade. SSP/SC, edições anteriores e intermediários continuam só locais.
+/dados/*
+!/dados/README.md
+!/dados/manifesto_zips.json
+!/dados/SHA256SUMS.txt
+!/dados/brutos/
+/dados/brutos/*
+!/dados/brutos/sinesp_20[2-9][0-9]_xlsx.zip
+# SSP/SC: só o README e o catálogo de fontes (metadados e links oficiais). PDFs, CSVs e ZIPs ficam locais.
+!/dados/brutos/ssp_sc/
+/dados/brutos/ssp_sc/*
+!/dados/brutos/ssp_sc/README.md
+!/dados/brutos/ssp_sc/fontes_oficiais.csv
+!/dados/processados/
+/dados/processados/*
+!/dados/processados/SINESP_20_26_Petras_Ruben_Carvalho.zip
 # saídas antigas e evidência da SSP/SC: só locais, preservadas em historico/
 /historico/saidas_antigas/
 /historico/ssp_sc/evidencia_grafia_violencia_domestica_2023.png
@@ -48,6 +62,10 @@ README_IA*.md
 /atualizacao/
 /dashboard/data_publica.novo/
 /dashboard/data_publica.antigo/
+
+# Vídeo de apresentação: só o README é publicado; gravações e versões provisórias ficam locais.
+/video/*
+!/video/README.md
 
 # Material local de revisão visual (capturas); não faz parte da entrega.
 /revisao_visual/

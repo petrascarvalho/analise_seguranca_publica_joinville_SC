@@ -1,0 +1,157 @@
+{
+  "descricao": "ZIPs publicáveis dos dados do projeto Segurança Pública de Joinville/SC (somente Sinesp/MJSP).",
+  "versao_dados": "20261027T114400Z",
+  "gerado_em": "2026-10-30T00:07:13Z",
+  "compressao": "ZIP_DEFLATED, nível 9",
+  "fonte": "MJSP / Sinesp VDE — https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados",
+  "licenca_informada_no_portal": "Creative Commons Atribuição-SemDerivações 3.0 Não Adaptada (CC BY-ND 3.0), rodapé do portal gov.br; XLSX redistribuídos sem modificação.",
+  "nao_publicados": "PDFs, CSVs extraídos e tabelas tratadas da SSP/SC; edições anteriores dos XLSX; arquivos intermediários e da Prefeitura.",
+  "zips": [
+    {
+      "zip": "brutos/sinesp_2020_xlsx.zip",
+      "bytes_zip": 17938261,
+      "sha256_zip": "d952ef1ec55436139747a36a93beb38840717a899c16876a0665be3960b44f94",
+      "bytes_originais": 24285292,
+      "reducao_percentual": 26.1,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2020.xlsx",
+          "bytes": 24285292,
+          "sha256": "eb251fbf5cbd4d4dab9841f5951a9d0a99834832987dbc4c4aa15f7a363b91e4",
+          "bytes_compactados": 17938127
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "brutos/sinesp_2021_xlsx.zip",
+      "bytes_zip": 17967097,
+      "sha256_zip": "272870fd46c3e8c188927f8f0b93914216fa8a73c52e8fcd701e018a0259ac8a",
+      "bytes_originais": 24343083,
+      "reducao_percentual": 26.2,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2021.xlsx",
+          "bytes": 24343083,
+          "sha256": "69009c47f349c2680bb703338c5570fd5e1bfb4d1c54311a544cb70f47b55c13",
+          "bytes_compactados": 17966963
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "brutos/sinesp_2022_xlsx.zip",
+      "bytes_zip": 18000114,
+      "sha256_zip": "21010b8b20d79bf075b926f8bd8a4ff29799fa6086ba26a1f7804a0701bd2856",
+      "bytes_originais": 24358954,
+      "reducao_percentual": 26.1,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2022.xlsx",
+          "bytes": 24358954,
+          "sha256": "cb65d831a2878a902e8919b79447fe37a63a3b155c393eb67859c1dfecac638f",
+          "bytes_compactados": 17999980
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "brutos/sinesp_2023_xlsx.zip",
+      "bytes_zip": 18044860,
+      "sha256_zip": "6eb2ceae60c4b55e147a58c763c2c2d9dd342b61932e5bceb5f67e115a98d7e1",
+      "bytes_originais": 24375935,
+      "reducao_percentual": 26.0,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2023.xlsx",
+          "bytes": 24375935,
+          "sha256": "4fcb40f2a02f1ee8684b7b17ec60398f406d2c2c4c9d10be3e46cf68abbbcec7",
+          "bytes_compactados": 18044726
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "brutos/sinesp_2024_xlsx.zip",
+      "bytes_zip": 18022767,
+      "sha256_zip": "ce9bbbfcfba659806d0241098c49cb5773919d01370161879cbc18b5a1d4c81d",
+      "bytes_originais": 24388243,
+      "reducao_percentual": 26.1,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2024.xlsx",
+          "bytes": 24388243,
+          "sha256": "eb09bf1a5c6be93cb8935e76ee3751c0f760d3130d68a73ee85100fb1d2bc792",
+          "bytes_compactados": 18022633
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "brutos/sinesp_2025_xlsx.zip",
+      "bytes_zip": 20153174,
+      "sha256_zip": "4040e2324b691e5bf3378383d4d20b70451834564892329bdcac6bba4d3701c9",
+      "bytes_originais": 26644100,
+      "reducao_percentual": 24.4,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2025.xlsx",
+          "bytes": 26644100,
+          "sha256": "6b87609815afc534f44f3423bf8660a69c961130c187f759b9d3e38ee2a8a6e8",
+          "bytes_compactados": 20153040
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "brutos/sinesp_2026_xlsx.zip",
+      "bytes_zip": 15970656,
+      "sha256_zip": "d0233961b717160e9c48341bfb55a567a9220fc7ccab102069ac922c2de0cb8c",
+      "bytes_originais": 20670832,
+      "reducao_percentual": 22.7,
+      "arquivos": [
+        {
+          "nome_interno": "bancovde-2026.xlsx",
+          "bytes": 20670832,
+          "sha256": "dd11c095119416a349fd95b7d31463451d54c62e997bd36a7548af773af0f8ab",
+          "bytes_compactados": 15970522
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "zip": "processados/SINESP_20_26_Petras_Ruben_Carvalho.zip",
+      "bytes_zip": 10070,
+      "sha256_zip": "55d1cca0236e3c4f0536868b3a36a1a5158550c448f4f0d4ccfe500db9d881ee",
+      "bytes_originais": 131335,
+      "reducao_percentual": 92.3,
+      "arquivos": [
+        {
+          "nome_interno": "etl_joinville/sinesp/etl_sinesp_joinville_mensal.csv",
+          "bytes": 56617,
+          "sha256": "ae500b938c444eb27ae9886efa11afc1ab93a4e4b0d03a7c93753f512d152f56",
+          "bytes_compactados": 3545
+        },
+        {
+          "nome_interno": "etl_joinville/sinesp/etl_catalogo_series.csv",
+          "bytes": 1046,
+          "sha256": "ec109b5e7e34e8c4cb391228ed7316e94a31e846bff15efa579cf0d648dad17d",
+          "bytes_compactados": 371
+        },
+        {
+          "nome_interno": "etl_joinville/sinesp/etl_recorte_joinville_bruto.csv",
+          "bytes": 72320,
+          "sha256": "732e8dde8e9e981c291c275d4bd12a4f121c7e69f84de28c9a90ad1280923e33",
+          "bytes_compactados": 4884
+        },
+        {
+          "nome_interno": "etl_joinville/sinesp/etl_relatorio.json",
+          "bytes": 1352,
+          "sha256": "577733454f91d3e01b2c2b85c98ad8cec04e8ffd08b2a6af2dce2b440c4014b8",
+          "bytes_compactados": 570
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    }
+  ]
+}

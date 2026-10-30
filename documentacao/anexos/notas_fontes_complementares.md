@@ -2,6 +2,8 @@
 
 Complemento da seção 4.3 do [README](../../README.md). Estes registros documentam por que furtos, roubos e outros números divulgados pela Prefeitura e pela SSP/SC **não foram incorporados** ao painel nem à base do Sinesp.
 
+O acervo de 45 PDFs da SSP/SC usado nas análises de violência doméstica e de homicídios é descrito separadamente em [`dados/brutos/ssp_sc/README.md`](../../dados/brutos/ssp_sc/README.md), com o catálogo de endereços oficiais e SHA-256.
+
 Consulta feita em 27/10/2026. **Nada deste documento foi incorporado ao dashboard nem à base Sinesp**. Dados estaduais não foram usados como se fossem de Joinville.
 
 ## 1. O que o Sinesp realmente traz para Joinville

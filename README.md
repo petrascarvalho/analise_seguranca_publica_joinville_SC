@@ -8,7 +8,7 @@
 
 Este projeto utiliza **Python, pandas, Matplotlib e Streamlit** para organizar, conferir e apresentar dados públicos sobre a segurança de Joinville, em Santa Catarina. A análise principal utiliza os dados do **Sinesp/MJSP**, de janeiro de 2020 a setembro de 2026. Os documentos da **SSP/SC** foram examinados separadamente, pois possuem critérios e limitações diferentes.
 
-**Aplicação Streamlit:** [endereço público existente](https://seguranca-publica-joinville-sinesp.streamlit.app/). A atualização para a versão final de página única será conferida após a publicação dos commits aprovados no GitHub. Até lá, esse endereço ainda mostra a interface anterior; as capturas deste README são da versão local.
+**Aplicação Streamlit:** [painel publicado no Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/), na versão final de página única (conferida em 29/10/2026).
 
 <p align="center">
   <img src="./documentacao/graficos/painel/01_visao_geral_pagina_unica.png" alt="Visão geral do painel de Joinville" width="100%">
@@ -57,7 +57,16 @@ A entrega acadêmica inclui **código Python, notebook, visualizações, aplica�
 - **Versão dos dados analisados:** `20261027T114400Z` (edição republicada pelo MJSP em 27/10/2026).
 - **Cobertura:** janeiro/2020 a setembro/2026. Em relação aos dados da Polícia Rodoviária Federal - PRF, os dados vão até agosto/2026 e os mandados de prisão da Polícia Federal começam em janeiro/2025.
 
-O painel utiliza apenas os dados agregados de Joinville, guardados em `dashboard/data_publica/`. Os grandes arquivos Excel originais **não são publicados no repositório**: o portal gov.br indica a licença geral CC BY-ND 3.0, mas não foi encontrada autorização específica para redistribuir as bases. Por isso, a publicação é limitada aos dados agregados, sempre com a atribuição da fonte.
+O painel utiliza apenas os dados agregados de Joinville, guardados em `dashboard/data_publica/`. Os sete arquivos Excel originais da edição aprovada acompanham o repositório **sem nenhuma modificação**, compactados em ZIP na pasta `dados/`, com a atribuição da fonte. A licença informada no portal gov.br é a CC BY-ND 3.0, que permite redistribuir cópias sem modificação. O manifesto da base aprovada (27/10/2026) ainda registra que os XLSX não eram redistribuídos: a publicação dos ZIPs foi decidida depois, sem alterar a base, o manifesto ou os resultados.
+
+**Arquivos ZIP do Sinesp (`dados/`):**
+
+| Arquivo | Conteúdo | Tipo |
+| --- | --- | --- |
+| `brutos/sinesp_2020_xlsx.zip` a `brutos/sinesp_2026_xlsx.zip` | Um ZIP por ano (`sinesp_2020_xlsx.zip`, `sinesp_2021_xlsx.zip`, `sinesp_2022_xlsx.zip`, `sinesp_2023_xlsx.zip`, `sinesp_2024_xlsx.zip`, `sinesp_2025_xlsx.zip` e `sinesp_2026_xlsx.zip`), cada um com o `bancovde-ANO.xlsx` original da edição `20261027T114400Z` | Original (MJSP) |
+| `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip` | Saídas do Sinesp geradas pelo ETL: base mensal (911 registros, igual à de `dashboard/data_publica/`), catálogo das 12 séries, recorte bruto de Joinville e relatório de conferência | Processado pelo projeto |
+
+O [`dados/README.md`](dados/README.md) descreve cada arquivo, a licença e a descompactação, e traz [links diretos para download](dados/README.md#links-diretos-para-download) de cada ZIP. O SHA-256 de cada ZIP está em `dados/SHA256SUMS.txt`, e o de cada arquivo interno, em `dados/manifesto_zips.json`.
 
 **Arquivos da base pública (`dashboard/data_publica/`):**
 
@@ -73,7 +82,21 @@ O painel utiliza apenas os dados agregados de Joinville, guardados em `dashboard
 
 Foram examinados **42 boletins mensais** e **três relatórios de violência doméstica** ([1º semestre de 2023](https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf), [2º semestre de 2023](https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf) e [2024](https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2024-SC.pdf)), totalizando **45 PDFs**. Para cada PDF foi preparado um CSV que localiza as células das tabelas; o programa usa esse CSV para encontrar o bloco de Joinville e confere cada valor diretamente no PDF, registrando o documento, a página, a tabela e a linha de origem.
 
-Os relatórios de violência doméstica não esclarecem suficientemente o significado de **“Fato Comunicado”**, e a página da fonte informa “Todos os Direitos Reservados”, sem licença de reutilização. Por prudência, **os PDFs, os CSVs extraídos e o CSV tratado da SSP/SC permanecem somente no computador**, sem publicação no GitHub ou no Streamlit Cloud.
+Os relatórios de violência doméstica não esclarecem suficientemente o significado de **“Fato Comunicado”**, e a página da fonte informa “Todos os Direitos Reservados”, sem licença de reutilização. Por prudência, **os PDFs, os CSVs extraídos e os dados tratados da SSP/SC permanecem somente no computador**, sem publicação no GitHub ou no Streamlit Cloud.
+
+**Conjuntos da SSP/SC preparados:**
+
+| Conjunto | Arquivo | Situação |
+| --- | --- | --- |
+| PDFs oficiais originais (45), sem modificação | `dados/brutos/ssp_sc/ssp_sc_pdfs_originais.zip` | Somente no computador |
+| CSVs extraídos dos PDFs (45): arquivos **derivados**, preparados no projeto, não são publicações oficiais da SSP/SC | `dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip` | Somente no computador |
+| Dados processados de Joinville: violência doméstica, homicídios por edição, republicações, inventário, rastreabilidade e verificações | `dados/processados/ssp_sc/ssp_sc_joinville_processados.zip` | Somente no computador |
+| Catálogo com endereço oficial, período e SHA-256 de cada PDF e CSV | [`dados/brutos/ssp_sc/fontes_oficiais.csv`](dados/brutos/ssp_sc/fontes_oficiais.csv) | No GitHub |
+| Explicação da fonte, dos arquivos, da reprodução e das restrições | [`dados/brutos/ssp_sc/README.md`](dados/brutos/ssp_sc/README.md) | No GitHub |
+
+- **Critérios de tratamento:** só os valores de Joinville são extraídos. Violência doméstica e homicídios ficam em arquivos separados, com a unidade publicada (“Fato Comunicado” e “vítimas”), sem somar categorias e sem juntar os números aos do Sinesp.
+- **Limitações:** “Fato Comunicado” não tem definição operacional nos PDFs. Os boletins republicam valores de períodos anteriores, às vezes diferentes, e nenhuma versão foi escolhida como definitiva.
+- **Rastreabilidade:** cada valor usado guarda o PDF, a página, a tabela e a linha de origem. Os 45 endereços do catálogo foram conferidos em 29/10/2026, baixando cada PDF novamente: todos são idênticos aos arquivos locais (mesmo SHA-256). Assim, qualquer pessoa pode obter os mesmos documentos na fonte oficial.
 
 ### 4.3 Outros dados consultados
 
@@ -128,7 +151,23 @@ O arquivo [`notebooks/analise_seguranca_publica_joinville.ipynb`](notebooks/anal
 
 O notebook foi **salvo com os resultados** (tabelas, textos e gráficos) da execução completa feita no computador do autor, com os arquivos originais. Assim, a análise pode ser lida diretamente no GitHub ou no VS Code, **sem executar nada e sem abrir o Streamlit**.
 
-Ao executá-lo novamente a partir de uma cópia do GitHub, as etapas 1, 2, 4 a 11 e 16 funcionam somente com a base pública de `dashboard/data_publica/`. A etapa 3 (XLSX de 2026) e as etapas 12 a 15 (SSP/SC) dependem dos arquivos originais: sem eles, exibem um aviso, e a SSP/SC mostra a figura-resumo já publicada, sem estimar nenhum valor.
+Ao executá-lo novamente a partir de uma cópia do GitHub, as etapas 1, 2, 4 a 11 e 16 funcionam somente com a base pública de `dashboard/data_publica/`. A etapa 3 lê o `bancovde-2026.xlsx` original, disponível depois de descompactar `dados/brutos/sinesp_2026_xlsx.zip`. As etapas 12 a 15 (SSP/SC) dependem dos arquivos que ficam no computador do autor: sem eles, exibem um aviso, e a SSP/SC mostra a figura-resumo já publicada, sem estimar nenhum valor.
+
+### 5.5 Arquivos ZIP e o ETL
+
+Os ZIPs guardam os arquivos de entrada e de saída do ETL [`scripts/etl_joinville.py`](scripts/etl_joinville.py). O caminho de cada arquivo descompactado é exatamente o que o programa procura:
+
+| Passo | Sinesp/MJSP | SSP/SC |
+| --- | --- | --- |
+| **Descompactação** | `dados/brutos/sinesp_ANO_xlsx.zip` → `dados/brutos/sinesp/bancovde-ANO.xlsx` | `ssp_sc_pdfs_originais.zip` → `dados/brutos/ssp_sc/pdfs/`; `ssp_sc_csv_extraidos.zip` → `dados/brutos/ssp_sc/csv_extraidos/` (somente no computador do autor) |
+| **Leitura (etapas 3 e 11)** | Procura cada `bancovde-ANO.xlsx` em `dados/brutos/sinesp/` e nas subpastas | Exige exatamente 45 PDFs e 45 CSVs nas duas pastas |
+| **Conferência por SHA-256** | Só aceita o XLSX cujo SHA-256 está no manifesto da versão `20261027T114400Z` | Confere o SHA-256 dos PDFs antes e depois, para provar que não foram alterados |
+| **Tratamento e validação (etapas 5–10 e 12)** | Duplicidades, ausências, tipos, recorte de Joinville e comparação com a base aprovada | Leitura das células indicadas pelos CSVs e conferência de cada valor no PDF (159 verificações) |
+| **Saídas (etapa 13)** | `dados/processados/etl_joinville/sinesp/` (mesmo conteúdo de `SINESP_20_26_Petras_Ruben_Carvalho.zip`) | `dados/processados/etl_joinville/ssp_sc/` (mesmo conteúdo de `ssp_sc_joinville_processados.zip`) |
+
+As duas fontes são tratadas em etapas e pastas **separadas** do começo ao fim; nenhuma tabela soma ou junta Sinesp e SSP/SC.
+
+**Reprodução com os arquivos publicados:** com os ZIPs do Sinesp descompactados, as etapas 1 a 10 são executadas e conferidas, e a base reconstruída é igual à publicada. Esse resultado foi testado num clone limpo, sem a pasta `dados/` original. Sem os PDFs e os CSVs da SSP/SC, o ETL completo **não termina normalmente**: ele para na etapa 11, com a mensagem “Acervo da SSP/SC incompleto”. As saídas do Sinesp que ele gravaria na etapa 13 já estão no ZIP processado.
 
 ## 6. Bibliotecas e tecnologias
 
@@ -144,7 +183,7 @@ Ao executá-lo novamente a partir de uma cópia do GitHub, as etapas 1, 2, 4 a 1
 | **ipykernel**          | Execução do notebook no VS Code.                      |
 | **Git e GitHub**       | Controle de versão e publicação do projeto.          |
 
-As dependências estão listadas em [`requirements.txt`](requirements.txt). O ambiente local usa **Python 3.12.14**, e o Streamlit Cloud foi configurado com Python 3.12.
+As dependências estão listadas em [`requirements.txt`](requirements.txt). O ambiente de desenvolvimento usa **Python 3.12.14**, e o Streamlit Cloud foi configurado com Python 3.12. Em 29/10/2026, os passos da seção 11 também foram testados com **Python 3.14.4**, num clone limpo: instalação do `requirements.txt`, conferência dos hashes, descompactação, ETL, notebook (16 células, sem erros) e painel.
 
 ## 7. Resultados encontrados
 
@@ -273,7 +312,7 @@ Foram aplicadas práticas de leitura e tratamento de bases, análise exploratór
 
 ## 10. Aplicação Streamlit
 
-O Streamlit reúne a análise em **uma única página**, com a bandeira de Joinville no cabeçalho, cores inspiradas nela, fundo azul-claro, cartões brancos e gráficos com barras azul-claras e linha azul-escura. Um índice no topo leva a cada seção. O painel lê somente a base aprovada de `dashboard/data_publica/`: não executa o ETL e não baixa dados da internet. A descrição e as capturas abaixo são da **versão local** (ver o final desta seção).
+O Streamlit reúne a análise em **uma única página**, com a bandeira de Joinville no cabeçalho, cores inspiradas nela, fundo azul-claro, cartões brancos e gráficos com barras azul-claras e linha azul-escura. Um índice no topo leva a cada seção. O painel lê somente a base aprovada de `dashboard/data_publica/`: não executa o ETL e não baixa dados da internet. A mesma interface está publicada no [Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/) (ver o final desta seção).
 
 | Seção                                      | O que o usuário encontra                                                                                                                                                                                                                    |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -303,34 +342,50 @@ Os filtros do Sinesp são **Indicador**, **Período (anos)** e **Meses**, com o 
   <img src="./documentacao/graficos/painel/07_qualidade_e_metodologia.png" alt="Qualidade dos dados e metodologia" width="100%">
 </p>
 
-**Versão local e versão pública:**
+**Versão pública e versão local:**
 
-- **Versão local (final):** executada com `.\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py` e aberta em `http://localhost:8501`. É a interface de página única descrita e capturada nesta seção.
-- **Versão pública:** [endereço no Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/). Em 29/10/2026, ainda mostrava a interface anterior, com três páginas (Projeto, Indicadores Sinesp e Qualidade e metodologia), porque o GitHub ainda não recebeu todos os commits locais. A atualização para a versão de página única será conferida após a publicação dos commits aprovados.
+- **Versão pública:** [Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/). Em 29/10/2026, a página publicada mostrava a versão final de página única, com os dados do Sinesp até setembro de 2026 (911 registros, 12 séries). A seção de violência doméstica mostra o aviso e a figura-resumo, porque os dados tratados da SSP/SC não são publicados.
+- **Versão local:** executada com `.\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py` e aberta em `http://localhost:8501`. No computador do autor, com os arquivos da SSP/SC, a seção de violência doméstica também mostra o filtro de categoria, os cartões e o gráfico (captura acima).
 
 ## 11. Como executar
 
-Abra o **Prompt de Comando (CMD)** na pasta principal do projeto.
+Requisitos: Windows, **Python 3.12 ou 3.14** (instalador do [python.org](https://www.python.org/downloads/), que inclui o comando `py`), Git e VS Code com as extensões Python e Jupyter. Abra o **Prompt de Comando (CMD)**; a partir do passo 2, todos os comandos são executados na pasta principal do projeto.
 
 ```bat
-:: 1. Copiar o projeto do GitHub e entrar na pasta
+:: 1. Baixar o projeto do GitHub (inclui os ZIPs do Sinesp, cerca de 120 MiB) e entrar na pasta
 git clone https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC.git
 cd analise_seguranca_publica_joinville_SC
 
-:: 2. Criar o ambiente virtual e instalar as bibliotecas
-python -m venv .venv
+:: 2. Conferir o SHA-256 dos ZIPs: cada linha deve mostrar OK
+py -c "import hashlib; [print('OK ' if hashlib.sha256(open('dados/' + nome, 'rb').read()).hexdigest() == h else 'DIFERENTE ', nome) for h, nome in (linha.split() for linha in open('dados/SHA256SUMS.txt'))]"
+
+:: 3. Descompactar: XLSX em dados\brutos\sinesp\ e saídas em dados\processados\etl_joinville\sinesp\
+py -c "import glob, zipfile; [zipfile.ZipFile(z).extractall('dados/brutos/sinesp') for z in glob.glob('dados/brutos/sinesp_*_xlsx.zip')]"
+py -c "import zipfile; zipfile.ZipFile('dados/processados/SINESP_20_26_Petras_Ruben_Carvalho.zip').extractall('dados/processados')"
+
+:: 4. Criar o ambiente virtual e instalar as bibliotecas (use py -3.12 para o Python 3.12)
+py -3.14 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
-:: 3. Abrir o painel interativo no navegador (funciona sem os arquivos originais)
-.\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py
-
-:: 4. Executar o ETL (exige os arquivos originais; ver abaixo)
+:: 5. Executar o ETL (lê os XLSX descompactados e confere com a base aprovada)
 .\.venv\Scripts\python.exe scripts\etl_joinville.py
+
+:: 6. Notebook: abrir no VS Code (instruções logo abaixo)
+
+:: 7. Abrir o painel interativo no navegador (http://localhost:8501)
+.\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py
 ```
 
-**Notebook:** abra `notebooks/analise_seguranca_publica_joinville.ipynb` no VS Code. Os resultados já aparecem salvos. Para executar de novo, selecione o interpretador Python do ambiente `.venv` e use *Run All*.
+**6. Notebook:** abra a pasta do projeto no VS Code e depois `notebooks/analise_seguranca_publica_joinville.ipynb`. Os resultados já aparecem salvos. Para executar de novo, clique em *Select Kernel*, escolha o Python do ambiente `.venv` e use *Run All*.
 
-**Arquivos originais (fora do GitHub):** para reproduzir o ETL completo, baixe os sete `bancovde-ANO.xlsx` no [catálogo do MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados) e coloque-os em `dados/brutos/sinesp/` (o ETL procura também nas subpastas e só usa a edição cujo SHA-256 está no manifesto). A parte da SSP/SC exige os 45 PDFs da página [Segurança em Números](https://ssp.sc.gov.br/segurancaemnumeros/) em `dados/brutos/ssp_sc/pdfs/` e os 45 CSVs extraídos em `dados/brutos/ssp_sc/csv_extraidos/`, que permanecem apenas no computador do autor. **O painel e o notebook funcionam sem esses arquivos**, pois usam a base Sinesp já aprovada.
+**O que acontece em cada passo:**
+
+- **Passos 2 e 3:** usam apenas bibliotecas que já vêm com o Python (`hashlib` e `zipfile`). Se o comando `py` não existir, use `python`. Também é possível descompactar pelo Explorador de Arquivos (*Extrair tudo*), escolhendo as mesmas pastas. O [`dados/README.md`](dados/README.md) explica cada ZIP, a licença e a conferência.
+- **Passo 5:** as etapas 1 a 10 (Sinesp) são executadas e conferidas: a base reconstruída é igual à publicada. Na etapa 11, o ETL **para com a mensagem** “Acervo da SSP/SC incompleto”, porque os 45 PDFs e os 45 CSVs da SSP/SC ficam apenas no computador do autor (ver a seção 5.5). Os PDFs podem ser baixados nos endereços do [catálogo de fontes](dados/brutos/ssp_sc/fontes_oficiais.csv), mas os CSVs extraídos não são publicados ([detalhes](dados/brutos/ssp_sc/README.md#4-como-reproduzir)). As saídas do Sinesp já estão no ZIP processado.
+- **Passo 6:** com o `bancovde-2026.xlsx` descompactado, a etapa 3 do notebook inspeciona o arquivo original. As etapas da SSP/SC mostram um aviso e a figura-resumo.
+- **Passo 7:** o painel usa somente `dashboard/data_publica/` e funciona mesmo sem os passos 2, 3 e 5.
+
+Os mesmos XLSX também podem ser baixados no [catálogo do MJSP](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados); o ETL só usa a edição cujo SHA-256 está no manifesto.
 
 **Opcional:** `.\.venv\Scripts\python.exe -m src.pipeline.consolidacao` grava a Sinesp no esquema comum da UNION, e `.\.venv\Scripts\python.exe -m src.pipeline.atualizacao_dados verificar` consulta a fonte oficial e apenas grava um relatório na pasta local `atualizacao/`, sem alterar os dados do painel.
 
@@ -396,20 +451,46 @@ Seguranca Publica Joinville/
 │           ├── 07_qualidade_e_metodologia.png
 │           └── 08_grafico_analitico_jan_set_2025_2026.png   ← gráfico analítico (não é captura)
 │
+├── video/
+│   └── README.md                        ← situação do vídeo de apresentação (pendente)
+│
 ├── .streamlit/
 │   └── config.toml                      ← tema do painel
 ├── .vscode/
 │   └── settings.json                    ← interpretador da .venv e pasta do notebook
 │
-└── dados/                               ← somente no computador (fora do GitHub)
+└── dados/                               [P] = no GitHub · [L] = somente no computador
+    ├── README.md                        [P] conteúdo, origem, licença e descompactação
+    ├── manifesto_zips.json              [P] arquivos internos, tamanhos e SHA-256 (Sinesp)
+    ├── SHA256SUMS.txt                   [P] SHA-256 de cada ZIP do Sinesp
     ├── brutos/
-    │   ├── sinesp/                      ← 7 XLSX oficiais (2020–2026)
-    │   └── ssp_sc/                      ← 45 PDFs e 45 CSVs extraídos
+    │   ├── sinesp_2020_xlsx.zip         [P] bancovde-2020.xlsx original (MJSP)
+    │   ├── sinesp_2021_xlsx.zip         [P] bancovde-2021.xlsx original (MJSP)
+    │   ├── sinesp_2022_xlsx.zip         [P] bancovde-2022.xlsx original (MJSP)
+    │   ├── sinesp_2023_xlsx.zip         [P] bancovde-2023.xlsx original (MJSP)
+    │   ├── sinesp_2024_xlsx.zip         [P] bancovde-2024.xlsx original (MJSP)
+    │   ├── sinesp_2025_xlsx.zip         [P] bancovde-2025.xlsx original (MJSP)
+    │   ├── sinesp_2026_xlsx.zip         [P] bancovde-2026.xlsx original (MJSP)
+    │   ├── sinesp/                      [L] XLSX oficiais e edições anteriores
+    │   └── ssp_sc/
+    │       ├── README.md                [P] fonte, arquivos, reprodução e restrições
+    │       ├── fontes_oficiais.csv      [P] endereço oficial e SHA-256 de cada arquivo
+    │       ├── ssp_sc_pdfs_originais.zip   [L] 45 PDFs oficiais
+    │       ├── ssp_sc_csv_extraidos.zip    [L] 45 CSVs derivados
+    │       ├── pdfs/                    [L] 45 PDFs descompactados
+    │       ├── csv_extraidos/           [L] 45 CSVs descompactados
+    │       └── paginas_referencia/      [L] cópia da página Segurança em Números
     └── processados/
-        └── etl_joinville/               ← criada pelo ETL ao ser executado (sinesp/ e ssp_sc/)
+        ├── SINESP_20_26_Petras_Ruben_Carvalho.zip   [P] saídas Sinesp do ETL
+        ├── ssp_sc/
+        │   ├── ssp_sc_joinville_processados.zip     [L] saídas SSP/SC do ETL
+        │   └── ...                      [L] tabelas de execuções anteriores do ETL
+        └── sinesp/, analises/, prefeitura/, complementares/   [L] arquivos de etapas anteriores
 ```
 
-As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permite importar os módulos. A pasta `src/` permanece porque contém funções utilizadas pelo ETL e pelo notebook. A pasta `dados/` **não é publicada**: os originais são grandes e não têm autorização confirmada de redistribuição, e a base Sinesp tratada já está em `dashboard/data_publica/`.
+Ao descompactar os ZIPs ou executar o ETL, surgem também `dados/brutos/sinesp/bancovde-ANO.xlsx` e `dados/processados/etl_joinville/` (`sinesp/` e `ssp_sc/`). Essas pastas não são publicadas.
+
+As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permite importar os módulos. A pasta `src/` permanece porque contém funções utilizadas pelo ETL e pelo notebook. Da pasta `dados/`, são publicados os ZIPs do Sinesp, os arquivos de integridade (cerca de 120 MiB no total), o `README.md` e, da SSP/SC, apenas o `README.md` e o catálogo `fontes_oficiais.csv`. Permanecem **somente no computador** os três ZIPs da SSP/SC, os PDFs e CSVs descompactados, as edições anteriores dos XLSX e os arquivos intermediários. Da pasta `video/`, só o `README.md` é publicado; gravações e versões provisórias ficam no computador.
 
 ## 13. Limitações e melhorias futuras
 
@@ -419,6 +500,7 @@ As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permi
 - **Unidades diferentes:** vítimas, mandados e fatos comunicados não podem ser somados.
 - **SSP/SC:** definição de “Fato Comunicado”, divergências dos boletins e condições de reutilização exigem esclarecimentos adicionais.
 - **Revisões oficiais:** os valores podem ser republicados; qualquer atualização exige nova conferência.
+- **Reprodução da SSP/SC:** sem autorização de redistribuição, os PDFs, os CSVs extraídos e os dados tratados ficam fora do GitHub. Com os arquivos publicados, a parte do Sinesp é reproduzida por completo, mas o ETL para na etapa 11.
 
 Como continuidade, o projeto poderá incorporar novos indicadores apenas quando houver fontes municipais compatíveis, com definições, períodos e condições de reutilização esclarecidos.
 
@@ -437,11 +519,11 @@ As cores do painel (azul `#074EA2`, fundo `#EAF4FC`, cartões `#FFFFFF`) foram *
 ## 15. Links de entrega
 
 - **GitHub pessoal:** [Análise da Segurança Pública de Joinville](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC).
-- **Streamlit Cloud:** [Abrir o painel](https://seguranca-publica-joinville-sinesp.streamlit.app/). A atualização da aplicação publicada permanece pendente de conferência após o push.
+- **Streamlit Cloud:** [Abrir o painel](https://seguranca-publica-joinville-sinesp.streamlit.app/), versão final de página única.
 - **Google Drive:** [Pasta de entrega](https://drive.google.com/drive/folders/1C14z1f0nRCzVbS321L3e9TDmocGinPfu?usp=sharing).
-- **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho) (repositório privado: acesso restrito aos participantes da turma).
+- **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho) (repositório privado: acesso restrito aos participantes da turma). Para não duplicar arquivos grandes no repositório coletivo, os ZIPs de dados do Sinesp ficam no GitHub pessoal ([links diretos para download](dados/README.md#links-diretos-para-download)).
 - **LinkedIn:** [Perfil profissional](https://www.linkedin.com/in/petrasrubencarvalho/).
-- **Vídeo:** pendente de produção e publicação.
+- **Vídeo:** pendente de produção e publicação ([situação do vídeo](video/README.md)).
 
 ## 16. Conclusões sustentadas pelas análises
 
