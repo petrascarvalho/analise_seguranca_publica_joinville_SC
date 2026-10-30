@@ -76,9 +76,10 @@ README_IA*.md
 /dashboard/data_publica.novo/
 /dashboard/data_publica.antigo/
 
-# Vídeo de apresentação: só o README é publicado; gravações e versões provisórias ficam locais.
+# Vídeo de apresentação: só o README e o vídeo final são publicados; gravações e versões provisórias ficam locais.
 /video/*
 !/video/README.md
+!/video/video_final_seguranca_publica_joinville_v2.mp4
 
 # Material local de revisão visual (capturas); não faz parte da entrega.
 /revisao_visual/

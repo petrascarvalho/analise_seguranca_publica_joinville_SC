@@ -14,6 +14,12 @@ Este projeto utiliza **Python, pandas, Matplotlib e Streamlit** para organizar, 
   <img src="./documentacao/graficos/painel/01_visao_geral_pagina_unica.png" alt="Visão geral do painel de Joinville" width="100%">
 </p>
 
+## Apresentação em Vídeo
+
+**[Assistir à apresentação final do projeto (MP4, 2min42s, 1080p)](video/video_final_seguranca_publica_joinville_v2.mp4)**
+
+O vídeo mostra o objetivo do projeto, as fontes de dados (Sinesp/MJSP e SSP/SC), o tratamento em Python, o notebook de análise e o painel Streamlit. Duração, tamanho e SHA-256 do arquivo estão em [`video/README.md`](video/README.md).
+
 ---
 
 ## 1. Título e resumo
@@ -460,7 +466,8 @@ Seguranca Publica Joinville/
 │           └── 08_grafico_analitico_jan_set_2025_2026.png   ← gráfico analítico (não é captura)
 │
 ├── video/
-│   └── README.md                        ← situação do vídeo de apresentação (pendente)
+│   ├── README.md                        ← dados e SHA-256 do vídeo de apresentação
+│   └── video_final_seguranca_publica_joinville_v2.mp4   ← apresentação final em vídeo (2min42s)
 │
 ├── .streamlit/
 │   └── config.toml                      ← tema do painel
@@ -506,7 +513,7 @@ Seguranca Publica Joinville/
 
 Ao descompactar os ZIPs ou executar o ETL, surgem também `dados/brutos/sinesp/bancovde-ANO.xlsx` e `dados/processados/etl_joinville/` (`sinesp/` e `ssp_sc/`). Essas pastas não são publicadas.
 
-As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permite importar os módulos. A pasta `src/` permanece porque contém funções utilizadas pelo ETL e pelo notebook. Da pasta `dados/`, são publicados 14 ZIPs (cerca de 121 MiB no total) e os arquivos de documentação e integridade. Permanecem **somente no computador** o ZIP dos PDFs da SSP/SC, os arquivos soltos (descompactados ou duplicados), as edições anteriores dos XLSX e a cópia da página da SSP/SC. Todos estão listados no inventário. Da pasta `video/`, só o `README.md` é publicado; gravações e versões provisórias ficam no computador.
+As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permite importar os módulos. A pasta `src/` permanece porque contém funções utilizadas pelo ETL e pelo notebook. Da pasta `dados/`, são publicados 14 ZIPs (cerca de 121 MiB no total) e os arquivos de documentação e integridade. Permanecem **somente no computador** o ZIP dos PDFs da SSP/SC, os arquivos soltos (descompactados ou duplicados), as edições anteriores dos XLSX e a cópia da página da SSP/SC. Todos estão listados no inventário. Da pasta `video/`, são publicados o `README.md` e o vídeo final; gravações e versões provisórias ficam no computador.
 
 ## 13. Limitações e melhorias futuras
 
@@ -540,7 +547,7 @@ As cores do painel (azul `#074EA2`, fundo `#EAF4FC`, cartões `#FFFFFF`) foram *
 - **Google Drive:** [Pasta de entrega](https://drive.google.com/drive/folders/1C14z1f0nRCzVbS321L3e9TDmocGinPfu?usp=sharing).
 - **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho) (repositório privado: acesso restrito aos participantes da turma). Para não duplicar arquivos grandes no repositório coletivo, os ZIPs de dados do Sinesp ficam no GitHub pessoal ([links diretos para download](dados/README.md#links-diretos-para-download)).
 - **LinkedIn:** [Perfil profissional](https://www.linkedin.com/in/petrasrubencarvalho/).
-- **Vídeo:** pendente de produção e publicação ([situação do vídeo](video/README.md)).
+- **Vídeo:** [apresentação final em vídeo](video/video_final_seguranca_publica_joinville_v2.mp4) (MP4, 2min42s, 1080p; [detalhes e SHA-256](video/README.md)).
 
 ## 16. Conclusões sustentadas pelas análises
 
