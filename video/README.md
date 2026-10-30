@@ -17,3 +17,11 @@ Vídeo acadêmico do projeto, com **2min42s**, que apresenta o objetivo, as font
 - Se o navegador não reproduzir o vídeo na página do GitHub, use o botão de download do arquivo e confira o SHA-256 acima.
 - Esta pasta publica somente este arquivo e o vídeo final. Gravações, versões provisórias e outros materiais de produção ficam somente no computador do autor.
 - Voltar ao [README principal](../README.md).
+
+## Responsável pelo projeto
+
+**Petras Ruben Carvalho**
+
+Projeto acadêmico desenvolvido no LAB365/SENAI Santa Catarina,
+com apresentação em vídeo e disponibilização dos materiais
+para avaliação.
