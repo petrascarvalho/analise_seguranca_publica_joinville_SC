@@ -8,7 +8,7 @@
 
 Este projeto utiliza **Python, pandas, Matplotlib e Streamlit** para organizar, conferir e apresentar dados públicos sobre a segurança de Joinville, em Santa Catarina. A análise principal utiliza os dados do **Sinesp/MJSP**, de janeiro de 2020 a setembro de 2026. Os documentos da **SSP/SC** foram examinados separadamente, pois possuem critérios e limitações diferentes.
 
-**Aplicação Streamlit:** [painel publicado no Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/), na versão final de página única (conferida em 29/10/2026).
+**Aplicação Streamlit:** [painel publicado no Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/)
 
 <p align="center">
   <img src="./documentacao/graficos/painel/01_visao_geral_pagina_unica.png" alt="Visão geral do painel de Joinville" width="100%">
@@ -18,7 +18,7 @@ Este projeto utiliza **Python, pandas, Matplotlib e Streamlit** para organizar, 
 
 **[Assistir à apresentação final do projeto (MP4, 2min42s, 1080p)](video/video_final_seguranca_publica_joinville_v2.mp4)**
 
-O vídeo mostra o objetivo do projeto, as fontes de dados (Sinesp/MJSP e SSP/SC), o tratamento em Python, o notebook de análise e o painel Streamlit. Duração, tamanho e SHA-256 do arquivo estão em [`video/README.md`](video/README.md).
+O vídeo mostra o objetivo do projeto, as fontes de dados (Sinesp/MJSP e SSP/SC), o tratamento em Python, o notebook de análise e o painel Streamlit. Duração, tamanho e SHA-256 do arquivo estão em [`video/`](video/README.md).
 
 ---
 
@@ -67,12 +67,12 @@ O painel utiliza apenas os dados agregados de Joinville, guardados em `dashboard
 
 **Arquivos ZIP do Sinesp (`dados/`):**
 
-| Arquivo | Conteúdo | Tipo |
-| --- | --- | --- |
-| `brutos/sinesp_2020_xlsx.zip` a `brutos/sinesp_2026_xlsx.zip` | Um ZIP por ano (`sinesp_2020_xlsx.zip`, `sinesp_2021_xlsx.zip`, `sinesp_2022_xlsx.zip`, `sinesp_2023_xlsx.zip`, `sinesp_2024_xlsx.zip`, `sinesp_2025_xlsx.zip` e `sinesp_2026_xlsx.zip`), cada um com o `bancovde-ANO.xlsx` original da edição `20261027T114400Z` | Original (MJSP) |
-| `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip` | Saídas do Sinesp geradas pelo ETL: base mensal (911 registros, igual à de `dashboard/data_publica/`), catálogo das 12 séries, recorte bruto de Joinville e relatório de conferência | Processado pelo projeto |
-| `processados/consolidacao_union_joinville.zip` | Estudo UNION/JOIN (`src/pipeline/consolidacao.py`): Sinesp no esquema comum (911 registros) e matriz de compatibilidade | Processado pelo projeto |
-| `processados/historico/sinesp_edicao_anterior_ate_ago2026.zip` | Recortes de Joinville da **edição anterior** (dados até agosto/2026, 900 registros), gerados em 16/10/2026 | **Histórico**, não é resultado atual |
+| Arquivo                                                           | Conteúdo                                                                                                                                                                                                                                                                             | Tipo                                          |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `brutos/sinesp_2020_xlsx.zip` a `brutos/sinesp_2026_xlsx.zip` | Um ZIP por ano (`sinesp_2020_xlsx.zip`, `sinesp_2021_xlsx.zip`, `sinesp_2022_xlsx.zip`, `sinesp_2023_xlsx.zip`, `sinesp_2024_xlsx.zip`, `sinesp_2025_xlsx.zip` e `sinesp_2026_xlsx.zip`), cada um com o `bancovde-ANO.xlsx` original da edição `20261027T114400Z` | Original (MJSP)                               |
+| `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip`            | Saídas do Sinesp geradas pelo ETL: base mensal (911 registros, igual à de `dashboard/data_publica/`), catálogo das 12 séries, recorte bruto de Joinville e relatório de conferência                                                                                           | Processado pelo projeto                       |
+| `processados/consolidacao_union_joinville.zip`                  | Estudo UNION/JOIN (`src/pipeline/consolidacao.py`): Sinesp no esquema comum (911 registros) e matriz de compatibilidade                                                                                                                                                             | Processado pelo projeto                       |
+| `processados/historico/sinesp_edicao_anterior_ate_ago2026.zip`  | Recortes de Joinville da **edição anterior** (dados até agosto/2026, 900 registros), gerados em 16/10/2026                                                                                                                                                                   | **Histórico**, não é resultado atual |
 
 O [`dados/README.md`](dados/README.md) descreve cada arquivo, a licença e a descompactação, e traz [links diretos para download](dados/README.md#links-diretos-para-download) de cada ZIP. O SHA-256 de cada ZIP está em `dados/SHA256SUMS.txt`, e o de cada arquivo interno, em `dados/manifesto_zips.json`. O [`dados/inventario_dados.csv`](dados/inventario_dados.csv) lista **todos** os arquivos da pasta `dados/`, publicados ou não, com fonte, situação (atual, histórico, complementar ou duplicata) e SHA-256.
 
@@ -94,14 +94,14 @@ Os relatórios de violência doméstica não esclarecem suficientemente o signif
 
 **Conjuntos da SSP/SC preparados:**
 
-| Conjunto | Arquivo | Situação |
-| --- | --- | --- |
-| PDFs oficiais originais (45), sem modificação | `dados/brutos/ssp_sc/ssp_sc_pdfs_originais.zip` | Somente no computador; baixar nos endereços oficiais do catálogo |
-| CSVs extraídos dos PDFs (45): arquivos **derivados**, preparados no projeto, não são publicações oficiais da SSP/SC | `dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip` | No GitHub ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip)) |
-| Dados processados de Joinville: violência doméstica, homicídios por edição, republicações, inventário, rastreabilidade e verificações | `dados/processados/ssp_sc/ssp_sc_joinville_processados.zip` | No GitHub ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/ssp_sc/ssp_sc_joinville_processados.zip)) |
-| Tabelas de etapas anteriores (16/10 e 28/10/2026), substituídas pelas atuais | `dados/processados/historico/ssp_sc_versoes_anteriores.zip` | No GitHub, como **histórico** ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/historico/ssp_sc_versoes_anteriores.zip)) |
-| Catálogo com endereço oficial, período e SHA-256 de cada PDF e CSV | [`dados/brutos/ssp_sc/fontes_oficiais.csv`](dados/brutos/ssp_sc/fontes_oficiais.csv) | No GitHub |
-| Explicação da fonte, dos arquivos, da reprodução e das restrições | [`dados/brutos/ssp_sc/README.md`](dados/brutos/ssp_sc/README.md) | No GitHub |
+| Conjunto                                                                                                                                        | Arquivo                                                                               | Situação                                                                                                                                                                                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PDFs oficiais originais (45), sem modificação                                                                                                 | `dados/brutos/ssp_sc/ssp_sc_pdfs_originais.zip`                                     | Somente no computador; baixar nos endereços oficiais do catálogo                                                                                                                          |
+| CSVs extraídos dos PDFs (45): arquivos **derivados**, preparados no projeto, não são publicações oficiais da SSP/SC                  | `dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip`                                      | No GitHub ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip))                                         |
+| Dados processados de Joinville: violência doméstica, homicídios por edição, republicações, inventário, rastreabilidade e verificações | `dados/processados/ssp_sc/ssp_sc_joinville_processados.zip`                         | No GitHub ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/ssp_sc/ssp_sc_joinville_processados.zip))                            |
+| Tabelas de etapas anteriores (16/10 e 28/10/2026), substituídas pelas atuais                                                                   | `dados/processados/historico/ssp_sc_versoes_anteriores.zip`                         | No GitHub, como **histórico** ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/historico/ssp_sc_versoes_anteriores.zip)) |
+| Catálogo com endereço oficial, período e SHA-256 de cada PDF e CSV                                                                           | [`dados/brutos/ssp_sc/fontes_oficiais.csv`](dados/brutos/ssp_sc/fontes_oficiais.csv) | No GitHub                                                                                                                                                                                   |
+| Explicação da fonte, dos arquivos, da reprodução e das restrições                                                                         | [`dados/brutos/ssp_sc/README.md`](dados/brutos/ssp_sc/README.md)                     | No GitHub                                                                                                                                                                                   |
 
 - **Critérios de tratamento:** só os valores de Joinville são extraídos. Violência doméstica e homicídios ficam em arquivos separados, com a unidade publicada (“Fato Comunicado” e “vítimas”), sem somar categorias e sem juntar os números aos do Sinesp.
 - **Limitações:** “Fato Comunicado” não tem definição operacional nos PDFs. Os boletins republicam valores de períodos anteriores, às vezes diferentes, e nenhuma versão foi escolhida como definitiva.
@@ -166,13 +166,13 @@ Ao executá-lo novamente a partir de uma cópia do GitHub, as etapas 1, 2, 4 a 1
 
 Os ZIPs guardam os arquivos de entrada e de saída do ETL [`scripts/etl_joinville.py`](scripts/etl_joinville.py). O caminho de cada arquivo descompactado é exatamente o que o programa procura:
 
-| Passo | Sinesp/MJSP | SSP/SC |
-| --- | --- | --- |
-| **Descompactação** | `dados/brutos/sinesp_ANO_xlsx.zip` → `dados/brutos/sinesp/bancovde-ANO.xlsx` | `ssp_sc_csv_extraidos.zip` → `dados/brutos/ssp_sc/csv_extraidos/`; PDFs baixados dos endereços oficiais do catálogo → `dados/brutos/ssp_sc/pdfs/` |
-| **Leitura (etapas 3 e 11)** | Procura cada `bancovde-ANO.xlsx` em `dados/brutos/sinesp/` e nas subpastas | Exige exatamente 45 PDFs e 45 CSVs nas duas pastas |
-| **Conferência por SHA-256** | Só aceita o XLSX cujo SHA-256 está no manifesto da versão `20261027T114400Z` | Confere o SHA-256 dos PDFs antes e depois, para provar que não foram alterados |
-| **Tratamento e validação (etapas 5–10 e 12)** | Duplicidades, ausências, tipos, recorte de Joinville e comparação com a base aprovada | Leitura das células indicadas pelos CSVs e conferência de cada valor no PDF (159 verificações) |
-| **Saídas (etapa 13)** | `dados/processados/etl_joinville/sinesp/` (mesmo conteúdo de `SINESP_20_26_Petras_Ruben_Carvalho.zip`) | `dados/processados/etl_joinville/ssp_sc/` (mesmo conteúdo de `ssp_sc_joinville_processados.zip`) |
+| Passo                                                  | Sinesp/MJSP                                                                                                 | SSP/SC                                                                                                                                                      |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Descompactação**                             | `dados/brutos/sinesp_ANO_xlsx.zip` → `dados/brutos/sinesp/bancovde-ANO.xlsx`                           | `ssp_sc_csv_extraidos.zip` → `dados/brutos/ssp_sc/csv_extraidos/`; PDFs baixados dos endereços oficiais do catálogo → `dados/brutos/ssp_sc/pdfs/` |
+| **Leitura (etapas 3 e 11)**                      | Procura cada `bancovde-ANO.xlsx` em `dados/brutos/sinesp/` e nas subpastas                              | Exige exatamente 45 PDFs e 45 CSVs nas duas pastas                                                                                                          |
+| **Conferência por SHA-256**                     | Só aceita o XLSX cujo SHA-256 está no manifesto da versão `20261027T114400Z`                           | Confere o SHA-256 dos PDFs antes e depois, para provar que não foram alterados                                                                             |
+| **Tratamento e validação (etapas 5–10 e 12)** | Duplicidades, ausências, tipos, recorte de Joinville e comparação com a base aprovada                    | Leitura das células indicadas pelos CSVs e conferência de cada valor no PDF (159 verificações)                                                          |
+| **Saídas (etapa 13)**                           | `dados/processados/etl_joinville/sinesp/` (mesmo conteúdo de `SINESP_20_26_Petras_Ruben_Carvalho.zip`) | `dados/processados/etl_joinville/ssp_sc/` (mesmo conteúdo de `ssp_sc_joinville_processados.zip`)                                                       |
 
 As duas fontes são tratadas em etapas e pastas **separadas** do começo ao fim; nenhuma tabela soma ou junta Sinesp e SSP/SC.
 
@@ -330,7 +330,7 @@ O Streamlit reúne a análise em **uma única página**, com a bandeira de Joinv
 
 | Seção                                      | O que o usuário encontra                                                                                                                                                                                                                    |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Apresentação**                     | Período, quantidade de registros e de séries, último mês disponível, três destaques fixos (homicídio doloso e tentativa de homicídio) e os principais achados.                                                                                                                     |
+| **Apresentação**                     | Período, quantidade de registros e de séries, último mês disponível, três destaques fixos (homicídio doloso e tentativa de homicídio) e os principais achados.                                                                       |
 | **Indicadores Sinesp**                 | Filtros, cartões com os totais do indicador escolhido e cinco abas: Evolução, Comparações, Meses e tendência, Estatísticas e meses incomuns, Indicadores e como interpretar. Cada gráfico tem uma tabela com os números desenhados. |
 | **Violência doméstica - SSP/SC**     | Fonte separada, em validação. Na execução local: filtro **Categoria (SSP/SC)**, cartões e gráfico mensal; no Streamlit Cloud: aviso e figura-resumo.                                                                             |
 | **Qualidade dos dados**                | Conferência dos arquivos, período disponível e explicação sobre zeros e ausências.                                                                                                                                                     |
@@ -493,7 +493,7 @@ Seguranca Publica Joinville/
     │       ├── fontes_oficiais.csv      [P] endereço oficial e SHA-256 de cada PDF e CSV
     │       ├── ssp_sc_csv_extraidos.zip    [P] 45 CSVs derivados dos PDFs
     │       ├── ssp_sc_pdfs_originais.zip   [L] 45 PDFs oficiais (reserva de direitos)
-    │       ├── pdfs/                    [L] 45 PDFs descompactados
+    │       ├── pdfs/ pdf_ssp_sc.zip            [L] 45 PDFs compactados
     │       ├── csv_extraidos/           [L] 45 CSVs descompactados
     │       └── paginas_referencia/      [L] cópia da página Segurança em Números
     └── processados/
@@ -501,13 +501,12 @@ Seguranca Publica Joinville/
         ├── consolidacao_union_joinville.zip         [P] estudo UNION/JOIN (Sinesp)
         ├── ssp_sc/
         │   ├── ssp_sc_joinville_processados.zip     [P] saídas SSP/SC do ETL
-        │   └── ...                      [L] tabelas soltas (atuais e anteriores)
+        │   └── pdf_ssp_sc.zip                       [L] arquivos pdf
         ├── historico/
         │   ├── sinesp_edicao_anterior_ate_ago2026.zip   [P] histórico: Sinesp até ago/2026
         │   └── ssp_sc_versoes_anteriores.zip            [P] histórico: SSP/SC de etapas anteriores
         ├── complementares/
         │   ├── fontes_complementares_joinville.zip      [P] Prefeitura e matriz de evidências
-        │   └── ...                      [L] tabela solta
         └── sinesp/, analises/, prefeitura/   [L] arquivos soltos, também incluídos nos ZIPs acima
 ```
 
@@ -545,7 +544,7 @@ As cores do painel (azul `#074EA2`, fundo `#EAF4FC`, cartões `#FFFFFF`) foram *
 - **Streamlit Cloud:** [Abrir o painel](https://seguranca-publica-joinville-sinesp.streamlit.app/), versão final de página única.
 - **Bases de dados:** [links diretos para download dos 14 ZIPs](dados/README.md#links-diretos-para-download), com o SHA-256 em [`dados/SHA256SUMS.txt`](dados/SHA256SUMS.txt).
 - **Google Drive:** [Pasta de entrega](https://drive.google.com/drive/folders/1C14z1f0nRCzVbS321L3e9TDmocGinPfu?usp=sharing).
-- **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho) (repositório privado: acesso restrito aos participantes da turma). Para não duplicar arquivos grandes no repositório coletivo, os ZIPs de dados do Sinesp ficam no GitHub pessoal ([links diretos para download](dados/README.md#links-diretos-para-download)).
+- **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](<https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho>) (repositório privado: acesso restrito aos participantes da turma). Para não duplicar arquivos grandes no repositório coletivo, os ZIPs de dados do Sinesp ficam no GitHub pessoal ([links diretos para download](dados/README.md#links-diretos-para-download)).
 - **LinkedIn:** [Perfil profissional](https://www.linkedin.com/in/petrasrubencarvalho/).
 - **Vídeo:** [apresentação final em vídeo](video/video_final_seguranca_publica_joinville_v2.mp4) (MP4, 2min42s, 1080p; [detalhes e SHA-256](video/README.md)).
 
