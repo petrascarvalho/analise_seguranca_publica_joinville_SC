@@ -65,8 +65,10 @@ O painel utiliza apenas os dados agregados de Joinville, guardados em `dashboard
 | --- | --- | --- |
 | `brutos/sinesp_2020_xlsx.zip` a `brutos/sinesp_2026_xlsx.zip` | Um ZIP por ano (`sinesp_2020_xlsx.zip`, `sinesp_2021_xlsx.zip`, `sinesp_2022_xlsx.zip`, `sinesp_2023_xlsx.zip`, `sinesp_2024_xlsx.zip`, `sinesp_2025_xlsx.zip` e `sinesp_2026_xlsx.zip`), cada um com o `bancovde-ANO.xlsx` original da edição `20261027T114400Z` | Original (MJSP) |
 | `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip` | Saídas do Sinesp geradas pelo ETL: base mensal (911 registros, igual à de `dashboard/data_publica/`), catálogo das 12 séries, recorte bruto de Joinville e relatório de conferência | Processado pelo projeto |
+| `processados/consolidacao_union_joinville.zip` | Estudo UNION/JOIN (`src/pipeline/consolidacao.py`): Sinesp no esquema comum (911 registros) e matriz de compatibilidade | Processado pelo projeto |
+| `processados/historico/sinesp_edicao_anterior_ate_ago2026.zip` | Recortes de Joinville da **edição anterior** (dados até agosto/2026, 900 registros), gerados em 16/10/2026 | **Histórico**, não é resultado atual |
 
-O [`dados/README.md`](dados/README.md) descreve cada arquivo, a licença e a descompactação, e traz [links diretos para download](dados/README.md#links-diretos-para-download) de cada ZIP. O SHA-256 de cada ZIP está em `dados/SHA256SUMS.txt`, e o de cada arquivo interno, em `dados/manifesto_zips.json`.
+O [`dados/README.md`](dados/README.md) descreve cada arquivo, a licença e a descompactação, e traz [links diretos para download](dados/README.md#links-diretos-para-download) de cada ZIP. O SHA-256 de cada ZIP está em `dados/SHA256SUMS.txt`, e o de cada arquivo interno, em `dados/manifesto_zips.json`. O [`dados/inventario_dados.csv`](dados/inventario_dados.csv) lista **todos** os arquivos da pasta `dados/`, publicados ou não, com fonte, situação (atual, histórico, complementar ou duplicata) e SHA-256.
 
 **Arquivos da base pública (`dashboard/data_publica/`):**
 
@@ -82,15 +84,16 @@ O [`dados/README.md`](dados/README.md) descreve cada arquivo, a licença e a des
 
 Foram examinados **42 boletins mensais** e **três relatórios de violência doméstica** ([1º semestre de 2023](https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.pdf), [2º semestre de 2023](https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.pdf) e [2024](https://ssp.sc.gov.br/wp-content/uploads/2025/06/VIOLENCIA-DOMESTICA-2024-SC.pdf)), totalizando **45 PDFs**. Para cada PDF foi preparado um CSV que localiza as células das tabelas; o programa usa esse CSV para encontrar o bloco de Joinville e confere cada valor diretamente no PDF, registrando o documento, a página, a tabela e a linha de origem.
 
-Os relatórios de violência doméstica não esclarecem suficientemente o significado de **“Fato Comunicado”**, e a página da fonte informa “Todos os Direitos Reservados”, sem licença de reutilização. Por prudência, **os PDFs, os CSVs extraídos e os dados tratados da SSP/SC permanecem somente no computador**, sem publicação no GitHub ou no Streamlit Cloud.
+Os relatórios de violência doméstica não esclarecem suficientemente o significado de **“Fato Comunicado”**, e a página da fonte informa “Todos os Direitos Reservados”, sem licença de reutilização. Por isso, o projeto distingue os **dados estatísticos** dos **documentos**. Os CSVs extraídos e as tabelas tratadas de Joinville são publicados, com atribuição da fonte. Os **45 PDFs não são republicados na íntegra**, por causa da reserva de direitos declarada no site, mas podem ser baixados nos endereços oficiais com conferência automática do SHA-256. Como não há licença declarada, a publicação dos dados não implica autorização da SSP/SC. Nos arquivos publicados não foram encontrados nomes, CPFs, e-mails ou telefones.
 
 **Conjuntos da SSP/SC preparados:**
 
 | Conjunto | Arquivo | Situação |
 | --- | --- | --- |
-| PDFs oficiais originais (45), sem modificação | `dados/brutos/ssp_sc/ssp_sc_pdfs_originais.zip` | Somente no computador |
-| CSVs extraídos dos PDFs (45): arquivos **derivados**, preparados no projeto, não são publicações oficiais da SSP/SC | `dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip` | Somente no computador |
-| Dados processados de Joinville: violência doméstica, homicídios por edição, republicações, inventário, rastreabilidade e verificações | `dados/processados/ssp_sc/ssp_sc_joinville_processados.zip` | Somente no computador |
+| PDFs oficiais originais (45), sem modificação | `dados/brutos/ssp_sc/ssp_sc_pdfs_originais.zip` | Somente no computador; baixar nos endereços oficiais do catálogo |
+| CSVs extraídos dos PDFs (45): arquivos **derivados**, preparados no projeto, não são publicações oficiais da SSP/SC | `dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip` | No GitHub ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip)) |
+| Dados processados de Joinville: violência doméstica, homicídios por edição, republicações, inventário, rastreabilidade e verificações | `dados/processados/ssp_sc/ssp_sc_joinville_processados.zip` | No GitHub ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/ssp_sc/ssp_sc_joinville_processados.zip)) |
+| Tabelas de etapas anteriores (16/10 e 28/10/2026), substituídas pelas atuais | `dados/processados/historico/ssp_sc_versoes_anteriores.zip` | No GitHub, como **histórico** ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/historico/ssp_sc_versoes_anteriores.zip)) |
 | Catálogo com endereço oficial, período e SHA-256 de cada PDF e CSV | [`dados/brutos/ssp_sc/fontes_oficiais.csv`](dados/brutos/ssp_sc/fontes_oficiais.csv) | No GitHub |
 | Explicação da fonte, dos arquivos, da reprodução e das restrições | [`dados/brutos/ssp_sc/README.md`](dados/brutos/ssp_sc/README.md) | No GitHub |
 
@@ -102,7 +105,7 @@ Os relatórios de violência doméstica não esclarecem suficientemente o signif
 
 Notícias da Prefeitura/SEPROT e um relatório da SSP/SC disponibilizado pela ALESC apresentam números divergentes para 2023: **furtos de 1.351 ou 8.865** e **roubos de 361, 669 ou 933**, conforme a fonte. Como as publicações não esclarecem todos os critérios necessários para conciliar esses valores, **eles não foram incorporados ao painel principal**.
 
-Isso demonstra por que identificar a origem e o significado dos números é tão importante quanto construir gráficos. As fontes, as divergências e a matriz de indicadores consultados estão no [anexo de fontes complementares](documentacao/anexos/notas_fontes_complementares.md), sem integrar a base do painel.
+Isso demonstra por que identificar a origem e o significado dos números é tão importante quanto construir gráficos. As fontes, as divergências e a matriz de indicadores consultados estão no [anexo de fontes complementares](documentacao/anexos/notas_fontes_complementares.md), sem integrar a base do painel. Os números reunidos estão em `dados/processados/complementares/fontes_complementares_joinville.zip` ([baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/complementares/fontes_complementares_joinville.zip)), identificados como **complementares e não validados**.
 
 ## 5. ETL e metodologia
 
@@ -159,7 +162,7 @@ Os ZIPs guardam os arquivos de entrada e de saída do ETL [`scripts/etl_joinvill
 
 | Passo | Sinesp/MJSP | SSP/SC |
 | --- | --- | --- |
-| **Descompactação** | `dados/brutos/sinesp_ANO_xlsx.zip` → `dados/brutos/sinesp/bancovde-ANO.xlsx` | `ssp_sc_pdfs_originais.zip` → `dados/brutos/ssp_sc/pdfs/`; `ssp_sc_csv_extraidos.zip` → `dados/brutos/ssp_sc/csv_extraidos/` (somente no computador do autor) |
+| **Descompactação** | `dados/brutos/sinesp_ANO_xlsx.zip` → `dados/brutos/sinesp/bancovde-ANO.xlsx` | `ssp_sc_csv_extraidos.zip` → `dados/brutos/ssp_sc/csv_extraidos/`; PDFs baixados dos endereços oficiais do catálogo → `dados/brutos/ssp_sc/pdfs/` |
 | **Leitura (etapas 3 e 11)** | Procura cada `bancovde-ANO.xlsx` em `dados/brutos/sinesp/` e nas subpastas | Exige exatamente 45 PDFs e 45 CSVs nas duas pastas |
 | **Conferência por SHA-256** | Só aceita o XLSX cujo SHA-256 está no manifesto da versão `20261027T114400Z` | Confere o SHA-256 dos PDFs antes e depois, para provar que não foram alterados |
 | **Tratamento e validação (etapas 5–10 e 12)** | Duplicidades, ausências, tipos, recorte de Joinville e comparação com a base aprovada | Leitura das células indicadas pelos CSVs e conferência de cada valor no PDF (159 verificações) |
@@ -167,7 +170,12 @@ Os ZIPs guardam os arquivos de entrada e de saída do ETL [`scripts/etl_joinvill
 
 As duas fontes são tratadas em etapas e pastas **separadas** do começo ao fim; nenhuma tabela soma ou junta Sinesp e SSP/SC.
 
-**Reprodução com os arquivos publicados:** com os ZIPs do Sinesp descompactados, as etapas 1 a 10 são executadas e conferidas, e a base reconstruída é igual à publicada. Esse resultado foi testado num clone limpo, sem a pasta `dados/` original. Sem os PDFs e os CSVs da SSP/SC, o ETL completo **não termina normalmente**: ele para na etapa 11, com a mensagem “Acervo da SSP/SC incompleto”. As saídas do Sinesp que ele gravaria na etapa 13 já estão no ZIP processado.
+**Reprodução com os arquivos publicados:** testada num clone limpo do repositório, apenas com os arquivos publicados e os comandos do [`dados/README.md`](dados/README.md#como-descompactar):
+
+- **Só com os ZIPs do Sinesp:** as etapas 1 a 10 são executadas e conferidas, e a base reconstruída é igual à publicada. O ETL **para na etapa 11** (“Acervo da SSP/SC incompleto”).
+- **Com os CSVs extraídos e os 45 PDFs baixados da fonte oficial:** as 14 etapas terminam sem divergências. As 11 saídas gravadas são idênticas, byte a byte, às dos ZIPs processados.
+
+Se a SSP/SC alterar ou retirar algum PDF do site, o comando de download avisa (`DIFERENTE`) e a parte da SSP/SC deixa de ser reproduzível.
 
 ## 6. Bibliotecas e tecnologias
 
@@ -332,7 +340,7 @@ O Streamlit reúne a análise em **uma única página**, com a bandeira de Joinv
 
 Os filtros do Sinesp são **Indicador**, **Período (anos)** e **Meses**, com o botão **Restaurar filtros** e a chave **Visualização compacta (celular)**. A escolha da classificação institucional só aparece em **Mandado de prisão cumprido**, que tem duas séries (Estadual e Polícia Federal). Um bloco recolhível mostra ainda quatro gráficos de referência fixos dos indicadores principais (homicídio doloso, tentativa de homicídio, feminicídio e tentativa de feminicídio), que não mudam com os filtros.
 
-**Acesso à SSP/SC:** a seção detalhada de violência doméstica, com seleção de categoria, números e gráfico, depende do arquivo tratado que permanece **somente no computador**. No **Streamlit Cloud**, a aplicação apresenta a limitação e uma figura-resumo, sem disponibilizar o CSV tratado. A captura abaixo é da execução local.
+**Acesso à SSP/SC:** a seção detalhada de violência doméstica, com seleção de categoria, números e gráfico, depende do arquivo tratado em `dados/processados/ssp_sc/`, que existe **somente no computador do autor**. Os mesmos dados estão publicados em ZIP, mas o painel não lê ZIPs. No **Streamlit Cloud**, a aplicação apresenta a limitação e uma figura-resumo, sem disponibilizar o CSV tratado. A captura abaixo é da execução local.
 
 <p align="center">
   <img src="./documentacao/graficos/painel/06_violencia_domestica_ssp_sc.png" alt="Violência doméstica na execução local" width="100%">
@@ -344,7 +352,7 @@ Os filtros do Sinesp são **Indicador**, **Período (anos)** e **Meses**, com o 
 
 **Versão pública e versão local:**
 
-- **Versão pública:** [Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/). Em 29/10/2026, a página publicada mostrava a versão final de página única, com os dados do Sinesp até setembro de 2026 (911 registros, 12 séries). A seção de violência doméstica mostra o aviso e a figura-resumo, porque os dados tratados da SSP/SC não são publicados.
+- **Versão pública:** [Streamlit Community Cloud](https://seguranca-publica-joinville-sinesp.streamlit.app/). Em 29/10/2026, a página publicada mostrava a versão final de página única, com os dados do Sinesp até setembro de 2026 (911 registros, 12 séries). A seção de violência doméstica mostra o aviso e a figura-resumo, porque o painel publicado não tem o arquivo tratado da SSP/SC.
 - **Versão local:** executada com `.\.venv\Scripts\python.exe -m streamlit run scripts/painel_streamlit.py` e aberta em `http://localhost:8501`. No computador do autor, com os arquivos da SSP/SC, a seção de violência doméstica também mostra o filtro de categoria, os cartões e o gráfico (captura acima).
 
 ## 11. Como executar
@@ -381,7 +389,7 @@ py -3.14 -m venv .venv
 **O que acontece em cada passo:**
 
 - **Passos 2 e 3:** usam apenas bibliotecas que já vêm com o Python (`hashlib` e `zipfile`). Se o comando `py` não existir, use `python`. Também é possível descompactar pelo Explorador de Arquivos (*Extrair tudo*), escolhendo as mesmas pastas. O [`dados/README.md`](dados/README.md) explica cada ZIP, a licença e a conferência.
-- **Passo 5:** as etapas 1 a 10 (Sinesp) são executadas e conferidas: a base reconstruída é igual à publicada. Na etapa 11, o ETL **para com a mensagem** “Acervo da SSP/SC incompleto”, porque os 45 PDFs e os 45 CSVs da SSP/SC ficam apenas no computador do autor (ver a seção 5.5). Os PDFs podem ser baixados nos endereços do [catálogo de fontes](dados/brutos/ssp_sc/fontes_oficiais.csv), mas os CSVs extraídos não são publicados ([detalhes](dados/brutos/ssp_sc/README.md#4-como-reproduzir)). As saídas do Sinesp já estão no ZIP processado.
+- **Passo 5:** com os XLSX do Sinesp, as etapas 1 a 10 são executadas e conferidas: a base reconstruída é igual à publicada. Na etapa 11, o ETL **para com a mensagem** “Acervo da SSP/SC incompleto”. Para executar as **14 etapas**, antes do passo 5 descompacte também os CSVs da SSP/SC e baixe os 45 PDFs dos endereços oficiais. Os dois comandos estão em [`dados/README.md`](dados/README.md#como-descompactar); o download confere o SHA-256 de cada PDF.
 - **Passo 6:** com o `bancovde-2026.xlsx` descompactado, a etapa 3 do notebook inspeciona o arquivo original. As etapas da SSP/SC mostram um aviso e a figura-resumo.
 - **Passo 7:** o painel usa somente `dashboard/data_publica/` e funciona mesmo sem os passos 2, 3 e 5.
 
@@ -460,9 +468,10 @@ Seguranca Publica Joinville/
 │   └── settings.json                    ← interpretador da .venv e pasta do notebook
 │
 └── dados/                               [P] = no GitHub · [L] = somente no computador
-    ├── README.md                        [P] conteúdo, origem, licença e descompactação
-    ├── manifesto_zips.json              [P] arquivos internos, tamanhos e SHA-256 (Sinesp)
-    ├── SHA256SUMS.txt                   [P] SHA-256 de cada ZIP do Sinesp
+    ├── README.md                        [P] fontes, licenças, links de download e descompactação
+    ├── manifesto_zips.json              [P] fonte, período, situação e SHA-256 de cada ZIP
+    ├── SHA256SUMS.txt                   [P] SHA-256 dos 14 ZIPs publicados
+    ├── inventario_dados.csv             [P] todos os arquivos de dados/, publicados ou não
     ├── brutos/
     │   ├── sinesp_2020_xlsx.zip         [P] bancovde-2020.xlsx original (MJSP)
     │   ├── sinesp_2021_xlsx.zip         [P] bancovde-2021.xlsx original (MJSP)
@@ -473,24 +482,31 @@ Seguranca Publica Joinville/
     │   ├── sinesp_2026_xlsx.zip         [P] bancovde-2026.xlsx original (MJSP)
     │   ├── sinesp/                      [L] XLSX oficiais e edições anteriores
     │   └── ssp_sc/
-    │       ├── README.md                [P] fonte, arquivos, reprodução e restrições
-    │       ├── fontes_oficiais.csv      [P] endereço oficial e SHA-256 de cada arquivo
-    │       ├── ssp_sc_pdfs_originais.zip   [L] 45 PDFs oficiais
-    │       ├── ssp_sc_csv_extraidos.zip    [L] 45 CSVs derivados
+    │       ├── README.md                [P] fonte, arquivos, reprodução e reutilização
+    │       ├── fontes_oficiais.csv      [P] endereço oficial e SHA-256 de cada PDF e CSV
+    │       ├── ssp_sc_csv_extraidos.zip    [P] 45 CSVs derivados dos PDFs
+    │       ├── ssp_sc_pdfs_originais.zip   [L] 45 PDFs oficiais (reserva de direitos)
     │       ├── pdfs/                    [L] 45 PDFs descompactados
     │       ├── csv_extraidos/           [L] 45 CSVs descompactados
     │       └── paginas_referencia/      [L] cópia da página Segurança em Números
     └── processados/
         ├── SINESP_20_26_Petras_Ruben_Carvalho.zip   [P] saídas Sinesp do ETL
+        ├── consolidacao_union_joinville.zip         [P] estudo UNION/JOIN (Sinesp)
         ├── ssp_sc/
-        │   ├── ssp_sc_joinville_processados.zip     [L] saídas SSP/SC do ETL
-        │   └── ...                      [L] tabelas de execuções anteriores do ETL
-        └── sinesp/, analises/, prefeitura/, complementares/   [L] arquivos de etapas anteriores
+        │   ├── ssp_sc_joinville_processados.zip     [P] saídas SSP/SC do ETL
+        │   └── ...                      [L] tabelas soltas (atuais e anteriores)
+        ├── historico/
+        │   ├── sinesp_edicao_anterior_ate_ago2026.zip   [P] histórico: Sinesp até ago/2026
+        │   └── ssp_sc_versoes_anteriores.zip            [P] histórico: SSP/SC de etapas anteriores
+        ├── complementares/
+        │   ├── fontes_complementares_joinville.zip      [P] Prefeitura e matriz de evidências
+        │   └── ...                      [L] tabela solta
+        └── sinesp/, analises/, prefeitura/   [L] arquivos soltos, também incluídos nos ZIPs acima
 ```
 
 Ao descompactar os ZIPs ou executar o ETL, surgem também `dados/brutos/sinesp/bancovde-ANO.xlsx` e `dados/processados/etl_joinville/` (`sinesp/` e `ssp_sc/`). Essas pastas não são publicadas.
 
-As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permite importar os módulos. A pasta `src/` permanece porque contém funções utilizadas pelo ETL e pelo notebook. Da pasta `dados/`, são publicados os ZIPs do Sinesp, os arquivos de integridade (cerca de 120 MiB no total), o `README.md` e, da SSP/SC, apenas o `README.md` e o catálogo `fontes_oficiais.csv`. Permanecem **somente no computador** os três ZIPs da SSP/SC, os PDFs e CSVs descompactados, as edições anteriores dos XLSX e os arquivos intermediários. Da pasta `video/`, só o `README.md` é publicado; gravações e versões provisórias ficam no computador.
+As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permite importar os módulos. A pasta `src/` permanece porque contém funções utilizadas pelo ETL e pelo notebook. Da pasta `dados/`, são publicados 14 ZIPs (cerca de 121 MiB no total) e os arquivos de documentação e integridade. Permanecem **somente no computador** o ZIP dos PDFs da SSP/SC, os arquivos soltos (descompactados ou duplicados), as edições anteriores dos XLSX e a cópia da página da SSP/SC. Todos estão listados no inventário. Da pasta `video/`, só o `README.md` é publicado; gravações e versões provisórias ficam no computador.
 
 ## 13. Limitações e melhorias futuras
 
@@ -500,7 +516,7 @@ As pastas `dashboard/` e `src/` também têm um arquivo `__init__.py`, que permi
 - **Unidades diferentes:** vítimas, mandados e fatos comunicados não podem ser somados.
 - **SSP/SC:** definição de “Fato Comunicado”, divergências dos boletins e condições de reutilização exigem esclarecimentos adicionais.
 - **Revisões oficiais:** os valores podem ser republicados; qualquer atualização exige nova conferência.
-- **Reprodução da SSP/SC:** sem autorização de redistribuição, os PDFs, os CSVs extraídos e os dados tratados ficam fora do GitHub. Com os arquivos publicados, a parte do Sinesp é reproduzida por completo, mas o ETL para na etapa 11.
+- **Reprodução da SSP/SC:** os PDFs não são republicados, por causa da reserva de direitos da fonte. A reprodução completa depende de eles continuarem disponíveis, sem alteração, nos endereços oficiais. Os dados estatísticos publicados não têm licença declarada pela SSP/SC.
 
 Como continuidade, o projeto poderá incorporar novos indicadores apenas quando houver fontes municipais compatíveis, com definições, períodos e condições de reutilização esclarecidos.
 
@@ -520,6 +536,7 @@ As cores do painel (azul `#074EA2`, fundo `#EAF4FC`, cartões `#FFFFFF`) foram *
 
 - **GitHub pessoal:** [Análise da Segurança Pública de Joinville](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC).
 - **Streamlit Cloud:** [Abrir o painel](https://seguranca-publica-joinville-sinesp.streamlit.app/), versão final de página única.
+- **Bases de dados:** [links diretos para download dos 14 ZIPs](dados/README.md#links-diretos-para-download), com o SHA-256 em [`dados/SHA256SUMS.txt`](dados/SHA256SUMS.txt).
 - **Google Drive:** [Pasta de entrega](https://drive.google.com/drive/folders/1C14z1f0nRCzVbS321L3e9TDmocGinPfu?usp=sharing).
 - **Repositório oficial da turma:** [Projeto Final — Petras Ruben Carvalho](https://github.com/Visualizacao-Dados-BI-T1/Projeto_ZP/tree/main/Projetos/Projeto_Final_do_Curso/Petras%20Ruben%20Carvalho) (repositório privado: acesso restrito aos participantes da turma). Para não duplicar arquivos grandes no repositório coletivo, os ZIPs de dados do Sinesp ficam no GitHub pessoal ([links diretos para download](dados/README.md#links-diretos-para-download)).
 - **LinkedIn:** [Perfil profissional](https://www.linkedin.com/in/petrasrubencarvalho/).

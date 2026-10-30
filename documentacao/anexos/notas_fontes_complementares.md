@@ -4,6 +4,8 @@ Complemento da seção 4.3 do [README](../../README.md). Estes registros documen
 
 O acervo de 45 PDFs da SSP/SC usado nas análises de violência doméstica e de homicídios é descrito separadamente em [`dados/brutos/ssp_sc/README.md`](../../dados/brutos/ssp_sc/README.md), com o catálogo de endereços oficiais e SHA-256.
 
+As tabelas com os números deste anexo (furtos e roubos divulgados pela Prefeitura/SEPROT, de 2023 a 2025, e a matriz de evidências) estão em `dados/processados/complementares/fontes_complementares_joinville.zip`, descrito no [`dados/README.md`](../../dados/README.md). São dados **complementares e não validados**, mantidos para documentar as divergências; não fazem parte da base do painel.
+
 Consulta feita em 27/10/2026. **Nada deste documento foi incorporado ao dashboard nem à base Sinesp**. Dados estaduais não foram usados como se fossem de Joinville.
 
 ## 1. O que o Sinesp realmente traz para Joinville

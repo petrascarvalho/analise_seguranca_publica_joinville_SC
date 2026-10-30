@@ -33,23 +33,36 @@ desktop.ini
 /backup_pre_migracao_20261016/
 /data/joinville_rows.json
 
-# Acervo e derivados: só são publicados os ZIPs do Sinesp/MJSP (XLSX oficiais sem modificação e saídas Sinesp do ETL),
-# o dados/README.md e os arquivos de integridade. SSP/SC, edições anteriores e intermediários continuam só locais.
+# Acervo de dados: lista explícita do que é publicado (ZIPs aprovados, READMEs, manifesto, hashes e inventário).
+# Arquivos soltos, PDFs da SSP/SC, edições anteriores dos XLSX e cópias locais continuam só no computador.
 /dados/*
 !/dados/README.md
 !/dados/manifesto_zips.json
 !/dados/SHA256SUMS.txt
+!/dados/inventario_dados.csv
 !/dados/brutos/
 /dados/brutos/*
 !/dados/brutos/sinesp_20[2-9][0-9]_xlsx.zip
-# SSP/SC: só o README e o catálogo de fontes (metadados e links oficiais). PDFs, CSVs e ZIPs ficam locais.
+# SSP/SC: README, catálogo de fontes e ZIP dos CSVs extraídos. O ZIP dos PDFs originais fica local (reserva de direitos).
 !/dados/brutos/ssp_sc/
 /dados/brutos/ssp_sc/*
 !/dados/brutos/ssp_sc/README.md
 !/dados/brutos/ssp_sc/fontes_oficiais.csv
+!/dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip
 !/dados/processados/
 /dados/processados/*
 !/dados/processados/SINESP_20_26_Petras_Ruben_Carvalho.zip
+!/dados/processados/consolidacao_union_joinville.zip
+!/dados/processados/ssp_sc/
+/dados/processados/ssp_sc/*
+!/dados/processados/ssp_sc/ssp_sc_joinville_processados.zip
+!/dados/processados/historico/
+/dados/processados/historico/*
+!/dados/processados/historico/sinesp_edicao_anterior_ate_ago2026.zip
+!/dados/processados/historico/ssp_sc_versoes_anteriores.zip
+!/dados/processados/complementares/
+/dados/processados/complementares/*
+!/dados/processados/complementares/fontes_complementares_joinville.zip
 # saídas antigas e evidência da SSP/SC: só locais, preservadas em historico/
 /historico/saidas_antigas/
 /historico/ssp_sc/evidencia_grafia_violencia_domestica_2023.png

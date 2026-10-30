@@ -1,39 +1,54 @@
 # Dados do projeto — Segurança Pública de Joinville/SC
 
-Esta pasta guarda os **dados do Sinesp/MJSP** usados no projeto, compactados em ZIP. Os arquivos estão **sem nenhuma modificação** dentro dos ZIPs: os nomes e formatos originais foram preservados.
+Esta pasta reúne os dados do projeto em arquivos ZIP, separados por fonte:
 
-## Arquivos disponíveis
+- **Sinesp/MJSP:** a fonte principal do painel;
+- **SSP/SC:** fonte complementar, em validação;
+- **arquivos históricos e complementares**, identificados como tais.
 
-| Arquivo ZIP | Conteúdo | Tipo | Tamanho original | Tamanho do ZIP |
-| --- | --- | --- | ---: | ---: |
-| `brutos/sinesp_2020_xlsx.zip` | `bancovde-2020.xlsx` | Original (MJSP) | 23,16 MiB | 17,11 MiB |
-| `brutos/sinesp_2021_xlsx.zip` | `bancovde-2021.xlsx` | Original (MJSP) | 23,22 MiB | 17,13 MiB |
-| `brutos/sinesp_2022_xlsx.zip` | `bancovde-2022.xlsx` | Original (MJSP) | 23,23 MiB | 17,17 MiB |
-| `brutos/sinesp_2023_xlsx.zip` | `bancovde-2023.xlsx` | Original (MJSP) | 23,25 MiB | 17,21 MiB |
-| `brutos/sinesp_2024_xlsx.zip` | `bancovde-2024.xlsx` | Original (MJSP) | 23,26 MiB | 17,19 MiB |
-| `brutos/sinesp_2025_xlsx.zip` | `bancovde-2025.xlsx` | Original (MJSP) | 25,41 MiB | 19,22 MiB |
-| `brutos/sinesp_2026_xlsx.zip` | `bancovde-2026.xlsx` (janeiro a setembro) | Original (MJSP) | 19,71 MiB | 15,23 MiB |
-| `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip` | 4 arquivos gerados pelo ETL (ver abaixo) | Processado pelo projeto | 0,13 MiB | 0,01 MiB |
+Dentro dos ZIPs, os arquivos estão **sem nenhuma modificação**, com os nomes e formatos originais. O inventário completo de todos os arquivos da pasta, publicados ou não, está em [`inventario_dados.csv`](inventario_dados.csv).
 
-- **Originais:** os sete XLSX anuais da base nacional **Sinesp VDE**, na edição `20261027T114400Z` (republicada pelo MJSP em 27/10/2026). Cada arquivo traz **todos os municípios do Brasil**; o recorte de Joinville é feito pelo ETL. Só foram incluídos os arquivos cujo SHA-256 está registrado no manifesto da base aprovada.
-- **Processados:** saídas do Sinesp geradas por `scripts/etl_joinville.py` a partir desses XLSX:
-  - `etl_sinesp_joinville_mensal.csv`: base mensal de Joinville (911 registros, 12 séries), idêntica a `dashboard/data_publica/sinesp_joinville_mensal.csv`;
-  - `etl_catalogo_series.csv`: uma linha por série, com unidade e período;
-  - `etl_recorte_joinville_bruto.csv`: linhas de Joinville copiadas dos XLSX, antes da padronização;
-  - `etl_relatorio.json`: contagens, conferências e SHA-256 dos XLSX usados.
+## Arquivos publicados
 
-Cada registro mensal é o valor de **um mês de uma série**; 911 registros não significam 911 crimes.
+| Arquivo ZIP | Fonte | Conteúdo | Situação | ZIP |
+| --- | --- | --- | --- | ---: |
+| `brutos/sinesp_2020_xlsx.zip` … `brutos/sinesp_2026_xlsx.zip` | MJSP / Sinesp VDE | Um XLSX original por ano (`bancovde-ANO.xlsx`), edição `20261027T114400Z`; 2026 de janeiro a setembro | Atual (original) | 15,2 a 19,2 MiB cada |
+| `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip` | MJSP / Sinesp VDE | 4 saídas do ETL: base mensal (911 registros, 12 séries), catálogo, recorte bruto e relatório | Atual (processado) | 0,01 MiB |
+| `processados/consolidacao_union_joinville.zip` | MJSP / Sinesp VDE | Estudo UNION/JOIN de `src/pipeline/consolidacao.py`: Sinesp no esquema comum (911 registros) e matriz de compatibilidade | Atual (processado) | 0,01 MiB |
+| `brutos/ssp_sc/ssp_sc_csv_extraidos.zip` | SSP/SC (extraído pelo projeto) | 45 CSVs extraídos dos PDFs; são **derivados**, não publicações oficiais | Atual | 0,28 MiB |
+| `processados/ssp_sc/ssp_sc_joinville_processados.zip` | SSP/SC | 7 saídas do ETL: violência doméstica (216), homicídios por edição (294), republicações, inventário, rastreabilidade, verificações e relatório | Atual (processado) | 0,02 MiB |
+| `processados/historico/sinesp_edicao_anterior_ate_ago2026.zip` | MJSP / Sinesp VDE, edição anterior | Recortes de Joinville gerados em 16/10/2026, com dados até agosto/2026 (900 registros) | **Histórico** | 0,07 MiB |
+| `processados/historico/ssp_sc_versoes_anteriores.zip` | SSP/SC | Tabelas de Joinville de etapas anteriores (16/10 e 28/10/2026), substituídas pelas saídas atuais | **Histórico** | 0,02 MiB |
+| `processados/complementares/fontes_complementares_joinville.zip` | Prefeitura/SEPROT; SSP/SC via ALESC | Furtos e roubos divulgados (2023–2025) e matriz de evidências | **Complementar, não validado** | 0,005 MiB |
 
-## Origem e licença
+- Os arquivos **históricos** e **complementares** servem para documentar o caminho da análise e as divergências entre fontes. **Não são resultados atuais** e não entram no painel.
+- Cada registro mensal do Sinesp é o valor de **um mês de uma série**: 911 registros não significam 911 crimes.
+- O [`manifesto_zips.json`](manifesto_zips.json) lista, para cada ZIP, a fonte, o período, a situação e o SHA-256 de cada arquivo interno.
 
-- **Fonte:** Ministério da Justiça e Segurança Pública — [Sinesp VDE, base de dados](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados).
-- **Licença informada no portal gov.br:** [Creative Commons Atribuição-SemDerivações 3.0](https://creativecommons.org/licenses/by-nd/3.0/deed.pt_BR) (CC BY-ND 3.0). Ela permite redistribuir cópias **sem modificação**, com atribuição da fonte. Por isso os XLSX são publicados exatamente como foram baixados, apenas compactados.
-- **Atribuição:** Fonte: MJSP / Sinesp VDE. Os arquivos processados são elaboração própria do projeto a partir desses dados.
-- Os dados são **contagens agregadas por município**; não contêm nomes nem informações pessoais.
+## Arquivo não publicado
+
+| Arquivo | Motivo |
+| --- | --- |
+| `brutos/ssp_sc/ssp_sc_pdfs_originais.zip` (45 PDFs originais da SSP/SC) | O site da fonte informa “Copyright © 2023 Todos os Direitos Reservados SC - Governo de Santa Catarina” ([Segurança em Números](https://ssp.sc.gov.br/segurancaemnumeros/), conferido em 29/10/2026), e os PDFs não trazem licença de reutilização. Por isso, os documentos **não são republicados na íntegra**. Os 45 PDFs podem ser baixados nos endereços oficiais, com conferência automática do SHA-256 (ver abaixo). |
+
+Também ficam só no computador as edições anteriores dos XLSX do Sinesp, uma cópia da página da SSP/SC e cópias locais duplicadas. Todos esses arquivos estão listados no inventário.
+
+## Origem e reutilização
+
+- **Sinesp/MJSP:** [base de dados do Sinesp VDE](https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados).
+  - A licença informada no portal gov.br é a [CC BY-ND 3.0](https://creativecommons.org/licenses/by-nd/3.0/deed.pt_BR), que permite redistribuir cópias **sem modificação**, com atribuição. Por isso os XLSX são publicados exatamente como foram baixados.
+  - Os arquivos processados são elaboração do projeto a partir desses dados.
+- **SSP/SC:** [Segurança em Números](https://ssp.sc.gov.br/segurancaemnumeros/).
+  - **Não há licença de reutilização informada.** O projeto publica somente os **dados estatísticos** extraídos e tratados, com atribuição da fonte. Os PDFs, que são os documentos com reserva de direitos, não são republicados.
+  - A unidade “Fato Comunicado” não tem definição oficial nos PDFs, e os boletins republicam valores diferentes para o mesmo período.
+- **Prefeitura/SEPROT e relatório da SSP/SC via ALESC:** números divulgados publicamente, com divergências entre fontes. Ver o [anexo de fontes complementares](../documentacao/anexos/notas_fontes_complementares.md).
+- **Dados pessoais:** todos os dados são **contagens agregadas por município**. Nos arquivos publicados não foram encontrados nomes, CPFs, e-mails ou telefones.
+
+Avaliação técnica de reutilização, não parecer jurídico. **Atribuição:** Fontes: MJSP / Sinesp VDE; SSP/SC — Segurança em Números. Tabelas processadas: elaboração do projeto.
 
 ## Links diretos para download
 
-Os ZIPs ficam no [GitHub pessoal do projeto](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC). Cada link abaixo baixa um arquivo; depois de baixar, confira o SHA-256 (ver “Como conferir a integridade”).
+Os ZIPs ficam no [GitHub pessoal do projeto](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC). Depois de baixar, confira o SHA-256 (ver “Como conferir a integridade”). Para usar com o projeto, salve cada ZIP no mesmo caminho da coluna “Arquivo”, dentro da pasta `dados/`.
 
 | Arquivo | Download |
 | --- | --- |
@@ -45,68 +60,50 @@ Os ZIPs ficam no [GitHub pessoal do projeto](https://github.com/petrascarvalho/a
 | `brutos/sinesp_2025_xlsx.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/brutos/sinesp_2025_xlsx.zip) |
 | `brutos/sinesp_2026_xlsx.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/brutos/sinesp_2026_xlsx.zip) |
 | `processados/SINESP_20_26_Petras_Ruben_Carvalho.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/SINESP_20_26_Petras_Ruben_Carvalho.zip) |
-
-Para usar com o projeto, salve cada ZIP no mesmo caminho da coluna “Arquivo”, dentro da pasta `dados/`.
-
-## Como baixar e descompactar
-
-1. Baixe o repositório (`git clone` ou o botão **Code → Download ZIP** do GitHub). Os ZIPs de dados ocupam cerca de **120 MiB**.
-2. Confira o SHA-256 dos ZIPs (ver “Como conferir a integridade”, abaixo).
-3. Descompacte os ZIPs **nas pastas indicadas**, a partir da pasta principal do projeto. No **Prompt de Comando (CMD)** do Windows (`zipfile` já vem com o Python; se o comando `py` não existir, use `python`):
-
-```bat
-:: Originais: os sete XLSX vão para dados\brutos\sinesp\
-py -c "import glob, zipfile; [zipfile.ZipFile(z).extractall('dados/brutos/sinesp') for z in glob.glob('dados/brutos/sinesp_*_xlsx.zip')]"
-
-:: Processados: recria dados\processados\etl_joinville\sinesp\
-py -c "import zipfile; zipfile.ZipFile('dados/processados/SINESP_20_26_Petras_Ruben_Carvalho.zip').extractall('dados/processados')"
-```
-
-Também é possível usar **Extrair tudo** no Explorador de Arquivos, escolhendo as mesmas pastas de destino (`dados\brutos\sinesp` para os sete originais e `dados\processados` para o processado).
-
-Resultado esperado:
-
-```text
-dados/
-├── brutos/
-│   └── sinesp/
-│       ├── bancovde-2020.xlsx
-│       ├── ...
-│       └── bancovde-2026.xlsx
-└── processados/
-    └── etl_joinville/
-        └── sinesp/
-            ├── etl_catalogo_series.csv
-            ├── etl_recorte_joinville_bruto.csv
-            ├── etl_relatorio.json
-            └── etl_sinesp_joinville_mensal.csv
-```
+| `processados/consolidacao_union_joinville.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/consolidacao_union_joinville.zip) |
+| `brutos/ssp_sc/ssp_sc_csv_extraidos.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip) |
+| `processados/ssp_sc/ssp_sc_joinville_processados.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/ssp_sc/ssp_sc_joinville_processados.zip) |
+| `processados/historico/sinesp_edicao_anterior_ate_ago2026.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/historico/sinesp_edicao_anterior_ate_ago2026.zip) |
+| `processados/historico/ssp_sc_versoes_anteriores.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/historico/ssp_sc_versoes_anteriores.zip) |
+| `processados/complementares/fontes_complementares_joinville.zip` | [baixar](https://github.com/petrascarvalho/analise_seguranca_publica_joinville_SC/raw/main/dados/processados/complementares/fontes_complementares_joinville.zip) |
 
 ## Como conferir a integridade
 
-O arquivo [`SHA256SUMS.txt`](SHA256SUMS.txt) tem o SHA-256 de cada ZIP, e o [`manifesto_zips.json`](manifesto_zips.json) tem, para cada ZIP, os arquivos internos com tamanho e SHA-256. Para conferir os oito ZIPs de uma vez, no CMD, a partir da pasta principal (cada linha deve mostrar `OK`):
+O [`SHA256SUMS.txt`](SHA256SUMS.txt) tem o SHA-256 de cada ZIP publicado. No CMD, a partir da pasta principal do projeto, o comando abaixo confere todos de uma vez; cada linha deve mostrar `OK`:
 
 ```bat
 py -c "import hashlib; [print('OK ' if hashlib.sha256(open('dados/' + nome, 'rb').read()).hexdigest() == h else 'DIFERENTE ', nome) for h, nome in (linha.split() for linha in open('dados/SHA256SUMS.txt'))]"
 ```
 
-Também é possível conferir um arquivo por vez no PowerShell, com `Get-FileHash dados\brutos\sinesp_2020_xlsx.zip -Algorithm SHA256`. O valor exibido deve ser igual ao da linha correspondente em `SHA256SUMS.txt`. O ETL também confere sozinho o SHA-256 de cada XLSX e só aceita a edição aprovada.
+Se o comando `py` não existir, use `python`. Também é possível conferir um arquivo por vez no PowerShell, com `Get-FileHash dados\brutos\sinesp_2020_xlsx.zip -Algorithm SHA256`. O ETL também confere sozinho o SHA-256 de cada XLSX e só aceita a edição aprovada.
+
+## Como descompactar
+
+No **Prompt de Comando (CMD)**, a partir da pasta principal do projeto (`zipfile` já vem com o Python). Os destinos são as pastas que o ETL e o notebook procuram:
+
+```bat
+:: Sinesp: os sete XLSX vão para dados\brutos\sinesp\
+py -c "import glob, zipfile; [zipfile.ZipFile(z).extractall('dados/brutos/sinesp') for z in glob.glob('dados/brutos/sinesp_*_xlsx.zip')]"
+
+:: Sinesp processado: recria dados\processados\etl_joinville\sinesp\
+py -c "import zipfile; zipfile.ZipFile('dados/processados/SINESP_20_26_Petras_Ruben_Carvalho.zip').extractall('dados/processados')"
+
+:: SSP/SC: CSVs extraídos vão para dados\brutos\ssp_sc\csv_extraidos\
+py -c "import zipfile; zipfile.ZipFile('dados/brutos/ssp_sc/ssp_sc_csv_extraidos.zip').extractall('dados/brutos/ssp_sc/csv_extraidos')"
+
+:: SSP/SC: baixa os 45 PDFs dos endereços oficiais do catálogo e grava só os que têm o SHA-256 esperado
+py -c "import csv, hashlib, os, urllib.request; os.makedirs('dados/brutos/ssp_sc/pdfs', exist_ok=True); [(open('dados/brutos/ssp_sc/' + r['arquivo'], 'wb').write(d), print('OK', r['arquivo'])) if hashlib.sha256(d).hexdigest() == r['sha256'] else print('DIFERENTE (não gravado)', r['arquivo']) for r in csv.DictReader(open('dados/brutos/ssp_sc/fontes_oficiais.csv', encoding='utf-8')) if r['arquivo'].startswith('pdfs/') for d in [urllib.request.urlopen(urllib.request.Request(r['url_oficial'], headers={'User-Agent': 'Mozilla/5.0'})).read()]]"
+
+:: SSP/SC processado: recria dados\processados\etl_joinville\ssp_sc\
+py -c "import zipfile; zipfile.ZipFile('dados/processados/ssp_sc/ssp_sc_joinville_processados.zip').extractall('dados/processados')"
+```
+
+Os ZIPs históricos, complementares e de consolidação podem ser abertos em qualquer pasta, por exemplo com **Extrair tudo** no Explorador de Arquivos. Eles não são usados pelo ETL.
 
 ## Como usar depois de descompactar
 
-```bat
-:: ETL: lê os XLSX, refaz o recorte de Joinville e confere com a base aprovada
-.\.venv\Scripts\python.exe scripts\etl_joinville.py
-```
-
-- **ETL:** com os XLSX descompactados, as etapas do Sinesp (1 a 10) são executadas e conferidas: a base reconstruída é igual à publicada. Na etapa 11, o ETL **para com uma mensagem** porque o acervo da SSP/SC não é publicado (ver abaixo). As saídas do Sinesp que ele gravaria na etapa 13 já estão no ZIP processado.
-- **Notebook:** `notebooks/analise_seguranca_publica_joinville.ipynb` encontra o `bancovde-2026.xlsx` em `dados/brutos/sinesp/` e executa a etapa 3 (inspeção do arquivo original). As demais etapas do Sinesp usam `dashboard/data_publica/` e funcionam mesmo sem os ZIPs.
+- **ETL** (`.\.venv\Scripts\python.exe scripts\etl_joinville.py`):
+  - **só com os XLSX do Sinesp:** executa e confere as etapas 1 a 10 e para na etapa 11 com a mensagem “Acervo da SSP/SC incompleto”;
+  - **com os 45 CSVs extraídos e os 45 PDFs baixados da fonte:** executa as 14 etapas e grava as saídas em `dados/processados/etl_joinville/`. Elas são iguais às dos ZIPs processados.
+- **Notebook:** com o `bancovde-2026.xlsx` descompactado, a etapa 3 inspeciona o arquivo original. As etapas da SSP/SC usam os arquivos locais quando existem.
 - **Painel Streamlit:** não precisa desta pasta; usa somente `dashboard/data_publica/`.
-
-## Dados que permanecem apenas no computador do autor
-
-| Dados | Motivo |
-| --- | --- |
-| PDFs, CSVs extraídos e tabelas tratadas da **SSP/SC**, também compactados em três ZIPs locais (`brutos/ssp_sc/ssp_sc_pdfs_originais.zip`, `brutos/ssp_sc/ssp_sc_csv_extraidos.zip` e `processados/ssp_sc/ssp_sc_joinville_processados.zip`) | A página da fonte informa “Todos os Direitos Reservados”, sem licença de reutilização, e a unidade “Fato Comunicado” ainda não tem definição confirmada. O [README da SSP/SC](brutos/ssp_sc/README.md) descreve os arquivos, e o [catálogo de fontes](brutos/ssp_sc/fontes_oficiais.csv) traz o endereço oficial e o SHA-256 de cada PDF, para quem quiser baixá-los na [SSP/SC — Segurança em Números](https://ssp.sc.gov.br/segurancaemnumeros/). |
-| Edições anteriores dos XLSX do Sinesp | Não correspondem à versão aprovada; a edição atual pode ser baixada no portal do MJSP. |
-| Arquivos intermediários de etapas anteriores e números da Prefeitura | Não fazem parte da base final do projeto. |

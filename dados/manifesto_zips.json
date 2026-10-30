@@ -1,11 +1,11 @@
 {
-  "descricao": "ZIPs publicáveis dos dados do projeto Segurança Pública de Joinville/SC (somente Sinesp/MJSP).",
+  "descricao": "ZIPs publicados dos dados do projeto Segurança Pública de Joinville/SC: Sinesp/MJSP (originais e processados), dados estatísticos da SSP/SC e arquivos históricos identificados.",
   "versao_dados": "20261027T114400Z",
   "gerado_em": "2026-10-30T00:07:13Z",
   "compressao": "ZIP_DEFLATED, nível 9",
   "fonte": "MJSP / Sinesp VDE — https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/download/dnsp-base-de-dados",
   "licenca_informada_no_portal": "Creative Commons Atribuição-SemDerivações 3.0 Não Adaptada (CC BY-ND 3.0), rodapé do portal gov.br; XLSX redistribuídos sem modificação.",
-  "nao_publicados": "PDFs, CSVs extraídos e tabelas tratadas da SSP/SC; edições anteriores dos XLSX; arquivos intermediários e da Prefeitura.",
+  "nao_publicados": "PDFs originais da SSP/SC (ssp_sc_pdfs_originais.zip): o site da fonte declara reserva de direitos e não há licença de reutilização; podem ser baixados nos endereços oficiais de dados/brutos/ssp_sc/fontes_oficiais.csv. Também ficam locais: edições anteriores dos XLSX do Sinesp, cópia da página da SSP/SC e arquivos duplicados (ver dados/inventario_dados.csv).",
   "zips": [
     {
       "zip": "brutos/sinesp_2020_xlsx.zip",
@@ -152,6 +152,599 @@
         }
       ],
       "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos"
+    },
+    {
+      "fonte": "SSP/SC — Segurança em Números (dados extraídos pelo projeto)",
+      "situacao": "atual",
+      "periodo": "boletins jan/2023–jul/2026; violência doméstica 2023–2024",
+      "observacao": "45 CSVs derivados dos PDFs (não são publicações oficiais). Publicados como dados estatísticos, com atribuição; sem licença declarada pela fonte.",
+      "zip": "brutos/ssp_sc/ssp_sc_csv_extraidos.zip",
+      "bytes_zip": 293374,
+      "sha256_zip": "cf9825cdca918b66ea4a2547ba0634423cd00b8a1304088a4f52c96563ddce12",
+      "bytes_originais": 1806688,
+      "reducao_percentual": 83.8,
+      "arquivos": [
+        {
+          "nome_interno": "2024_05_01_janeiro_24.csv",
+          "bytes": 25324,
+          "sha256": "b550a216d9994be8cc8f63c53e1d85b0853f659b18172331ec98831f146bd66a",
+          "bytes_compactados": 5076
+        },
+        {
+          "nome_interno": "2024_05_02_fevereiro_24.csv",
+          "bytes": 26052,
+          "sha256": "fbf7c9bb595425383ebeb34e2a901497bf8b234556be6aa75b0dda4cb019341d",
+          "bytes_compactados": 5196
+        },
+        {
+          "nome_interno": "2024_05_03_marco_24.csv",
+          "bytes": 24664,
+          "sha256": "026441d2ea288bde0a8ff24de1e036102169dd7c006fd67099481ce3510b453d",
+          "bytes_compactados": 5248
+        },
+        {
+          "nome_interno": "2024_05_23.01_janeiro.csv",
+          "bytes": 24662,
+          "sha256": "40df55c88c8427121111f5d4481172006b60eb8e7ccb3298effc0aea8a4725be",
+          "bytes_compactados": 4965
+        },
+        {
+          "nome_interno": "2024_05_23.02_fevereiro.csv",
+          "bytes": 26290,
+          "sha256": "6eef232a1f0fb121460266c5589a1aaf5646c7e494f4e42acc94a47e8021e668",
+          "bytes_compactados": 5216
+        },
+        {
+          "nome_interno": "2024_05_23.04_abril.csv",
+          "bytes": 24750,
+          "sha256": "d14eb1d3651e7c59be52f65a94167815cd4c538289fde6e191adcd97300e27cc",
+          "bytes_compactados": 5300
+        },
+        {
+          "nome_interno": "2024_05_23.05_maio.csv",
+          "bytes": 24314,
+          "sha256": "23401a5ba92819c7b68b7127b1dd42198cdab1417fc65c8183efae8f632d65ea",
+          "bytes_compactados": 5324
+        },
+        {
+          "nome_interno": "2024_05_23.06_junho.csv",
+          "bytes": 24786,
+          "sha256": "5fde363c0ea269f15fba3050f04481385eb527c077d3e6acf423901672a0ac50",
+          "bytes_compactados": 5390
+        },
+        {
+          "nome_interno": "2024_05_23.07_julho.csv",
+          "bytes": 24902,
+          "sha256": "34d739128929a25c476ceec21a5f8a67107627a516ca867eea532b0e896bebbc",
+          "bytes_compactados": 5422
+        },
+        {
+          "nome_interno": "2024_05_23.08_agosto.csv",
+          "bytes": 25263,
+          "sha256": "0a6b594be9dccc9a69bf8c70bc54390f7de3d21ba9c9abb0e78659ad42f4349b",
+          "bytes_compactados": 5431
+        },
+        {
+          "nome_interno": "2024_05_23.09_setembro.csv",
+          "bytes": 26752,
+          "sha256": "c7a92773e033239230786e49f021d58a8cb28c8a74f58bf1ca1458702e6bf141",
+          "bytes_compactados": 5504
+        },
+        {
+          "nome_interno": "2024_05_23.10_outubro.csv",
+          "bytes": 26774,
+          "sha256": "8889fac1c59e96e4caa2ef3118eacb4e1085a9573ab32126912f6cc06b5fcd58",
+          "bytes_compactados": 5512
+        },
+        {
+          "nome_interno": "2024_05_23.11_novembro.csv",
+          "bytes": 27122,
+          "sha256": "0534c98cc836ae0cee77449141704012c3c79fed1154d7a3dce45c85a7d9daea",
+          "bytes_compactados": 5504
+        },
+        {
+          "nome_interno": "2024_05_23.12_dezembro.csv",
+          "bytes": 26027,
+          "sha256": "b2f8cdf7612e28726eb8e3aaba999990b2ec999ae7a5b7aaf048dc5fd72e975d",
+          "bytes_compactados": 5344
+        },
+        {
+          "nome_interno": "2024_06_04_abril_24.csv",
+          "bytes": 24708,
+          "sha256": "d19cfb485c0c9bf044dd690d66cf359f2442909b34d70a4835262e7370f758c8",
+          "bytes_compactados": 5289
+        },
+        {
+          "nome_interno": "2024_06_05_maio_24.csv",
+          "bytes": 24384,
+          "sha256": "77708304b8d15fe6a15dd53e3caaa267cc29a4a94a29921766af76371917703d",
+          "bytes_compactados": 5325
+        },
+        {
+          "nome_interno": "2024_07_06-junho-2.csv",
+          "bytes": 25741,
+          "sha256": "5fd7676d668c45795857a7bb292adb818818bece8493d30c6999039df95f1fe1",
+          "bytes_compactados": 5420
+        },
+        {
+          "nome_interno": "2024_08_07-julho-1.csv",
+          "bytes": 26859,
+          "sha256": "5b0f65640d3e244302cc0225770aa463487cbb33694bddf15c1803a09cb56a16",
+          "bytes_compactados": 5399
+        },
+        {
+          "nome_interno": "2024_09_08-agosto-1.csv",
+          "bytes": 26875,
+          "sha256": "de92dadc680ff4e1538677b6ef9bdfc62aedfaaf0be51e6a0c7d7d31d231dc2c",
+          "bytes_compactados": 5424
+        },
+        {
+          "nome_interno": "2024_10_Relatorio-SET-2024-Ratificado-1.csv",
+          "bytes": 33818,
+          "sha256": "a45f8f3de814c76788f25317f01cb20a690d82ad494be372b7d1d61c936d5cfc",
+          "bytes_compactados": 5506
+        },
+        {
+          "nome_interno": "2024_11_RELATORIO-OUT.csv",
+          "bytes": 27253,
+          "sha256": "75a933cd7483a6669a0fa3d05d2d2bb8d1aa9866afbabd3f7a57b381efe46b36",
+          "bytes_compactados": 5501
+        },
+        {
+          "nome_interno": "2024_12_NOV-1.csv",
+          "bytes": 24427,
+          "sha256": "69b5728ce21aa0085d10910261467119d5ff87f06ddd1fa8e7a81869f75df44e",
+          "bytes_compactados": 5397
+        },
+        {
+          "nome_interno": "2025_02_01-janeiro-1.csv",
+          "bytes": 31039,
+          "sha256": "bba6066eb56088db50a5772141c4e2146f933e596b8ad473fb122cf05938201b",
+          "bytes_compactados": 5415
+        },
+        {
+          "nome_interno": "2025_02_12-dezembro-1.csv",
+          "bytes": 27803,
+          "sha256": "855fb90e0f9b6717d4251abec5203dede076215991460f832c4a2a322833a2c6",
+          "bytes_compactados": 5311
+        },
+        {
+          "nome_interno": "2025_03_02-fevereiro-25.csv",
+          "bytes": 26109,
+          "sha256": "98980a73eb809e30d16345b6021ef18afa923bed2db70823f2e591e4d2292e1c",
+          "bytes_compactados": 5049
+        },
+        {
+          "nome_interno": "2025_04_03-marco.csv",
+          "bytes": 23658,
+          "sha256": "c72b2c51e8421a962a979a69a7141049ccee4bf2749e1dd5def7be07b60d7454",
+          "bytes_compactados": 5110
+        },
+        {
+          "nome_interno": "2025_06_04-abril-3.csv",
+          "bytes": 24489,
+          "sha256": "980f1cd5de74a56600d52016b6f3e2ebf47bfeb8591203a73e272c560479cde9",
+          "bytes_compactados": 5175
+        },
+        {
+          "nome_interno": "2025_06_05-maio-1-1.csv",
+          "bytes": 24611,
+          "sha256": "5fe12dd0803454ddd946dfbb39f5a44c271d8cc637cb0ba5c81e43ec2c12d206",
+          "bytes_compactados": 5188
+        },
+        {
+          "nome_interno": "2025_06_VIOLENCIA-DOMESTICA-1o-SEMESTRE-2023.csv",
+          "bytes": 236378,
+          "sha256": "e13b05a4629afb95630daa2980e9364bd16de0d67da4fa4b748edc53ed9598b1",
+          "bytes_compactados": 19516
+        },
+        {
+          "nome_interno": "2025_06_VIOLENCIA-DOMESTICA-2024-SC.csv",
+          "bytes": 260780,
+          "sha256": "81527b59a6560e41874a6571219f081ada5289bc1c131e9e5cdfac64d65ee750",
+          "bytes_compactados": 27125
+        },
+        {
+          "nome_interno": "2025_06_VIOLENCIA-DOMESTICA-2o-SEMESTRE-2023.csv",
+          "bytes": 226792,
+          "sha256": "17fc7991fbde2870fcd255f3aec43128bfefa197cd0a27c2906b998112dd0cd1",
+          "bytes_compactados": 19383
+        },
+        {
+          "nome_interno": "2025_08_06-junho-2025.csv",
+          "bytes": 25571,
+          "sha256": "257ee747ae894b01c23a1a020fea2e57679e1d5d519088a87aaf8e7254f67365",
+          "bytes_compactados": 5246
+        },
+        {
+          "nome_interno": "2025_08_07-julho-2025.csv",
+          "bytes": 25624,
+          "sha256": "d4e20aa44a095772982471c9a9fd35c0670fd7f2c1be06c1f0a42442331d94d1",
+          "bytes_compactados": 5260
+        },
+        {
+          "nome_interno": "2025_10_08-agosto.csv",
+          "bytes": 24148,
+          "sha256": "a87d2df4caf5a6884df6e8a6f9acb113fbbb634974739918f1bd6e6c64d55f29",
+          "bytes_compactados": 5252
+        },
+        {
+          "nome_interno": "2025_10_09-setembro.csv",
+          "bytes": 25112,
+          "sha256": "b37611153f47245cb78ec493051fe7a1eb50d2cacaa08f56d3bbb336293271a9",
+          "bytes_compactados": 5286
+        },
+        {
+          "nome_interno": "2025_11_10-outubro.csv",
+          "bytes": 25119,
+          "sha256": "6f5c06bcdd8bf6854040b08582db7512bec7b99940d7594e5ef312e554ec90b3",
+          "bytes_compactados": 5298
+        },
+        {
+          "nome_interno": "2025_12_11-novembro.csv",
+          "bytes": 24543,
+          "sha256": "f1bffea9ceae5f32964bf63131e40f88d048d10494b3b417691637036f1d6e4f",
+          "bytes_compactados": 5222
+        },
+        {
+          "nome_interno": "2026_01_12-dezembro.csv",
+          "bytes": 24621,
+          "sha256": "b169a625d4c9ea7e578936c20d29ce24784d264652658693f1230656d2d8c6d2",
+          "bytes_compactados": 5117
+        },
+        {
+          "nome_interno": "2026_02_01-janeiro-2026.csv",
+          "bytes": 26348,
+          "sha256": "e0c6ac80fd316e7bf0c0788c6c413a402029f7fb4483df932e7a48f3a25fe4fc",
+          "bytes_compactados": 4986
+        },
+        {
+          "nome_interno": "2026_03_02-fevereiro-2026.csv",
+          "bytes": 26922,
+          "sha256": "483a8cdf059ac850235ae2b08a2d4e73693e34d38d1563cd6bc78701e22c5296",
+          "bytes_compactados": 5037
+        },
+        {
+          "nome_interno": "2026_05_03-marco-2026.csv",
+          "bytes": 25522,
+          "sha256": "8f20da8c97651545239255e08c19b3ee8c362a11d084a11848720dca2b8c292e",
+          "bytes_compactados": 5094
+        },
+        {
+          "nome_interno": "2026_05_04-abril-2026.csv",
+          "bytes": 25497,
+          "sha256": "1502e0cbf409ed6c076f403f520a53d9fcad377e32e481ed9176e1a03cbe4194",
+          "bytes_compactados": 5138
+        },
+        {
+          "nome_interno": "2026_06_05-maio.csv",
+          "bytes": 23310,
+          "sha256": "23bab4013a499bacd1c5c76c2209d0de98f01a1827d108717f9ac483558f5a02",
+          "bytes_compactados": 5157
+        },
+        {
+          "nome_interno": "2026_07_06-junho-de-2026.csv",
+          "bytes": 26689,
+          "sha256": "989e9aa65f6f3c2690f56892c342478a9facd3317b2bf49e409870e0938efbb2",
+          "bytes_compactados": 5248
+        },
+        {
+          "nome_interno": "2026_08_2026-julho.csv",
+          "bytes": 24256,
+          "sha256": "8d0dca080c10516e72925b9267030f78324e15a397b2d7d01f83670222dc71b8",
+          "bytes_compactados": 5194
+        }
+      ],
+      "integridade": "testzip OK; SHA-256 dos arquivos internos recalculado"
+    },
+    {
+      "fonte": "SSP/SC — Segurança em Números (tratamento do projeto)",
+      "situacao": "atual",
+      "periodo": "Joinville; violência doméstica 2023–2024; homicídios 2020–2026 por edição",
+      "observacao": "Saídas SSP/SC do ETL atual. Unidade “Fato Comunicado” sem definição oficial; republicações divergentes.",
+      "zip": "processados/ssp_sc/ssp_sc_joinville_processados.zip",
+      "bytes_zip": 19189,
+      "sha256_zip": "c0146c0876c15c1ea57214071d20cbf53f9b61bbd5bf20dd75824358aaafd80e",
+      "bytes_originais": 250323,
+      "reducao_percentual": 92.3,
+      "arquivos": [
+        {
+          "nome_interno": "etl_joinville/ssp_sc/violencia_domestica_joinville_tratada.csv",
+          "bytes": 78650,
+          "sha256": "c553b03b113748aeb56023a39ae7d55fefb3807c3c0c182c7f4ca2e2cc2f4d49",
+          "bytes_compactados": 2551
+        },
+        {
+          "nome_interno": "etl_joinville/ssp_sc/homicidios_boletins_joinville_versoes.csv",
+          "bytes": 59781,
+          "sha256": "21ccb2232c7a41a96d0a636a7da9f7829574954317d35f10e5f0c98eef439cf1",
+          "bytes_compactados": 2690
+        },
+        {
+          "nome_interno": "etl_joinville/ssp_sc/homicidios_republicacoes_grupos.csv",
+          "bytes": 17561,
+          "sha256": "d96dd4f710a597753750fae1b72ae3845c6b45f2574b992bcc74ede4fd256381",
+          "bytes_compactados": 1317
+        },
+        {
+          "nome_interno": "etl_joinville/ssp_sc/inventario_acervo_ssp_sc.csv",
+          "bytes": 12737,
+          "sha256": "72e5b61514a13266d9005b1d4aedc4c1f5c28188edb531aefd102ccd80b0de6e",
+          "bytes_compactados": 4726
+        },
+        {
+          "nome_interno": "etl_joinville/ssp_sc/rastreabilidade_celulas_ssp_sc.csv",
+          "bytes": 68897,
+          "sha256": "4376f12eda41f0b05ba6c2041117b4a02c467296e5c316e81ddca0539007a525",
+          "bytes_compactados": 4834
+        },
+        {
+          "nome_interno": "etl_joinville/ssp_sc/verificacoes_extracao_ssp_sc.csv",
+          "bytes": 11733,
+          "sha256": "52b3edc20a56cd9b2a12f21e479127af091984480be7c91cf26c2702b3184edf",
+          "bytes_compactados": 1148
+        },
+        {
+          "nome_interno": "etl_joinville/ssp_sc/relatorio_auditoria_ssp_sc.json",
+          "bytes": 964,
+          "sha256": "f1d69f624bbbda6e8a2f7b40152600fcf9a27dac1d6709db34b4964f7533f24e",
+          "bytes_compactados": 456
+        }
+      ],
+      "integridade": "testzip OK; SHA-256 dos arquivos internos recalculado"
+    },
+    {
+      "fonte": "MJSP / Sinesp VDE",
+      "situacao": "atual",
+      "periodo": "jan/2020–set/2026",
+      "versao": "20261027T114400Z",
+      "observacao": "Gerado por src/pipeline/consolidacao.py; conteúdo idêntico ao gerado pelo código atual.",
+      "zip": "processados/consolidacao_union_joinville.zip",
+      "bytes_zip": 7802,
+      "sha256_zip": "fbc6202a14757897e500a75512c5e14e1b5bb99c4e15b655ec5e51f77a02184e",
+      "bytes_originais": 256299,
+      "reducao_percentual": 97.0,
+      "arquivos": [
+        {
+          "nome_interno": "sinesp/sinesp_esquema_comum.csv",
+          "bytes": 254999,
+          "sha256": "8507117bd62be3e0a77429c94b3d04699ba81bd8f803cee140e040e451eb218c",
+          "bytes_compactados": 6611
+        },
+        {
+          "nome_interno": "matriz_compatibilidade_union.csv",
+          "bytes": 1300,
+          "sha256": "98612305d489b33342db04a69fb8cb280e62185eadc1bcc8c8425b9069e11910",
+          "bytes_compactados": 726
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos; descompactação comparada byte a byte"
+    },
+    {
+      "fonte": "MJSP / Sinesp VDE (edição anterior)",
+      "situacao": "histórico",
+      "periodo": "jan/2020–ago/2026",
+      "observacao": "Edição anterior à republicação de 27/10/2026; não usar como resultado atual.",
+      "zip": "processados/historico/sinesp_edicao_anterior_ate_ago2026.zip",
+      "bytes_zip": 74442,
+      "sha256_zip": "5506a7ef4d878459fd82efa023e7c1056ad284ca759e3537a11234bbe1a82097",
+      "bytes_originais": 167558,
+      "reducao_percentual": 55.6,
+      "arquivos": [
+        {
+          "nome_interno": "sinesp/bancovde-2020-joinville-sc.xlsx",
+          "bytes": 9852,
+          "sha256": "db9686906e8e0b1168e7c9ce54dc7a45691a1dba4081f5279be7e8aeadb42fb0",
+          "bytes_compactados": 8762
+        },
+        {
+          "nome_interno": "sinesp/bancovde-2021-joinville-sc.xlsx",
+          "bytes": 9839,
+          "sha256": "1f76a56de98330d3e811061fd27997a09c3686ec4fea7f4f953b030efd00324b",
+          "bytes_compactados": 8787
+        },
+        {
+          "nome_interno": "sinesp/bancovde-2022-joinville-sc.xlsx",
+          "bytes": 9850,
+          "sha256": "53fc02c16b92ba25793f1777843e802289ffc9082a1ed244a94e5918dabec0b7",
+          "bytes_compactados": 8820
+        },
+        {
+          "nome_interno": "sinesp/bancovde-2023-joinville-sc.xlsx",
+          "bytes": 9825,
+          "sha256": "b6acfcba34294a8245317f637660ff2b6b87bbdb8ad6bab4e879906c794d04a2",
+          "bytes_compactados": 8757
+        },
+        {
+          "nome_interno": "sinesp/bancovde-2024-joinville-sc.xlsx",
+          "bytes": 9812,
+          "sha256": "a631de8f1576081fe13efc6d7805d1271745c01a53e1cf7d5f61eaa67889f290",
+          "bytes_compactados": 8774
+        },
+        {
+          "nome_interno": "sinesp/bancovde-2025-joinville-sc.xlsx",
+          "bytes": 10111,
+          "sha256": "d2839ef1bc7c912f8f6ac9c55b7d598ec239fb8e29a2dafcad22805d712f38ac",
+          "bytes_compactados": 9062
+        },
+        {
+          "nome_interno": "sinesp/bancovde-2026-joinville-sc.xlsx",
+          "bytes": 8481,
+          "sha256": "43136a33bd7cfe69fe4107fd7daac46685a30a764067b049e3cf14031c5c5ea9",
+          "bytes_compactados": 7683
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2020.csv",
+          "bytes": 1736,
+          "sha256": "41ee7cc07359dee71caca30fda6a6ff86e3e1439dc19186b8546f94a567d33ee",
+          "bytes_compactados": 272
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2021.csv",
+          "bytes": 1736,
+          "sha256": "a83e22939369286a95d86b2d92d523f00bd8e0712ec2af33fdacf1a9c323f84a",
+          "bytes_compactados": 267
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2022.csv",
+          "bytes": 1736,
+          "sha256": "cf1582a9dc4f9c6c94c1811b1a690b1dbedf1bdf9b750073374a4bdf712c589e",
+          "bytes_compactados": 267
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2023.csv",
+          "bytes": 1735,
+          "sha256": "810289789b16f1beb00b95a5eefcf68aecf90ed1620e2f3a90c7db2aca5cba67",
+          "bytes_compactados": 270
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2024.csv",
+          "bytes": 1733,
+          "sha256": "8f8edbfdb7b2dbde3f8b4bf52c0bfa6de2d6d701cbc111592409a760493aed7e",
+          "bytes_compactados": 279
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2025.csv",
+          "bytes": 1736,
+          "sha256": "3a38e987383847d07d87ac5a495f19bc2d6dfba30aeb85744a8364b98ed242f7",
+          "bytes_compactados": 269
+        },
+        {
+          "nome_interno": "sinesp/feminicidio_sinesp_joinville_2026.csv",
+          "bytes": 1204,
+          "sha256": "5bf9afedc6262cd20997916a17f5242455f0d2e6d564190d599d530d0a8e2d71",
+          "bytes_compactados": 239
+        },
+        {
+          "nome_interno": "analises/sinesp_joinville.csv",
+          "bytes": 76871,
+          "sha256": "2961979b25bcfaf582a447e0cca6a8324d7a19430b508c8a5786b8d6f8d816ce",
+          "bytes_compactados": 4291
+        },
+        {
+          "nome_interno": "analises/sinesp_joinville.parquet",
+          "bytes": 11301,
+          "sha256": "7e374bdf4e2a4025d21ce65c4e5ef227dbf3aa13179c5edb83ef6ed511bad652",
+          "bytes_compactados": 4977
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos; descompactação comparada byte a byte"
+    },
+    {
+      "fonte": "SSP/SC — Segurança em Números",
+      "situacao": "histórico",
+      "periodo": "2020–2026 (versões de 16/10 e 28/10/2026)",
+      "observacao": "Substituído pelas saídas atuais do ETL; não usar como resultado atual.",
+      "zip": "processados/historico/ssp_sc_versoes_anteriores.zip",
+      "bytes_zip": 15780,
+      "sha256_zip": "f37be7a1e1d2392b9f17fb03b38c354aea162629a8a4d3216a1db545684e614a",
+      "bytes_originais": 170441,
+      "reducao_percentual": 90.7,
+      "arquivos": [
+        {
+          "nome_interno": "ssp_sc/ssp_joinville_2023.csv",
+          "bytes": 25435,
+          "sha256": "2cbceb763e7c66db0eee818962cf16dbc0233836f3beebdf01eb17d9229a70b9",
+          "bytes_compactados": 1481
+        },
+        {
+          "nome_interno": "ssp_sc/ssp_joinville_2024.csv",
+          "bytes": 25522,
+          "sha256": "30aa690d31ad7e8101916ed9b6e3e9a2071299b4537b67afc6c4565ccafaa3ed",
+          "bytes_compactados": 1508
+        },
+        {
+          "nome_interno": "ssp_sc/ssp_joinville_2025.csv",
+          "bytes": 12556,
+          "sha256": "9ed2b4e1aebae65753ac58a14d8132110be9fd5682cc9ddbbb573ed4d87fca2d",
+          "bytes_compactados": 802
+        },
+        {
+          "nome_interno": "ssp_sc/ssp_joinville_2026.csv",
+          "bytes": 7474,
+          "sha256": "b7d74ef0dcbb00c09edd85ba8cc259d36504c48ec1ffe593b08b42c722b38392",
+          "bytes_compactados": 565
+        },
+        {
+          "nome_interno": "analises/ssp_joinville.csv",
+          "bytes": 70528,
+          "sha256": "0adcbc6f9d27ca1a61d91b72afdc20770f84376a7ec5b335cd739c441b9f178d",
+          "bytes_compactados": 3484
+        },
+        {
+          "nome_interno": "analises/ssp_joinville.parquet",
+          "bytes": 10535,
+          "sha256": "4818ee5fcf32f96868fb02b74a690abff59b900552ef17700077511e26726960",
+          "bytes_compactados": 4958
+        },
+        {
+          "nome_interno": "ssp_sc/homicidios_republicacoes_grupos.csv",
+          "bytes": 17561,
+          "sha256": "bf576655a8dd87adf4419d0660d3e6132b3ce89420e9fc1640285c2b161366cb",
+          "bytes_compactados": 1316
+        },
+        {
+          "nome_interno": "ssp_sc/relatorio_auditoria_ssp_sc.json",
+          "bytes": 830,
+          "sha256": "3926cdd04b2f9636b7f75613bc738ebfe3ec025458f056a9d3a36b95584c22e9",
+          "bytes_compactados": 382
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos; descompactação comparada byte a byte"
+    },
+    {
+      "fonte": "Prefeitura de Joinville/SEPROT; SSP/SC (relatório via ALESC)",
+      "situacao": "complementar, não validado",
+      "periodo": "2023–2025",
+      "observacao": "Números divergentes entre fontes; não incorporados ao painel (ver documentacao/anexos/notas_fontes_complementares.md).",
+      "zip": "processados/complementares/fontes_complementares_joinville.zip",
+      "bytes_zip": 5034,
+      "sha256_zip": "354c01bfac272ef01b203d6bd9f9c5152b4aeddb065bb8e3a3ab6d859e68998d",
+      "bytes_originais": 15641,
+      "reducao_percentual": 67.8,
+      "arquivos": [
+        {
+          "nome_interno": "complementares/indicadores_complementares_joinville.csv",
+          "bytes": 7387,
+          "sha256": "cf16a6bc93eeb8f6bb610e72bcab777c674d07ef7ccee32b51c3645686e14334",
+          "bytes_compactados": 1062
+        },
+        {
+          "nome_interno": "prefeitura/furto_roubo_joinville_2023.csv",
+          "bytes": 469,
+          "sha256": "b33b9d0e007d18b9a0ab956620f91f6757e6fa837afd7d01e54fd43080f40ada",
+          "bytes_compactados": 226
+        },
+        {
+          "nome_interno": "prefeitura/furto_roubo_joinville_2024.csv",
+          "bytes": 469,
+          "sha256": "1dc29359d9d903c9879aa2045a310daa4f548e8a119eba552739199601d42383",
+          "bytes_compactados": 226
+        },
+        {
+          "nome_interno": "prefeitura/furto_roubo_joinville_2025.csv",
+          "bytes": 469,
+          "sha256": "66a0f5c0694647fd9fbd8a1b1143d42fef663888fd57e753dee28c5cfe811014",
+          "bytes_compactados": 227
+        },
+        {
+          "nome_interno": "analises/prefeitura_furto_roubo_joinville.csv",
+          "bytes": 1275,
+          "sha256": "d5b74d52f6fd84a0f654ccc97e408fe3bfe17ebd06927cb737be1bacac6bdbe4",
+          "bytes_compactados": 260
+        },
+        {
+          "nome_interno": "analises/prefeitura_furto_roubo_joinville.parquet",
+          "bytes": 5572,
+          "sha256": "de39c0c2a40211bef750ca184a23971e80eb31574f9ab8fe48c7acb4141a8785",
+          "bytes_compactados": 1865
+        }
+      ],
+      "integridade": "testzip OK; nomes, quantidade, tamanhos e SHA-256 conferidos; descompactação comparada byte a byte"
     }
+  ],
+  "licenca_ssp_sc": "Sem licença de reutilização informada. Evidência: Copyright © 2023 Todos os Direitos Reservados SC - Governo de Santa Catarina (rodapé de https://ssp.sc.gov.br/segurancaemnumeros/, conferido em 29/10/2026). Dados estatísticos publicados com atribuição; PDFs não republicados. Avaliação técnica, não parecer jurídico.",
+  "atualizacoes": [
+    "29/10/2026: acrescentados 6 ZIPs (SSP/SC e arquivos processados adicionais); os 8 registros do Sinesp foram preservados sem alteração."
   ]
 }
